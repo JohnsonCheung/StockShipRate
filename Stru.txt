@@ -1,0 +1,10 @@
+Att: AttNm Att FilTim FilSz
+InvD: InvDId InvId Sku Qty_Ac DteCrt
+InvH: InvId VndShtNm InvNo InvDte InvAmt DteCrt
+MEMB52: YYMM Sku Whs OH
+ZHT1: Whs ZHT1 FmDte RateSc ToDte
+PgmPrm: Apn
+Prm: UOMFn UomPth ZHT1Fn ZHT1Pth MB52Fn MB52Pth BegYYMM NMthGR
+Prm_C: UOMFn UomPth ZHT1Fn ZHT1Pth MB52Fn MB52Pth
+Prm_N: UOMFn UomPth ZHT1Fn ZHT1Pth MB52Fn MB52Pth
+~TMPCLP293281: YYMM Sku BchNo Whs Loc QUnRes QInsp QBlk
