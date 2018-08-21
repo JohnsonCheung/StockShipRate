@@ -19,7 +19,7 @@ IFxAy = PthFfnAy(InvPth, "*.xlsx")
 End Function
 Function IFxImp(A$) As String()
 WIni
-Dim B$(), C$()
+Dim B$(), C$(), O$()
 B = WtLnkFx(">InvH", A, "InvH")
 C = WtLnkFx(">InvD", A, "InvD")
 O = AyAdd(B, C)

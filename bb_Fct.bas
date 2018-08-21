@@ -232,27 +232,40 @@ End Function
 Function CvAv(A) As Variant()
 CvAv = A
 End Function
-Sub Commit()
-ApnCommit
+Sub Commit(Optional Msg$ = "Commit")
+AppCommit Msg
 End Sub
-Function FcommitcmdBld$()
-Dim O$()
-AyWrt
-O = TmpFt
-
-FcommitcmdBld = O
+Sub FcommitBrw()
+FtBrw FcommitBld
+End Sub
+Function FcommitBld$(Optional Msg$ = "Commit")
+Dim O$(), Cd$, GitAdd$, GitCommit$, GitPush
+Cd = FmtQQ("Cd ""?""", SrcPth)
+GitAdd = "git add -A"
+GitCommit = FmtQQ("git commit --message=""?""", RplVBar(Msg))
+GitPush = "git push -u origin master"
+Push O, Cd
+Push O, GitAdd
+Push O, GitCommit
+Push O, GitPush
+Push O, "Pause"
+FcommitBld = AyWrt(O, TmpCmd(Apn))
 End Function
-Sub ApnCommit()
-apnexp
-FcmdRun FcommitcmdBld, vbNormalFocus
+Sub AppCommit(Optional Msg$ = "Commit")
+AppExp
+Dim T$
+T = FcmdRun(FcommitBld(Msg), vbNormalFocus)
+Stop
+Kill T
 End Sub
 Sub ZZ_FcmdRun()
 FcmdRun "Cmd", vbMaximizedFocus
 MsgBox "AA"
 End Sub
-Sub FcmdRun(A$, Optional WinSty As VbAppWinStyle = vbHide)
+Function FcmdRun$(A$, Optional WinSty As VbAppWinStyle = vbMaximizedFocus)
 Shell A, WinSty
-End Sub
+FcmdRun = A
+End Function
 Function FunMsgAv_Ly(A$, Msg$, Av()) As String()
 Dim B$(), C$()
 B = SplitVBar(Msg)
@@ -1273,7 +1286,9 @@ End Function
 Function ApnWFb$(A$)
 ApnWFb = ApnWPth(A) & "Wrk.accdb"
 End Function
-
+Function WPth$()
+WPth = ApnWPth(Apn)
+End Function
 Function ApnWPth$(A$)
 Dim P$
 P = TmpHom & A & "\"
@@ -1943,7 +1958,7 @@ End Function
 Function ISpecINm$(A$)
 ISpecINm = LinT1(A)
 End Function
-Sub LSpecDmp(A)
+Sub LSpecDmp(A$)
 Debug.Print RplVBar(A)
 End Sub
 Function LSpecLy(A) As String()
@@ -3227,7 +3242,7 @@ End Function
 Function DbqryRs(A As Database, Q) As DAO.Recordset
 Set DbqryRs = A.QueryDefs(Q).OpenRecordset
 End Function
-Function RplVBar$(A)
+Function RplVBar$(A$)
 RplVBar = Replace(A, "|", vbCrLf)
 End Function
 Function Sz&(A)
@@ -3242,10 +3257,15 @@ End Function
 Sub AyBrw(A)
 StrBrw Join(A, vbCrLf)
 End Sub
-Function TblFld_Ty(T, F) As DAO.DataTypeEnum
-TblFld_Ty = CurrentDb.TableDefs(T).Fields(F).Type
+Function TfTy(T$, F$) As DAO.DataTypeEnum
+TfTy = DbtfTy(CurrentDb, T, F)
 End Function
-
+Function DbtfTy(A As Database, T$, F$) As DAO.DataTypeEnum
+DbtfTy = A.TableDefs(T).Fields(F).Type
+End Function
+Function DbtfTyStr$(A As Database, T$, F$)
+DbtfTyStr = DaoTy_Str(DbtfTy(A, T, F))
+End Function
 Function StrWrt$(A, Ft$, Optional IsNotOvrWrt As Boolean)
 Fso.CreateTextFile(Ft, Overwrite:=Not IsNotOvrWrt).Write A
 StrWrt = Ft
@@ -3283,6 +3303,9 @@ End Function
 
 Function TmpFt$(Optional Fdr$, Optional Fnn$)
 TmpFt = TmpFfn(".txt", Fdr, Fnn)
+End Function
+Function TmpCmd$(Optional Fdr$, Optional Fnn$)
+TmpCmd = TmpFfn(".cmd", Fdr, Fnn)
 End Function
 Function TmpFx$(Optional Fdr$, Optional Fnn$)
 TmpFx = TmpFfn(".xlsx", Fdr, Fnn)
