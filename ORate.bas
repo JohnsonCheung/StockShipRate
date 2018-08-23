@@ -1,5 +1,5 @@
 Option Compare Database
-Sub Calc()
+Sub Rpt()
 'The @Main is the detail of showing how NxtMth YMZHT1 is calculate
 Y = 18
 M = 2
@@ -19,11 +19,12 @@ WCls
 End Sub
 
 Sub Gen()
+OupFx_Gen OupFx, WFb
 End Sub
 Sub Oup()
 OMain
 End Sub
-Sub OMain()
+Sub UMain()
 'YMZHT1: Y M ZHT1 Whs RateSc FmDte ToDte DteCrt
 QQ "Delete * from [YMZHT1] where Y=? and M=?", Y, M
 QQ "Insert into YMZHT1 (Y,M,ZHT1,Whs,RateSc) Select ?,?,ZHT1,Whs,RateSc from [$ZHT1]", Y, M
@@ -33,14 +34,13 @@ End Sub
 
 Sub Tmp()
 TmpRate
-TmpZHT1
 End Sub
 Sub TmpRate()
 WDrp "$Rate"
 WQQ "Select ZHT1,Whs,RateSc into [$Rate] from [YMZHT1] where Y=? and M=?", Y, M
 WQQ "Create Index Pk on [$Rate] (ZHT1,Whs) with primary"
 End Sub
-Sub TmpZHT1()
+Sub OMain()
 'YMZHT1: Y M ZHT1 Whs RateSc FmDte ToDte DteCrt
 'YMOH: Y M Sku Whs OH Sc Sc_U
 'InvD: VndShtNm InvNo Sku Sc Amt
@@ -55,7 +55,7 @@ Sub TmpZHT1()
 'To Find: EndRateSc
 'Work:
 '      SellSc    = BegOHSc + IRSc - EndOHSc    = 100(Sc) + 30(Sc) - 40(Sc) = 90(Sc)
-'      SellAmt   = SellSc * OldRateSc          = 90(Sc) * $0.5/Sc          = $45
+'      SellAmt   = SellSc * BegRateSc          = 90(Sc) * $0.5/Sc          = $45
 '      EndAmt    = BegAmt + IRAmt - SellAmt    = $50 + $21 - $45           = $26
 '      EndRateSc = EndAmt / EndOHSc            = $26 / 40(Sc)              = $0.65/Sc (**)
 WDrp "#BegOH #EndOH #IR #SkuWhs #SkuWhs1 @Main"
@@ -102,18 +102,32 @@ WRun "Alter Table [@Main] add column Sc_U double, ProdH text(20),M32 Text(2), M3
 WRun "Update [@Main] x inner join [#IUom] a on x.Sku=a.Sku and x.Whs=a.Whs set x.ProdH=a.ProdH, x.Sc_U=a.Sc_U"
 WRun "Update [@Main] set M32=Mid(ProdH,3,2),M35=Mid(ProdH,3,5),M38=Mid(ProdH,3,8)"
 
-'Add ZHT1 RateSc
+'AddCol ZHT1 RateSc
 WRun "Update [@Main] x inner join [$Rate] a on x.Whs=a.Whs and x.M38=a.ZHT1 set x.RateSc=a.RateSc,x.ZHT1=a.ZHT1 where x.RateSc Is Null"
 WRun "Update [@Main] x inner join [$Rate] a on x.Whs=a.Whs and x.M35=a.ZHT1 set x.RateSc=a.RateSc,x.ZHT1=a.ZHT1 where x.RateSc Is Null"
 WRun "Update [@Main] x inner join [$Rate] a on x.Whs=a.Whs and x.M32=a.ZHT1 set x.RateSc=a.RateSc,x.ZHT1=a.ZHT1 where x.RateSc Is Null"
+
+'RenCol RateSc -> BegRateSc
+WReOpn
+WtRenCol "@Main", "RateSc", "BegRateSc"
 
 '@Main Sku ZHT1 BegOHSc BegRateSc BegAmt IRSc IRAmt OldRateSc EndAmt EndOHSc EndRateSc
              'Sku Whs
              'ZHT1 ZBrdNm ZBrd ZQlyNm ZQly Z8Nm Z8
              'EndAmt = EndOHSc
-'Des StkUom
+'AddCol Des StkUom
 WRun "Alter Table [@Main] Add Column Des Text(255), StkUom Text(10)"
 WRun "Update [@Main] x inner join [#IUom] a on x.Sku=a.Sku set x.Sc_U = a.Sc_U,x.Des=a.Des,x.StkUom=a.StkUom"
+
+'AddCol BegAmt SellSc SellAmt EndAmt EndRateSc
+WRun "Alter Table [@Main] Add Column BegAmt Currency, SellSc Double, SellAmt Currency, EndAmt Currency, EndRateSc Double"
+WRun "Update [@Main]" & _
+" set" & _
+" SellSc = BegOHSc + IRSc - EndOHSc," & _
+" SellAmt = SellSc * BegRateSc," & _
+" BegAmt = BegOHSc * BegRateSc," & _
+" EndAmt = BegAmt + IRAmt - SellAmt," & _
+" EndRateSc = IIf(Nz(EndOHSc,0)=0,BegRateSc,EndAmt/EndOHSc)"
 
 'Stream ProdH F2 M32 M35 M38 Topaz ZHT1 RateSc Z2 Z5 Z8
 'ProdH Topaz
@@ -125,7 +139,6 @@ WRun "Update [@Main] x inner join [#IUom] a on x.Sku=a.Sku set x.Sc_U = a.Sc_U,x
 'WRun "Update [@Main] set Stream=IIf(Left(Topaz,3)='UDV','Diageo','MH')"
 'WRun "Update [@Main] Set Z2=Left(ZHT1,2), Z5=Left(ZHT1,5), Z8=Left(ZHT1,8) where not ZHT1 is null"
 'WRun "Update [@Main] Set Amt = RateSc * OH_Sc where RateSc is not null"
-Stop
 WDrp "#SkuWhs #SkuWhs1 #BegOH #EndOH #IR"
 End Sub
 

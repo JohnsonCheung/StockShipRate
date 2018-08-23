@@ -1,6 +1,7 @@
 Option Compare Database
 Option Explicit
 Public Fso As New Scripting.FileSystemObject
+Public Fcmd As New Fcmd
 Type AttRs
     TblRs As DAO.Recordset
     AttRs As DAO.Recordset
@@ -15,6 +16,7 @@ Const PSep$ = " "
 Const PSep1$ = " "
 Public StsM$()
 Public ErrM$()
+Dim Av()
 Sub BrwSts()
 AyBrwEr StsM
 Erase StsM
@@ -186,13 +188,16 @@ If N <> 1 Then
     Er "DbAtt_Exp|[Att] in [Db] has [FilCnt] which be one.|Not able to export [ToFfn]", _
         Att, A.Name, N, ToFfn
 End If
+Stop
 DbAtt_Exp = AttRs_Exp(DbAtt_Rs(A, Att), ToFfn)
+MsgAp_Dmp "@[Sub], [Att] is exported [ToFfn]", "DbAtt_Exp", Att, ToFfn
 End Function
 Sub Er(Msg$, ParamArray Ap())
 Dim Av(), O$()
 Av = Ap
 O = MsgAv_Ly(Msg, Av)
 AyBrw O
+Stop
 Err.Raise 1
 End Sub
 Function MsgNy(A) As String()
@@ -293,41 +298,68 @@ Sub Commit(Optional Msg$ = "Commit")
 AppCommit Msg
 End Sub
 Sub FcommitBrw()
-FtBrw FcommitBld
+FtBrw BldCommitFcmd
 End Sub
-Function FcommitBld$(Optional Msg$ = "Commit")
+Function BldCommitFcmd$()
 Dim O$(), Cd$, GitAdd$, GitCommit$, GitPush
 Cd = FmtQQ("Cd ""?""", SrcPth)
 GitAdd = "git add -A"
-GitCommit = FmtQQ("git commit --message=""?""", RplVBar(Msg))
-GitPush = "git push -u origin master"
+GitCommit = "git commit --message=%1%"
 Push O, Cd
 Push O, GitAdd
 Push O, GitCommit
+Push O, "Pause"
+BldCommitFcmd = AyWrt(O, Fcmd.Commit)
+End Function
+
+Function BldPushAppFcmd$()
+Dim O$(), Cd$, GitPush
+Cd = FmtQQ("Cd ""?""", SrcPth)
+GitPush = "git push -u origin master"
+Push O, Cd
 Push O, GitPush
 Push O, "Pause"
-FcommitBld = AyWrt(O, TmpCmd(Apn))
+BldPushAppFcmd = AyWrt(O, Fcmd.PushApp)
 End Function
 Sub AppCommit(Optional Msg$ = "Commit")
 AppExp
-Dim T$
-T = FcmdRun(FcommitBld(Msg), vbNormalFocus)
-Stop
-Kill T
+FcmdRunMax BldCommitFcmd, Msg
 End Sub
-Sub ZZ_FcmdRun()
-FcmdRun "Cmd", vbMaximizedFocus
+Sub AppPush()
+FcmdRunMax BldPushAppFcmd
+End Sub
+Sub ZZ_FcmdRunMax()
+FcmdRunMax "Cmd"
 MsgBox "AA"
 End Sub
-Function FcmdRun$(A$, Optional WinSty As VbAppWinStyle = vbMaximizedFocus)
-Shell A, WinSty
-FcmdRun = A
+Function AyQuoteDbl(A) As String()
+If Sz(A) = 0 Then Exit Function
+Dim I, O$()
+For Each I In A
+    Push O, QuoteDbl(I)
+Next
+AyQuoteDbl = O
+End Function
+Function QuoteDbl$(A)
+QuoteDbl = """" & A & """"
+End Function
+
+Function FcmdRunMax$(A$, ParamArray Ap())
+' WinSty As VbAppWinStyle = vbMaximizedFocus)
+Dim Cmd$
+    Av = Ap
+    Cmd = JnSpc(AyQuoteDbl(AyAdd(Array(A), Av)))
+Shell Cmd, vbMaximizedFocus
+FcmdRunMax = A
 End Function
 Function FunMsgAv_Ly(A$, Msg$, Av()) As String()
 Dim B$(), C$()
 B = SplitVBar(Msg)
 C = NyAv_Ly(CvSy(AyAdd(ApSy("Fun"), MsgNy(Msg))), CvAv(AyAdd(Array(A), Av)))
 FunMsgAv_Ly = AyAdd(B, C)
+End Function
+Function FldVal(A As DAO.Field)
+Asg A.Value, FldVal
 End Function
 Function DbAtt_Rs(A As Database, Att) As AttRs
 With DbAtt_Rs
@@ -336,7 +368,7 @@ With DbAtt_Rs
         A.Execute FmtQQ("Insert into Att (AttNm) values('?')", Att)
         Set .TblRs = A.OpenRecordset(FmtQQ("Selectex Att from Att where AttNm='?'", Att))
     End If
-    Set .AttRs = .TblRs.Fields(0).Value
+    Set .AttRs = FldVal(.TblRs!Att) '.Fields(0).Value
 End With
 End Function
 Function DbFstAttRs(A As Database) As AttRs
@@ -442,8 +474,21 @@ Function AttFfn$(A)
 'Return Fst-Ffn-of-Att-A
 AttFfn = RsMovFst(AttRs(A).AttRs)!FileName
 End Function
+Function RsNRec&(A As DAO.Recordset)
+Dim O&
+With A
+    .MoveFirst
+    While Not .EOF
+        O = O + 1
+        .MoveNext
+    Wend
+    .MoveFirst
+End With
+RsNRec = O
+End Function
 Function DbAtt_FilCnt%(A As Database, Att)
-DbAtt_FilCnt = DbAtt_Rs(A, Att).AttRs.RecordCount
+'DbAtt_FilCnt = DbAtt_Rs(A, Att).AttRs.RecordCount
+DbAtt_FilCnt = RsNRec(DbAtt_Rs(A, Att).AttRs)
 End Function
 Function AttFilCnt%(A)
 AttFilCnt = DbAtt_FilCnt(CurrentDb, A)
@@ -451,7 +496,6 @@ End Function
 Function AttExp$(A, ToFfn)
 'Exporting the only file in Att
 AttExp = DbAtt_Exp(CurrentDb, A, ToFfn)
-MsgAp_Dmp "In [Sub], [Att] is exported [ToFfn]", AttExp$, A, ToFfn
 End Function
 Sub AttImp(A$, FmFfn$)
 DbAtt_Imp CurrentDb, A, FmFfn
@@ -1477,7 +1521,7 @@ TpFxm = TpPth & Apn & "(Template).xlsm"
 End Function
 
 Function TpFx$()
-TpFx = TpPth & Apn & "(Template).xlsm"
+TpFx = TpPth & Apn & "(Template).xlsx"
 End Function
 Sub TpOpn()
 FxOpn TpFx
@@ -2930,6 +2974,9 @@ End Function
 Function WbA1(A As Workbook, Optional WsNm) As Range
 Set WbA1 = WsA1(WbAddWs(A, WsNm))
 End Function
+Sub DbtRenCol(A As Database, T, Fm, NewCol)
+A.TableDefs(T).Fields(Fm).Name = NewCol
+End Sub
 Function DbtAt_Lo(A As Database, T$, At As Range, Optional UseWc As Boolean) As ListObject
 Dim N$, Q As QueryTable
 N = TnLoNm(T)
@@ -3700,7 +3747,10 @@ Function FmtQQAv$(QQVbl, Av)
 Dim O$, I, Cnt
 O = Replace(QQVbl, "|", vbCrLf)
 Cnt = SubStrCnt(QQVbl, "?")
-If Cnt <> Sz(Av) Then Stop
+If Cnt <> Sz(Av) Then
+    MsgAp_Brw "[QQVal] has [N-?], but not match with [Av]-[Sz]", QQVbl, Cnt, Av, Sz(Av)
+    Stop
+End If
 For Each I In Av
     O = Replace(O, "?", I, Count:=1)
 Next
@@ -4422,6 +4472,9 @@ Sub WQQ(A, ParamArray Ap())
 Dim Av()
 Av = Ap
 WRun FmtQQAv(A, Av)
+End Sub
+Sub WtRenCol(T, Fm, NewCol)
+DbtRenCol W, T, Fm, NewCol
 End Sub
 Sub WRun(A)
 On Error GoTo X
