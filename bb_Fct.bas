@@ -13,8 +13,46 @@ End Type
 Public W As Database
 Const PSep$ = " "
 Const PSep1$ = " "
-Function YYMM_FstDte(A$) As Date
+Public StsM$()
+Public ErrM$()
+Sub BrwSts()
+AyBrwEr StsM
+Erase StsM
+End Sub
+Sub BrwBrw()
+AyBrwEr ErrM
+Erase ErrM
+End Sub
+Sub AyPushMsgAv(A, Msg$, Av())
+PushAy A, MsgAv_Ly(Msg, Av)
+End Sub
+Sub PushErr(Msg$, ParamArray Ap())
+Dim Av()
+Av = Ap
+AyPushMsgAv ErrM, Msg, Av
+End Sub
+Sub PushSts(Msg$, ParamArray Ap())
+Dim Av()
+Av = Ap
+AyPushMsgAv StsM, Msg, Av
+End Sub
+Function YYMM_FstDte(A) As Date
 YYMM_FstDte = DateSerial(Left(A, 2), Mid(A, 3, 2), 1)
+End Function
+Function YM_LasDte(Y As Byte, M As Byte) As Date
+YM_LasDte = DteNxtMth(YM_FstDte(Y, M))
+End Function
+Function NowStr$()
+NowStr = Format(Now, "YYYY-MM-DD HH:MM:SS")
+End Function
+Function DteFstDayOfMth(A As Date) As Date
+DteFstDayOfMth = DateSerial(Year(A), Month(A), 1)
+End Function
+Function DteNxtMth(A As Date) As Date
+DteNxtMth = DateTime.DateAdd("M", 1, A)
+End Function
+Function YM_FstDte(Y As Byte, M As Byte) As Date
+YM_FstDte = DateSerial(2000 + Y, M, 1)
 End Function
 Function DteYYMM$(A As Date)
 DteYYMM = Right(Year(A), 2) & Format(Month(A), "00")
@@ -38,16 +76,20 @@ On Error Resume Next
 W.Close
 Set W = Nothing
 End Sub
-Sub WDrp(Tt)
-DbttDrp W, Tt
+Sub WDrp(TT)
+DbttDrp W, TT
 End Sub
-Function PnmFfn$(A$)
+Function PnmFfn$(A)
 PnmFfn = PnmPth(A) & PnmFn(A)
 End Function
-Function PnmPth$(A$)
+Function PnmPth$(A)
 PnmPth = PthEnsSfx(PnmVal(A & "Pth"))
 End Function
-
+Sub QQ(QQSql, ParamArray Ap())
+Dim Av()
+Av = Ap
+DoCmd.RunSQL FmtQQAv(QQSql, Av)
+End Sub
 Sub WReOpn()
 WCls
 WOpn
@@ -57,7 +99,7 @@ Set RgRCC = RgRCRC(A, R, C1, R, C2)
 End Function
 
 Sub ZZ_WtLnkFx()
-AyDmp WtLnkFx(">UOM", IFxUOM)
+WtLnkFx ">UOM", IFxUOM
 End Sub
 Sub LoSetFml(A As ListObject, ColNm$, Fml$)
 A.ListColumns(ColNm).DataBodyRange.Formula = Fml
@@ -78,11 +120,11 @@ End Sub
 Function WTny() As String()
 WTny = DbTny(W)
 End Function
-Function WStru$(Optional Tt$)
-If Tt = "" Then
+Function WStru$(Optional TT$)
+If TT = "" Then
     WStru = DbStru(W)
 Else
-    WStru = DbttStru(W, Tt)
+    WStru = DbttStru(W, TT)
 End If
 End Function
 Function WAcs() As Access.Application
@@ -95,8 +137,8 @@ Function WtStru$(T$)
 WtStru = DbtStru(W, T)
 End Function
 
-Function WttStru$(Tt)
-WttStru = DbttStru(W, Tt)
+Function WttStru$(TT)
+WttStru = DbttStru(W, TT)
 End Function
 Function WFb$()
 WFb = ApnWFb(Apn)
@@ -118,13 +160,13 @@ Sub RsDmpByFny0(A As Recordset, Fny0)
 AyDmp RsCsvLyByFny0(A, Fny0)
 A.MoveFirst
 End Sub
-Function AttRs(A$) As AttRs
+Function AttRs(A) As AttRs
 AttRs = DbAtt_Rs(CurrentDb, A)
 End Function
 Function AttFny() As String()
 AttFny = ItrNy(DbFstAttRs(CurrentDb).AttRs.Fields)
 End Function
-Function AttRs_Exp$(A As AttRs, ToFfn$)
+Function AttRs_Exp$(A As AttRs, ToFfn)
 'Export the only File in {AttRs} {ToFfn}
 Dim Fn$, Ext$, T$, F2 As DAO.Field2
 With A.AttRs
@@ -134,7 +176,7 @@ End With
 F2.SaveToFile ToFfn
 AttRs_Exp = ToFfn
 End Function
-Function DbAtt_Exp$(A As Database, Att$, ToFfn$)
+Function DbAtt_Exp$(A As Database, Att, ToFfn)
 'Exporting the first File in Att.
 'If no file in att, error
 'If any, export and return the
@@ -153,7 +195,7 @@ O = MsgAv_Ly(Msg, Av)
 AyBrw O
 Err.Raise 1
 End Sub
-Function MsgNy(A$) As String()
+Function MsgNy(A) As String()
 Dim O$(), P%, J%
 O = Split(A, "[")
 AyShift O
@@ -176,6 +218,10 @@ End Function
 Function NmV_Ly(Nm$, V) As String()
 Dim O$(), S$, J%
 O = VarLy(V)
+If Sz(O) = 0 Then
+    NmV_Ly = ApSy(Nm)
+    Exit Function
+End If
 O(0) = Nm & O(0)
 S = Space(Len(Nm))
 For J = 1 To UB(O)
@@ -223,6 +269,17 @@ Dim Av()
 Av = Ap
 AyDmp MsgAv_Ly(A, Av)
 End Sub
+Sub MsgAp_Brw(A$, ParamArray Ap())
+Dim Av()
+Av = Ap
+AyBrw MsgAv_Ly(A, Av)
+End Sub
+
+Function MsgAp_Ly(A$, ParamArray Ap()) As String()
+Dim Av()
+Av = Ap
+MsgAp_Ly = MsgAv_Ly(A, Av)
+End Function
 Function MsgAv_Ly(A$, Av()) As String()
 Dim B$(), C$()
 B = SplitVBar(A)
@@ -272,7 +329,7 @@ B = SplitVBar(Msg)
 C = NyAv_Ly(CvSy(AyAdd(ApSy("Fun"), MsgNy(Msg))), CvAv(AyAdd(Array(A), Av)))
 FunMsgAv_Ly = AyAdd(B, C)
 End Function
-Function DbAtt_Rs(A As Database, Att$) As AttRs
+Function DbAtt_Rs(A As Database, Att) As AttRs
 With DbAtt_Rs
     Set .TblRs = A.OpenRecordset(FmtQQ("Select Att,FilTim,FilSz from Att where AttNm='?'", Att))
     If .TblRs.EOF Then
@@ -329,10 +386,10 @@ If IsNothing(F2) Then Stop
 F2.SaveToFile ToFfn
 DbAttExpFfn = ToFfn
 End Function
-Sub AttClr(A$)
+Sub AttClr(A)
 DbAtt_Clr CurrentDb, A
 End Sub
-Sub DbAtt_Clr(A As Database, Att$)
+Sub DbAtt_Clr(A As Database, Att)
 RsClr DbAtt_Rs(A, Att).AttRs
 End Sub
 Sub RsClr(A As DAO.Recordset)
@@ -359,7 +416,7 @@ Set F = T.Fields("Att").Value
 DbAttFnAy = RsSy(F, "FileName")
 End Function
 
-Function AttFnAy(A$) As String()
+Function AttFnAy(A) As String()
 AttFnAy = DbAttFnAy(CurrentDb, "AA")
 End Function
 
@@ -381,24 +438,20 @@ Function RsMovFst(A As DAO.Recordset) As DAO.Recordset
 A.MoveFirst
 Set RsMovFst = A
 End Function
-Function AttFfn$(A$)
+Function AttFfn$(A)
 'Return Fst-Ffn-of-Att-A
 AttFfn = RsMovFst(AttRs(A).AttRs)!FileName
 End Function
-Function DbAtt_FilCnt%(A As Database, Att$)
+Function DbAtt_FilCnt%(A As Database, Att)
 DbAtt_FilCnt = DbAtt_Rs(A, Att).AttRs.RecordCount
 End Function
-Function AttFilCnt%(A$)
+Function AttFilCnt%(A)
 AttFilCnt = DbAtt_FilCnt(CurrentDb, A)
 End Function
-Function AttExp$(A$, ToFfn$)
+Function AttExp$(A, ToFfn)
 'Exporting the only file in Att
 AttExp = DbAtt_Exp(CurrentDb, A, ToFfn)
-Debug.Print "-----"
-Debug.Print "AttExp"
-Debug.Print "Att   : "; A
-Debug.Print "ToFfn : "; ToFfn
-Debug.Print "Att is: Export to ToFfn"
+MsgAp_Dmp "In [Sub], [Att] is exported [ToFfn]", AttExp$, A, ToFfn
 End Function
 Sub AttImp(A$, FmFfn$)
 DbAtt_Imp CurrentDb, A, FmFfn
@@ -406,10 +459,10 @@ End Sub
 Sub DbAtt_Imp(A As Database, Att$, FmFfn$)
 AttRs_Imp DbAtt_Rs(A, Att), FmFfn
 End Sub
-Function AttFstFn$(A$)
+Function AttFstFn$(A)
 AttFstFn = DbAtt_FstFn(CurrentDb, A)
 End Function
-Function DbAtt_FstFn(A As Database, Att$)
+Function DbAtt_FstFn(A As Database, Att)
 DbAtt_FstFn = DbAtt_Rs(A, Att).AttRs!FileName
 End Function
 Function RsHasFldV(A As DAO.Recordset, F$, V) As Boolean
@@ -417,6 +470,7 @@ With A
     .MoveFirst
     While Not .EOF
         If .Fields(F) = V Then RsHasFldV = True: Exit Function
+        .MoveNext
     Wend
 End With
 End Function
@@ -427,21 +481,16 @@ Dim S&, T As Date
 S = FfnSz(Ffn)
 T = FfnTim(Ffn)
 If Trc Then
-    Debug.Print "----------"
-    Debug.Print "AttRs_Imp:"
-    Debug.Print "Att       : "; A.TblRs.Name
-    Debug.Print "Given-File: "; Ffn
-    Debug.Print "Given-File-Sz : "; S
-    Debug.Print "Given-File-Tim: "; T
+    MsgAp_Dmp "In 'AttRs_Imp', [Att] is going to import [Ffn] with [Sz] and [Tim]", A.TblRs!AttNm, Ffn, S, T
 End If
 With A
     .TblRs.Edit
     With .AttRs
         If RsHasFldV(A.AttRs, "FileName", FfnFn(Ffn)) Then
-            If Trc Then Debug.Print "Given-Ffn is : Found in Att, it is replaced"
+            If Trc Then MsgAp_Dmp "Ffn is found and Att is replaced"
             .Edit
         Else
-            If Trc Then Debug.Print "Given-Ffn is : Not found in Att, it is added"
+            If Trc Then MsgAp_Dmp "Ffn is not found in Att, it is imported"
             .AddNew
         End If
         Set F2 = !FileData
@@ -480,7 +529,7 @@ End Function
 Sub ZZ_FbOupTny()
 D FbOupTny(WFb)
 End Sub
-Function FbOupTny(A$) As String()
+Function FbOupTny(A) As String()
 FbOupTny = AyWhHasPfx(FbTny(A), "@")
 End Function
 
@@ -521,7 +570,7 @@ End With
 Set WcAddWs = Ws
 End Function
 
-Function FbWb_zExpOupTbl(A$) As Workbook
+Function FbWb_zExpOupTbl(A) As Workbook
 Dim O As Workbook
 Set O = NewWb
 AyRunABX FbOupTny(A), "WbAddWc", O, A
@@ -529,9 +578,9 @@ ItrDo O.Connections, "WcAddWs"
 WbRfh O
 Set FbWb_zExpOupTbl = O
 End Function
-Sub PushObj_zNonNothing(Oy, Obj)
+Sub PushObj_zNonNothing(OY, Obj)
 If IsNothing(Obj) Then Exit Sub
-PushObj Oy, Obj
+PushObj OY, Obj
 End Sub
 Function WbWcAy_zOle(A As Workbook) As OLEDBConnection()
 Dim O() As OLEDBConnection, Wc As WorkbookConnection
@@ -650,7 +699,7 @@ Set O.ActiveConnection = A
 Set CnCat = O
 End Function
 
-Function FbTny(A$) As String()
+Function FbTny(A) As String()
 Dim Db As Database
 Set Db = FbDb(A)
 FbTny = DbTny(Db)
@@ -692,23 +741,44 @@ End Function
 Function CatTny(A As Catalog) As String()
 CatTny = ItrNy(A.Tables)
 End Function
+Function AyTakBefOrAll(A, Sep$) As String()
+Dim O$(), I
+If Sz(A) = 0 Then Exit Function
+For Each I In A
+    Push O, TakBefOrAll(CStr(I), Sep)
+Next
+AyTakBefOrAll = O
+End Function
+Function AyDist(A)
+Dim O, I
+If Sz(A) = 0 Then AyDist = A: Exit Function
+O = AyCln(A)
+For Each I In A
+    PushNoDup O, I
+Next
+AyDist = O
+End Function
+Sub PushNoDup(A, M)
+If AyHas(A, M) Then Exit Sub
+Push A, M
+End Sub
 Function FxWsNy(A) As String()
-FxWsNy = CatTny(FxCat(A))
+FxWsNy = AyDist(AyTakBefOrAll(CatTny(FxCat(A)), "$"))
 End Function
 Function FxHasWs(A, WsNm$) As Boolean
 FxHasWs = AyHas(FxWsNy(A), WsNm)
 End Function
 
-Sub DbtImpTbl(A As Database, Tt)
+Sub DbtImpTbl(A As Database, TT)
 Dim Tny$(), J%, S$
-Tny = CvNy(Tt)
+Tny = CvNy(TT)
 For J = 0 To UB(Tny)
     DbtDrp A, "#I" & Tny(J)
     S = FmtQQ("Select * into [#I?] from [?]", Tny(J), Tny(J))
     A.Execute S
 Next
 End Sub
-Function LnkColStr_Ly(A$) As String()
+Function LnkColStr_Ly(A) As String()
 Dim A1$(), A2$(), Ay() As LnkCol
 Ay = LnkColStr_LnkColAy(A)
 A1 = LnkColAy_Ny(Ay)
@@ -734,7 +804,7 @@ End Property
 
 Function LnkColStr_LnkColAy(A) As LnkCol()
 Dim Emp() As LnkCol, Ay$()
-Ay = SplitVBar(A): If Sz(Ay) = 0 Then Stop
+Ay = SplitVBar(A): If Sz(Ay) = 0 Then Stop: Exit Function
 LnkColStr_LnkColAy = AyMapInto(Ay, "LinLnkCol", Emp)
 End Function
 
@@ -821,9 +891,8 @@ Function ApSy(ParamArray Ap()) As String()
 Dim Av(): Av = Ap
 Dim O$(), J%, U&
 U = UB(Av)
-ReDim O(U)
-For J = 0 To U
-    O(J) = Av(J)
+For J = 0 To UB(Av)
+    PushNonEmpty O, Av(J)
 Next
 ApSy = O
 End Function
@@ -948,10 +1017,10 @@ For Each Ws In Tp.Sheets
 Next
 WbLoAy = O
 End Function
-Sub OyPushItr(Oy, Itr)
+Sub OyPushItr(OY, Itr)
 Dim I
 For Each I In Itr
-    PushObj Oy, I
+    PushObj OY, I
 Next
 End Sub
 Function AscIsUCase(A%) As Boolean
@@ -976,7 +1045,7 @@ End Function
 Function AyRmvFstNonLetter(A) As String()
 AyRmvFstNonLetter = AyMapSy(A, "RmvFstNonLetter")
 End Function
-Function DbtNewWb(A As Database, Tt) As Workbook
+Function DbtNewWb(A As Database, TT) As Workbook
 
 End Function
 
@@ -1008,8 +1077,8 @@ For J = A.ListRows.Count To 2 Step -1
     A.ListRows(J).Delete
 Next
 End Sub
-Sub DbttDrp(A As Database, Tt)
-AyDoPX CvNy(Tt), "DbtDrp", A
+Sub DbttDrp(A As Database, TT)
+AyDoPX CvNy(TT), "DbtDrp", A
 End Sub
 Sub DbtDrp(A As Database, T$)
 If DbHasTbl(A, T) Then A.Execute FmtQQ("Drop Table [?]", T)
@@ -1194,6 +1263,7 @@ For Each I In A
     OP = ObjPrp(I, PrpNm)
     If OP = V Then Asg I, ItrFstPrpEq: Exit Function
 Next
+'Impossible
 Debug.Print PrpNm, V
 For Each I In A
     Debug.Print ObjPrp(I, PrpNm)
@@ -1236,12 +1306,12 @@ Ay = SslSy(A)
 Pfx = AyShift(Ay)
 PfxSsl_Sy = AyAddPfx(Ay, Pfx)
 End Function
-Function ApnWAcs(A$)
+Function ApnWAcs(A)
 Dim O As Access.Application
 AcsOpn O, ApnWFb(A)
 Set ApnWAcs = O
 End Function
-Function ApnAcs(A$) As Access.Application
+Function ApnAcs(A) As Access.Application
 AcsOpn Acs, ApnWFb(A)
 Set ApnAcs = Acs
 End Function
@@ -1255,17 +1325,17 @@ Case Else
     A.OpenCurrentDatabase Fb
 End Select
 End Sub
-Sub ApnBrwWDb(A$)
+Sub ApnBrwWDb(A)
 Dim Fb$
 Fb = ApnWFb(A)
 AcsOpn Acs, Fb
 AcsVis Acs
 End Sub
-Sub FbEns(A$)
+Sub FbEns(A)
 If FfnIsExist(A) Then Exit Sub
 FbCrt A
 End Sub
-Sub FbCrt(A$)
+Sub FbCrt(A)
 DBEngine.CreateDatabase A, dbLangGeneral
 End Sub
 Sub FxRfhWbWcStr(A, Fb$)
@@ -1283,13 +1353,13 @@ Function FbDb(A) As Database
 Set FbDb = DBEngine.OpenDatabase(A)
 End Function
 
-Function ApnWFb$(A$)
+Function ApnWFb$(A)
 ApnWFb = ApnWPth(A) & "Wrk.accdb"
 End Function
 Function WPth$()
 WPth = ApnWPth(Apn)
 End Function
-Function ApnWPth$(A$)
+Function ApnWPth$(A)
 Dim P$
 P = TmpHom & A & "\"
 PthEns P
@@ -1307,7 +1377,7 @@ Set R = A.Columns(C)
 Set WsC = R.EntireColumn
 End Function
 
-Function ApnWDb(A$) As Database
+Function ApnWDb(A) As Database
 Static X As Boolean, Y As Database
 If Not X Then
     X = True
@@ -1330,8 +1400,8 @@ For J = 0 To UB(A)
 Next
 AyWdt = O
 End Function
-Function TtStru$(Tt)
-TtStru = DbttStru(CurrentDb, Tt)
+Function TtStru$(TT)
+TtStru = DbttStru(CurrentDb, TT)
 End Function
 Function TblStru$(T$)
 TblStru = DbtStru(CurrentDb, T)
@@ -1389,7 +1459,9 @@ End Function
 Function TpWsCdNy() As String()
 TpWsCdNy = FxWsCdNy(TpFx)
 End Function
-
+Function TpWb() As Workbook
+Set TpWb = FxWb(TpFx)
+End Function
 Function TpWcSy() As String()
 Dim W As Workbook, X As Excel.Application
 Set X = New Excel.Application
@@ -1400,6 +1472,9 @@ Set W = Nothing
 X.Quit
 Set X = Nothing
 End Function
+Function TpFxm$()
+TpFxm = TpPth & Apn & "(Template).xlsm"
+End Function
 
 Function TpFx$()
 TpFx = TpPth & Apn & "(Template).xlsm"
@@ -1407,9 +1482,6 @@ End Function
 Sub TpOpn()
 FxOpn TpFx
 End Sub
-Function TpWb() As Workbook
-Set TpWb = FxWb(TpFx)
-End Function
 Function WsPtAy(A As Worksheet) As PivotTable()
 Dim O() As PivotTable, Pt As PivotTable
 For Each Pt In A.PivotTables
@@ -1499,15 +1571,9 @@ If AddTblLinMsg Then
     
 End If
 End Function
-Function ErzFfnNotExist(A$) As String()
-Dim O$(), M$
-If Not FfnIsExist(A$) Then
-    Push O, A
-    M = "Above file not exist"
-    Push O, M
-    Push O, String(Len(M), "-")
-End If
-ErzFfnNotExist = O
+Function FfnNotFndChk(A) As String()
+If FfnIsExist(A) Then Exit Function
+FfnNotFndChk = MsgAp_Ly("[File] not exist", A)
 End Function
 Function ErzThen(ParamArray ErFunNmAp()) As String()
 Dim Av(), O$(), I
@@ -1519,54 +1585,11 @@ For Each I In Av
     End If
 Next
 End Function
-Function UnderLin$(A$)
+Function UnderLin$(A)
 UnderLin = String(Len(A), "-")
 End Function
-Function UnderLinDbl$(A$)
+Function UnderLinDbl$(A)
 UnderLinDbl = String(Len(A), "=")
-End Function
-Function ErzFxWs(A$, WsNm$) As String()
-'ErThen "ErzFfnNotExist ErzFxHasNoWs"
-Dim O$()
-O = ErzFfnNotExist(A)
-If Sz(O) > 0 Then
-    ErzFxWs = O
-    Exit Function
-End If
-
-'B = ErzFxWs__1(A, WsNm)
-If Sz(A) > 0 Then
-'    ErAyzFxWs = A
-    Exit Function
-End If
-
-
-If Not FfnIsExist(A) Then
-    Push O, A
-    Push O, "Above Excel file not found"
-    Push O, "--------------------------"
-    'ErAyzFxWsLnk = O
-    Exit Function
-End If
-Dim B$
-'B = FxWs_LnkErMsg(A, WsNm)
-If B <> "" Then
-    Push O, "Excel File: " & A
-    Push O, "Worksheet : " & WsNm
-    Push O, "System Msg: " & B
-    Push O, "Above Excel file & Worksheet cannot be linked to Access"
-    Push O, "-------------------------------------------------------"
-    'ErAyzFxWsLnk = O
-    Exit Function
-End If
-On Error GoTo X
-TblLnkFx "#", CStr(A), WsNm
-TtDrp "#"
-Exit Function
-X:
-'FxWs_LnkErMsg = Err.Description
-
-'A = ErAyzFxWsMissingCol(
 End Function
 Function CurDbPth$()
 CurDbPth = FfnPth(CurrentDb.Name)
@@ -1574,7 +1597,38 @@ End Function
 Property Get PnmVal(Pnm$)
 PnmVal = CurrentDb.TableDefs("Prm").OpenRecordset.Fields(Pnm).Value
 End Property
+Function DteLasDayOfMth(A As Date) As Date
+DteLasDayOfMth = DtePrvDay(DteFstDteOfMth(DteNxtMth(A)))
+End Function
+Function DteFstDteOfMth(A As Date) As Date
+DteFstDteOfMth = DateSerial(Year(A), Month(A), 1)
+End Function
+Function DtePrvDay(A As Date) As Date
+DtePrvDay = DateAdd("D", -1, A)
+End Function
 
+Sub ZZ_AyMax()
+Dim A()
+Dim Act
+Act = AyMax(A)
+Stop
+End Sub
+Function AyWhLik(A, Lik$) As String()
+If Sz(A) = 0 Then Exit Function
+Dim O$(), I
+For Each I In A
+    If I Like Lik Then Push O, I
+Next
+AyWhLik = O
+End Function
+Function AyMax(A)
+Dim O, I
+If Sz(A) = 0 Then Exit Function
+For Each I In A
+    O = Max(O, I)
+Next
+AyMax = O
+End Function
 Function FldsFny(A As DAO.Fields) As String()
 FldsFny = ItrNy(A)
 End Function
@@ -1624,7 +1678,7 @@ A = PthFxAy(CurDir)
 AyDmp A
 End Sub
 
-Function DteIsVdt(A$) As Boolean
+Function DteIsVdt(A) As Boolean
 On Error Resume Next
 DteIsVdt = Format(CDate(A), "YYYY-MM-DD") = A
 End Function
@@ -1656,6 +1710,11 @@ Const S$ = "SELECT qSku.*" & _
 " FROM [N:\SAPAccessReports\DutyPrepay5\DutyPrepay5 (With Import).accdb].[qSku] AS qSku;"
 AyBrw RsCsvLy(SqlRs(S))
 End Sub
+Function QQSqlRs(A, ParamArray Ap()) As DAO.Recordset
+Dim Av()
+Av = Ap
+Set QQSqlRs = SqlRs(FmtQQAv(A, Av))
+End Function
 
 Function SqlRs(A) As DAO.Recordset
 Set SqlRs = CurrentDb.OpenRecordset(A)
@@ -1690,8 +1749,8 @@ TtBrw "#B"
 Stop
 TtDrp "#B"
 End Sub
-Sub TtWbBrw(Tt, Optional UseWc As Boolean)
-WbVis TtWb(Tt, UseWc)
+Sub TtWbBrw(TT, Optional UseWc As Boolean)
+WbVis TtWb(TT, UseWc)
 End Sub
 Sub TblBrw(T)
 DoCmd.OpenTable T
@@ -1700,7 +1759,7 @@ Function CvTt(A) As String()
 CvTt = CvNy(A)
 End Function
 
-Sub TtBrw(Tt)
+Sub TtBrw(TT)
 'OFunAyDo DoCmd, "OpenTable", CvTt(Tt)
 End Sub
 
@@ -1718,7 +1777,7 @@ A.Execute FmtQQ("Select x.* into [?] from [?] x inner join [?] a on ?", TarTbl, 
 DbtDrp A, Tmp
 End Sub
 Sub D(A)
-AyDmp A
+AyDmp VarLy(A)
 End Sub
 Sub AyDmp(A)
 Dim I
@@ -1727,26 +1786,27 @@ For Each I In A
     Debug.Print I
 Next
 End Sub
-Function TblFny(A$) As String()
+Function TblFny(A) As String()
 TblFny = DbtFny(CurrentDb, A)
 End Function
-Function DbtFny_zAutoQuote(A As Database, T$) As String()
+Function DbtFny_zAutoQuote(A As Database, T) As String()
 Dim O$()
 O = DbtFny(A, T)
 If DbtIsXls(A, T) Then O = AyQuoteSqBkt(O)
 DbtFny_zAutoQuote = O
 End Function
 
-Function DbtFny(A As Database, T$) As String()
+Function DbtFny(A As Database, T) As String()
 DbtFny = RsFny(DbtRs(A, T))
 End Function
-Function DbtIsXls(A As Database, T$) As Boolean
+Function DbtIsXls(A As Database, T) As Boolean
+On Error Resume Next
 DbtIsXls = HasPfx(A.TableDefs(T).Connect, "Excel")
 End Function
-Function SplitSpc(A$) As String()
+Function SplitSpc(A) As String()
 SplitSpc = Split(A, " ")
 End Function
-Function SqlAny(A$) As Boolean
+Function SqlAny(A) As Boolean
 SqlAny = DbqAny(CurrentDb, A)
 End Function
 Function RsAny(A As DAO.Recordset) As Boolean
@@ -1797,16 +1857,16 @@ End Sub
 Sub AcstCls(A As Access.Application, T$)
 A.DoCmd.Close acTable, T, acSaveYes
 End Sub
-Sub AcsttCls(A As Access.Application, Tt)
-AyDoPX CvNy(Tt), "AcstCls", A
+Sub AcsttCls(A As Access.Application, TT)
+AyDoPX CvNy(TT), "AcstCls", A
 End Sub
 
 Sub ClsTbl()
 AcsClsTbl Application
 End Sub
 
-Sub TtCls(Tt)
-AyDo CvNy(Tt), "TblCls"
+Sub TtCls(TT)
+AyDo CvNy(TT), "TblCls"
 End Sub
 
 
@@ -1816,8 +1876,8 @@ End Sub
 Sub TblDrp(T$)
 DbtDrp CurrentDb, T
 End Sub
-Sub TtDrp(Tt)
-DbttDrp CurrentDb, Tt
+Sub TtDrp(TT)
+DbttDrp CurrentDb, TT
 End Sub
 
 Function DbHasQry(A As Database, Q) As Boolean
@@ -1828,7 +1888,7 @@ Sub DbDrpQry(A As Database, Q)
 If DbHasQry(A, Q) Then A.QueryDefs.Delete Q
 End Sub
 
-Sub DbCrtQry(A As Database, Q, Sql$)
+Sub DbCrtQry(A As Database, Q, Sql)
 If Not DbHasQry(A, Q) Then
     Dim QQ As New QueryDef
     QQ.Sql = Sql
@@ -1901,36 +1961,39 @@ If Sz(0) > 0 Then
 End If
 End Function
 Function TakAft$(A, S)
-Dim P%
-P = InStr(A, S)
-If P = 0 Then Exit Function
-TakAft = Mid(A, P + Len(S))
+TakAft = TakAftAt(A, InStr(A, S), S)
+End Function
+Function TakAftAt$(A, At&, S)
+If At = 0 Then Exit Function
+TakAftAt = Mid(A, At + Len(S))
+End Function
+Function TakAftRev$(A, S)
+TakAftRev = TakAftAt(A, InStrRev(A, S), S)
 End Function
 Function TakBefOrAll$(A, S)
-Dim O$
-O = TakBef(A, S)
-If O = "" Then
-    TakBefOrAll = A
-Else
-    TakBefOrAll = O
-End If
+TakBefOrAll = StrDft(TakBef(A, S), A)
+End Function
+Function StrDft$(A, B)
+StrDft = IIf(A = "", B, A)
 End Function
 Function TakAftOrAll$(A, S)
-Dim O$
-O = TakAft(A, S)
-If O = "" Then
-    TakAftOrAll = A
-Else
-    TakAftOrAll = O
-End If
+TakAftOrAll = StrDft(TakAft(A, S), A)
 End Function
-
-
+Function TakAftOrAllRev$(A, S)
+TakAftOrAllRev = StrDft(TakAftRev(A, S), A)
+End Function
+Function TakBefOrAllRev$(A, S)
+TakBefOrAllRev = StrDft(TakBefRev(A, S), A)
+End Function
+Function TakBefAt(A, At&)
+If At = 0 Then Exit Function
+TakBefAt = Left(A, At - 1)
+End Function
 Function TakBef$(A, S)
-Dim P%
-P = InStr(A, S)
-If P = 0 Then Exit Function
-TakBef = Left(A, P - 1)
+TakBef = TakBefAt(A, InStr(A, S))
+End Function
+Function TakBefRev$(A, S)
+TakBefRev = TakBefAt(A, InStrRev(A, S))
 End Function
 
 Function DbtXlsLnkInf(A As Database, T) As XlsLnkInf
@@ -1955,12 +2018,21 @@ For J = 1 To UB(A)
 Next
 AyOfAy_Ay = O
 End Function
-Function ISpecINm$(A$)
+Function ISpecINm$(A)
 ISpecINm = LinT1(A)
 End Function
-Sub LSpecDmp(A$)
+Sub LSpecDmp(A)
 Debug.Print RplVBar(A)
 End Sub
+Function CurY() As Byte
+CurY = CurYY - 2000
+End Function
+Function CurYY%()
+CurYY = Year(Now)
+End Function
+Function CurM() As Byte
+CurM = Month(Now)
+End Function
 Function LSpecLy(A) As String()
 Const L2Spec$ = ">GLAnp |" & _
     "Whs    Txt Plant |" & _
@@ -1972,8 +2044,11 @@ Const L2Spec$ = ">GLAnp |" & _
     "BchNo  Txt Batch |" & _
     "Where Plant='8601' and [Storage Location]='0002' and [Movement Type] like '6*'"
 End Function
-Function HasPfx(A, Pfx$) As Boolean
+Function HasPfx(A, Pfx) As Boolean
 HasPfx = Left(A, Len(Pfx)) = Pfx
+End Function
+Function HasSfx(A, Sfx) As Boolean
+HasSfx = Right(A, Len(Sfx)) = Sfx
 End Function
 Sub LSpecAsg(A, Optional OTblNm$, Optional OLnkColStr$, Optional OWhBExpr$)
 Dim Ay$()
@@ -2058,7 +2133,7 @@ TFny = DbtFny(A, T)
 Miss = AyMinus(ExpFny, TFny)
 DbtChkFny = DbtMissFny_Er(A, T, Miss, TFny)
 End Function
-Function QuoteSqBkt$(A$)
+Function QuoteSqBkt$(A)
 QuoteSqBkt = "[" & A & "]"
 End Function
 Function PushMsgUnderLin(O$(), M$)
@@ -2085,11 +2160,12 @@ Case DAO.DataTypeEnum.dbDate: O = "Dte"
 Case DAO.DataTypeEnum.dbText: O = "Txt"
 Case DAO.DataTypeEnum.dbBoolean: O = "Yes"
 Case DAO.DataTypeEnum.dbDouble: O = "Dbl"
+Case DAO.DataTypeEnum.dbCurrency: O = "Cur"
 Case Else: Stop
 End Select
 DaoTy_ShtTy = O
 End Function
-Function DaoShtTy_Ty(A$) As DAO.DataTypeEnum
+Function DaoShtTy_Ty(A) As DAO.DataTypeEnum
 Dim O As DAO.DataTypeEnum
 Select Case A
 Case "Byt": O = DAO.DataTypeEnum.dbByte
@@ -2099,6 +2175,7 @@ Case "Dte": O = DAO.DataTypeEnum.dbDate
 Case "Txt": O = DAO.DataTypeEnum.dbText
 Case "Yes": O = DAO.DataTypeEnum.dbBoolean
 Case "Dbl": O = DAO.DataTypeEnum.dbDouble
+Case "Cur": O = DAO.DataTypeEnum.dbCurrency
 Case Else: Stop
 End Select
 DaoShtTy_Ty = O
@@ -2157,14 +2234,14 @@ If FfnTim(A) <> FfnTim(B) Then Exit Function
 If FfnSz(A) <> FfnSz(B) Then Exit Function
 FfnIsSam = True
 End Function
-Function FfnSz&(A$)
+Function FfnSz&(A)
 If FfnIsExist(A) Then
     FfnSz = FileLen(A)
 Else
     FfnSz = -1
 End If
 End Function
-Function FfnTim(A$) As Date
+Function FfnTim(A) As Date
 If FfnIsExist(A) Then FfnTim = FileDateTime(A)
 End Function
 Function AyTrim(A) As String()
@@ -2379,36 +2456,35 @@ End Function
 Function DrsColSy(A As Drs, F) As String()
 DrsColSy = DrsColInto(A, F, EmpSy)
 End Function
-
-Function DbtLnk(A As Database, T$, S$, Cn$) As String()
+Function ObjNm$(A)
+If IsNothing(A) Then ObjNm = "#nothing#": Exit Function
 On Error GoTo X
-Dim Tt As New DAO.TableDef
+ObjNm = A.Name
+Exit Function
+X:
+ObjNm = Err.Description
+End Function
+Function DbNm$(A As Database)
+DbNm = ObjNm(A)
+End Function
+Sub DbtLnk(A As Database, T, S$, Cn$)
+On Error GoTo X
+Dim TT As New DAO.TableDef
 DbttDrp A, T
-With Tt
+With TT
     .Connect = Cn
     .Name = T
     .SourceTableName = S
-    A.TableDefs.Append Tt
+    A.TableDefs.Append TT
 End With
-Exit Function
+Exit Sub
 X:
-Dim Er$
-Er = Err.Description
-Debug.Print Er
-Dim O$(), M$
-M = "Cannot create Table in Database from Source by Cn with Er from system"
-Push O, "Program  : DbtLnk"
-Push O, "Database : " & A.Name
-Push O, "Table    : " & T
-Push O, "Source   : " & S
-Push O, "Cn       : " & Cn
-Push O, "Er       : " & Er
-PushMsgUnderLin O, M
-DbtLnk = O
-End Function
-Function TblLnk(T$, S$, Cn$) As String()
-TblLnk = DbtLnk(CurrentDb, T, S, Cn)
-End Function
+Er "Cannot create [Table] in [Database] from [Source] using [CnStr].  It gets [error]", _
+    T, DbNm(A), S, Cn, Err.Description
+End Sub
+Sub TblLnk(T$, S$, Cn$)
+DbtLnk CurrentDb, T, S, Cn
+End Sub
 Function WbWsCd(A As Workbook, WsCdNm$) As Worksheet
 Set WbWsCd = ItrFstPrpEq(A.Sheets, "CodeName", WsCdNm)
 End Function
@@ -2544,7 +2620,7 @@ For Each FunP In A
     Run CStr(FunP), P
 Next
 End Sub
-Function OupFx_Crt$(A$)
+Function OupFx_Crt$(A)
 OupFx_Crt = AttExp("Tp", A)
 End Function
 Sub OupFx_Gen(OupFx$, Fb$, ParamArray WbFmtrAp())
@@ -2583,9 +2659,6 @@ Set CvLo = A
 End Function
 Function DbOupTny(A As Database) As String()
 DbOupTny = DbqSy(A, "Select Name from MSysObjects where Name like '@*' and Type =1")
-End Function
-Function ObjNm$(O)
-ObjNm = CallByName(O, "Name", VbGet)
 End Function
 
 Function ObjHasNmPfx(O, NmPfx$) As Boolean
@@ -2658,9 +2731,6 @@ B = Left(A, P1 + Len(S1) - 1)
 C = Mid(A, P2 + Len(S2) - 1)
 RplBet = B & By & C
 End Function
-Sub A()
-ZZ_FbWb_zExpOupTbl
-End Sub
 Function FbWcStr$(A)
 FbWcStr = FbOleCnStr(A)
 'FbWcStr = FmtQQ("OLEDB;Provider=Microsoft.ACE.OLEDB.16.0;User ID=Admin;Data Source=?;Mode=Share Deny None;Extended Properties="""";Jet OLEDB:System database="""";Jet OLEDB:Registry Path="""";Jet OLEDB:Engine Type=6;Jet OLEDB:Database Locking Mode=0;Jet OLEDB:Global Partial Bulk Ops=2;Jet OLEDB:Global Bulk Transactions=1;Jet OLEDB:New Database Password="""";Jet OLEDB:Create System Database=False;Jet OLEDB:Encrypt Database=False;Jet OLEDB:Don't Copy Locale on Compact=False;Jet OLEDB:Compact Without Replica Repair=False;Jet OLEDB:SFP=False;Jet OLEDB:Support Complex Data=False;Jet OLEDB:Bypass UserInfo Validation=False;Jet OLEDB:Limited DB Caching=False;Jet OLEDB:Bypass ChoiceField Validation=False", A)
@@ -2784,8 +2854,8 @@ Function RgVis(A As Range) As Range
 XlsVis A.Application
 Set RgVis = A
 End Function
-Sub DbttWrtFx(A As Database, Tt, Fx$)
-DbttWb(A, Tt).SaveAs Fx
+Sub DbttWrtFx(A As Database, TT, Fx$)
+DbttWb(A, TT).SaveAs Fx
 End Sub
 Sub WsClrLo(A As Worksheet)
 Dim Ay() As ListObject, J%
@@ -2794,8 +2864,8 @@ For J = 0 To UB(Ay)
     Ay(J).Delete
 Next
 End Sub
-Sub TtWrtFx(Tt, Fx$)
-DbttWrtFx CurrentDb, Tt, Fx
+Sub TtWrtFx(TT, Fx$)
+DbttWrtFx CurrentDb, TT, Fx
 End Sub
 Function WbAddWs(A As Workbook, Optional WsNm, Optional BefWsNm$, Optional AftWsNm$) As Worksheet
 Dim O As Worksheet, Bef As Worksheet, Aft As Worksheet
@@ -2848,13 +2918,13 @@ Function FfnIsExist(A) As Boolean
 On Error Resume Next
 FfnIsExist = Dir(A) <> ""
 End Function
-Function TtWb(Tt, Optional UseWc As Boolean) As Workbook
-Set TtWb = DbttWb(CurrentDb, Tt, UseWc)
+Function TtWb(TT, Optional UseWc As Boolean) As Workbook
+Set TtWb = DbttWb(CurrentDb, TT, UseWc)
 End Function
-Function DbttWb(A As Database, Tt, Optional UseWc As Boolean) As Workbook
+Function DbttWb(A As Database, TT, Optional UseWc As Boolean) As Workbook
 Dim O As Workbook
 Set O = NewWb
-Set DbttWb = WbAddDbtt(O, A, Tt, UseWc)
+Set DbttWb = WbAddDbtt(O, A, TT, UseWc)
 WbWs(O, "Sheet1").Delete
 End Function
 Function WbA1(A As Workbook, Optional WsNm) As Range
@@ -2902,8 +2972,8 @@ For Each X In A
 Next
 End Sub
 
-Function WbAddDbtt(A As Workbook, Db As Database, Tt, Optional UseWc As Boolean) As Workbook
-AyDoPPXP CvTt(Tt), "WbAddDbt", A, Db, UseWc
+Function WbAddDbtt(A As Workbook, Db As Database, TT, Optional UseWc As Boolean) As Workbook
+AyDoPPXP CvTt(TT), "WbAddDbt", A, Db, UseWc
 Set WbAddDbtt = A
 End Function
 
@@ -2929,7 +2999,7 @@ End Function
 Function DbtCsv(A As Database, T) As String()
 DbtCsv = RsCsvLy(DbtRs(A, T))
 End Function
-Function TblNm_LoNm$(A$)
+Function TblNm_LoNm$(A)
 TblNm_LoNm = "T_" & RmvFstNonLetter(A)
 End Function
 Function DbtLo(A As Database, T$, At As Range) As ListObject
@@ -3015,10 +3085,10 @@ End Function
 Function DbtNCol&(A As Database, T)
 DbtNCol = A.OpenRecordset(T).Fields.Count
 End Function
-Function TblSq(A$) As Variant()
+Function TblSq(A) As Variant()
 TblSq = DbtSq(CurrentDb, A)
 End Function
-Function DbtSq(A As Database, T$, Optional ReSeqSpec$) As Variant()
+Function DbtSq(A As Database, T, Optional ReSeqSpec$) As Variant()
 Dim Q$
 Q = QSel(T, ReSeqSpec_Fny(ReSeqSpec))
 DbtSq = RsSq(DbqRs(A, Q))
@@ -3095,7 +3165,7 @@ End Function
 Function FxLo(A$, Optional WsNm$ = "Data", Optional LoNm$ = "Data") As ListObject
 Set FxLo = WsLo(WbWs(FxWb(A), WsNm), LoNm)
 End Function
-Function TblCnStr$(T)
+Function TblCnStr$(T$)
 TblCnStr = CurrentDb.TableDefs(T).Connect
 End Function
 Function DbqLng&(A As Database, Sql)
@@ -3104,11 +3174,24 @@ End Function
 Function SqlLng&(A)
 SqlLng = DbqLng(CurrentDb, A)
 End Function
+Function QQSqlV(A, ParamArray Ap())
+Dim Av()
+Av = Ap
+QQSqlV = SqlV(FmtQQAv(A, Av))
+End Function
 Function SqlV(A)
 SqlV = DbqV(CurrentDb, A)
 End Function
+Sub ZZ_DbqV()
+Dim A
+A = SqlV("Select Fx from OHYM")
+Stop
+End Sub
 Function DbqV(A As Database, Sql)
-DbqV = A.OpenRecordset(Sql).Fields(0).Value
+With A.OpenRecordset(Sql)
+    If .EOF Then Exit Function
+    DbqV = .Fields(0).Value
+End With
 End Function
 Function TblNRec&(A)
 TblNRec = SqlLng(FmtQQ("Select Count(*) from [?]", A))
@@ -3119,30 +3202,34 @@ Ay = DftFfnAy(FfnAy0)
 If Sz(Ay) = 0 Then Exit Function
 For Each I In Ay
     If Not FfnIsExist(CStr(I)) Then
-        Push O, "File: " & I
-        PushMsgUnderLin O, "Above file not found"
+        Push O, I
     End If
 Next
-ErzFileNotFound = O
+If Sz(O) = 0 Then Exit Function
+ErzFileNotFound = MsgAp_Ly("[File(s)] not found", O)
 End Function
-Function DbtLnkFx(A As Database, T$, Fx$, Optional WsNm$ = "Sheet1") As String()
-Dim O$()
-O = ErzFileNotFound(Fx)
-If Sz(O) > 0 Then
-    DbtLnkFx = O
-    Exit Function
-End If
+Sub FfnAssExist(A)
+If AyBrwEr(ErzFileNotFound(A)) Then Stop
+End Sub
+Sub DbtLnkFx(A As Database, T, Fx, Optional WsNm$ = "Sheet1")
+FfnAssExist Fx
 Dim Cn$: Cn = FxDaoCnStr(Fx)
 Dim Src$: Src = WsNm & "$"
-DbtLnkFx = DbtLnk(A, T, Src, Cn)
+DbtLnk A, T, Src, Cn
+End Sub
+Function RmvPfx$(A, Pfx)
+If HasPfx(A, Pfx) Then RmvPfx = Mid(A, Len(Pfx) + 1)
 End Function
-Function TblLnkFb(Tt, Fb$, Optional FbTny0) As String()
-TblLnkFb = DbtLnkFb(CurrentDb, Tt, Fb, FbTny0)
+Function RmvSfx$(A, Sfx)
+If HasSfx(A, Sfx) Then RmvSfx = Left(A, Len(A) - Len(Sfx))
 End Function
-Function DbtLnkFb(A As Database, Tt, Fb$, Optional FbTny0) As String()
+Sub TT_LnkFb(TT, Fb$, Optional Fbtt)
+DbttLnkFb CurrentDb, TT, Fb, Fbtt
+End Sub
+Sub DbttLnkFb(A As Database, TT, Fb$, Optional Fbtt)
 Dim Tny$(), FbTny$()
-Tny = CvNy(Tt)
-FbTny = CvNy(FbTny0)
+Tny = CvNy(TT)
+FbTny = CvNy(Fbtt)
     Select Case True
     Case Sz(FbTny) = Sz(Tny)
     Case Sz(FbTny) = 0
@@ -3151,15 +3238,14 @@ FbTny = CvNy(FbTny0)
         Stop
     End Select
 Dim Cn$: Cn = FbCnStr(Fb)
-Dim J%, O$()
+Dim J%
 For J = 0 To UB(Tny)
-    O = AyAdd(O, DbtLnk(A, Tny(J), FbTny(J), Cn))
+    DbtLnk A, Tny(J), FbTny(J), Cn
 Next
-DbtLnkFb = O
-End Function
-Function TblLnkFx(T$, Fx$, Optional WsNm$ = "Sheet1") As String()
-TblLnkFx = DbtLnkFx(CurrentDb, T, Fx, WsNm)
-End Function
+End Sub
+Sub TblLnkFx(T$, Fx$, Optional WsNm$ = "Sheet1")
+DbtLnkFx CurrentDb, T, Fx, WsNm
+End Sub
 Function FbCnStr$(A)
 FbCnStr = ";DATABASE=" & A & ";"
 End Function
@@ -3190,9 +3276,9 @@ Dim Ay$()
 Ay = DbtFny_zAutoQuote(A, T)
 DbtStru = T & ": " & JnSpc(Ay)
 End Function
-Function DbttStru$(A As Database, Tt)
+Function DbttStru$(A As Database, TT)
 Dim Tny$(), O$(), J%
-Tny = CvNy(Tt)
+Tny = CvNy(TT)
 For J = 0 To UB(Tny)
     Push O, DbtStru(A, Tny(J))
 Next
@@ -3242,7 +3328,7 @@ End Function
 Function DbqryRs(A As Database, Q) As DAO.Recordset
 Set DbqryRs = A.QueryDefs(Q).OpenRecordset
 End Function
-Function RplVBar$(A$)
+Function RplVBar$(A)
 RplVBar = Replace(A, "|", vbCrLf)
 End Function
 Function Sz&(A)
@@ -3255,6 +3341,7 @@ AyBrwEr = True
 AyBrw A
 End Function
 Sub AyBrw(A)
+If Sz(A) = 0 Then Exit Sub
 StrBrw Join(A, vbCrLf)
 End Sub
 Function TfTy(T$, F$) As DAO.DataTypeEnum
@@ -3393,10 +3480,10 @@ Dim Av(): Av = Ap
 FmtQQ = FmtQQAv(QQVbl, Av)
 End Function
 
-Function SqlDry(A$) As Variant()
+Function SqlDry(A) As Variant()
 SqlDry = DbqDry(CurrentDb, A)
 End Function
-Function DbqDry(A As Database, Sql$) As Variant()
+Function DbqDry(A As Database, Sql) As Variant()
 Dim O()
 With DbqRs(A, Sql)
     While Not .EOF
@@ -3558,7 +3645,7 @@ For J = 1 To N
 Next
 SqzHBar = O
 End Function
-Sub FxOpn(A$)
+Sub FxOpn(A)
 If Not FfnIsExist(A) Then
     MsgBox "File not found: " & vbCrLf & vbCrLf & A
     Exit Sub
@@ -3639,7 +3726,7 @@ For J = 2 To UB(A)
 Next
 AyIsAllEq = True
 End Function
-Function FfnNxt$(A$)
+Function FfnNxt$(A)
 If Not FfnIsExist(A) Then FfnNxt = A: Exit Function
 Dim J%, O$
 For J = 1 To 99
@@ -3649,11 +3736,11 @@ Next
 Stop
 End Function
 
-Function FfnAddFnSfx$(A$, Sfx$)
+Function FfnAddFnSfx$(A, Sfx$)
 FfnAddFnSfx = FfnPth(A) & FfnFnn(A) & Sfx & FfnExt(A)
 End Function
 
-Function FfnNxtN$(A$, N%)
+Function FfnNxtN$(A, N%)
 If 1 > N Or N > 99 Then Stop
 Dim Sfx$
 Sfx = "(" & Format(N, "00") & ")"
@@ -3713,23 +3800,37 @@ Else
 End If
 FfnCutExt = FfnPth(A) & C
 End Function
-Function PthEns$(A$)
+Function PthEns$(A)
 If Dir(A, VbFileAttribute.vbDirectory) = "" Then MkDir A
 PthEns = A
 End Function
-
+Function AyWhOPred(A, Obj, Pred$)
+If Sz(A) = 0 Then AyWhOPred = A: Exit Function
+Dim I, O, X
+O = AyCln(A)
+For Each I In A
+    X = CallByName(Obj, Pred, VbMethod, I)
+    If X Then
+        Push O, I
+    End If
+Next
+AyWhOPred = O
+End Function
 Function PthFfnAy(A, Optional Spec$ = "*.*") As String()
+PthFfnAy = AyAddPfx(PthFnAy(A, Spec), PthEnsSfx(A))
+End Function
+Function PthFnAy(A, Optional Spec$ = "*.*") As String()
 Dim O$(), B$, P$
 P = PthEnsSfx(A)
-B = Dir(A & Spec)
+B = Dir(P & Spec)
 Dim J%
 While B <> ""
     J = J + 1
     If J > 1000 Then Stop
-    Push O, P & B
+    Push O, B
     B = Dir
 Wend
-PthFfnAy = O
+PthFnAy = O
 End Function
 
 Function FfnExt$(Ffn)
@@ -3862,7 +3963,7 @@ Next
 AyHasAy = True
 End Function
 
-Function SqlQQStr_Sy(Sql$, QQStr$) As String()
+Function SqlQQStr_Sy(Sql, QQStr$) As String()
 Dim Dry: Dry = SqlDry(Sql)
 If AyIsEmpty(Dry) Then Exit Function
 Dim O$()
@@ -3979,7 +4080,7 @@ Function CvRg(A) As Range
 Set CvRg = A
 End Function
 
-Function PnmFn$(A$)
+Function PnmFn$(A)
 PnmFn = PnmVal(A & "Fn")
 End Function
 
@@ -4021,7 +4122,7 @@ End Function
 Sub AppExpStru()
 StrWrt Stru, SrcPth & "Stru.txt"
 End Sub
-Sub FfnDltIfExist(A$)
+Sub FfnDltIfExist(A)
 On Error GoTo X
 If FfnIsExist(A) Then Kill A
 Exit Sub
@@ -4032,7 +4133,7 @@ Sub FfnAy_DltIfExist(A)
 AyDo A, "FfnDltIfExist"
 End Sub
 
-Sub PthClr(A$)
+Sub PthClr(A)
 FfnAy_DltIfExist PthFfnAy(A)
 End Sub
 Sub SrcPthBrw()
@@ -4085,7 +4186,7 @@ AyBrw ReSeqSpec_Fny("Flg RecTy Amt Key Uom MovTy Qty BchRateUX RateTy Bch Las GL
 " Uom Des StkUom Ac_U")
 End Sub
 
-Function ReSeqSpec_Fny(A$) As String()
+Function ReSeqSpec_Fny(A) As String()
 Dim Ay$(), D As Dictionary, O$(), L1$, L
 Ay = SplitVBar(A)
 If Sz(Ay) = 0 Then Exit Function
@@ -4208,41 +4309,35 @@ If Not FfnIsExist(A) Then
 End If
 If AttIsOld("Tp", A) Then AttImp "Tp", A
 End Sub
-Function AttIsOld(A$, Ffn$) As Boolean
+Function AttIsOld(A, Ffn) As Boolean
 Dim T1 As Date, T2 As Date
 T1 = AttTim(A)
 T2 = FfnTim(Ffn)
 If True Then
-    Debug.Print "---------"
-    Debug.Print "AttIsOld:"
-    Debug.Print "Att         : "; A
-    Debug.Print "GiveFfn     : "; Ffn
-    Debug.Print "AttTim      : "; T1
-    Debug.Print "GiveFfn-Tim : "; T2
-    Debug.Print "AttIsOld    : "; T1 < T2
+    MsgAp_Dmp "In 'AttIsOld', [Att] of [Tim1] comparing with [file] of [Tim2], Att is [Older]", A, T1, Ffn, T2, T1 < T2
 End If
 AttIsOld = T1 < T2
 End Function
-Function TblkfV(T$, K$, F$)
+Function TblkfV(T, K, F)
 TblkfV = DbtkfV(CurrentDb, T, K, F)
 End Function
-Function DbtPkNm$(A As Database, T$)
+Function DbtPkNm$(A As Database, T)
 Dim I As DAO.Index
 For Each I In A.TableDefs(T).Indexes
     If I.Primary Then DbtPkNm = I.Name
 Next
 End Function
-Function DbtkfV(A As Database, T$, K$, F$)
+Function DbtkfV(A As Database, T, K, F)
 With A.TableDefs(T).OpenRecordset
     .Index = DbtPkNm(A, T)
     .Seek "=", K
     If Not .EOF Then DbtkfV = .Fields(F)
 End With
 End Function
-Function AttTim(A$) As Date
+Function AttTim(A) As Date
 AttTim = TblkfV("Att", A, "FilTim")
 End Function
-Function AttSz(A$) As Date
+Function AttSz(A) As Date
 AttSz = TblkfV("Att", A, "FilSz")
 End Function
 Function DrsSq(A As Drs) As Variant()
@@ -4272,8 +4367,8 @@ End Function
 Function SqWs(A) As Worksheet
 Set SqWs = LoWs(SqLo(A))
 End Function
-Sub WImpTbl(Tt)
-DbtImpTbl W, Tt
+Sub WImpTbl(TT)
+DbtImpTbl W, TT
 End Sub
 
 Function WbMax(A As Workbook) As Workbook
@@ -4281,42 +4376,62 @@ A.Application.WindowState = xlMaximized
 Set WbMax = A
 End Function
 
+Sub Done()
+MsgBox "Done"
+End Sub
+
 Function WtChkCol(T$, LnkColStr$) As String()
 WtChkCol = DbtChkCol(W, T, LnkColStr)
 End Function
 
-Function WtLnkFb(T$, Fb$) As String()
-WtLnkFb = DbtLnkFb(W, T, Fb)
+Function WqRs(Sql) As Recordset
+Set WqRs = DbqRs(W, Sql)
 End Function
+Function WqV(Sql)
+WqV = DbqV(W, Sql)
+End Function
+Sub WttLnkFb(TT, Fb$)
+DbttLnkFb W, TT, Fb
+End Sub
 
 Sub WQuit()
 WCls
 Quit
 End Sub
 
-Function WtLnkFx(T$, Fx$, Optional WsNm$ = "Sheet1") As String()
-WtLnkFx = DbtLnkFx(W, T, Fx, WsNm)
-End Function
+Sub WtLnkFx(T, Fx, Optional WsNm$ = "Sheet1")
+DbtLnkFx W, T, Fx, WsNm
+End Sub
 
 Sub WOpn()
 FbEns WFb
 Set W = FbDb(WFb)
 End Sub
 
-Sub WIni()
-TpImp
+Sub WKill()
 WCls
 FfnDltIfExist WFb
-WOpn
 End Sub
 
-Sub WRun(A$)
+Sub WIni()
+'TpImp
+WKill
+WOpn
+End Sub
+Sub WQQ(A, ParamArray Ap())
+Dim Av()
+Av = Ap
+WRun FmtQQAv(A, Av)
+End Sub
+Sub WRun(A)
 On Error GoTo X
 W.Execute A
 Exit Sub
 X:
+Debug.Print Err.Description
 Debug.Print A
 Debug.Print "?WStru("""")"
+On Error Resume Next
 DbCrtQry W, "Query1", A
 Stop
 End Sub
