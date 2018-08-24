@@ -16,7 +16,176 @@ Const PSep$ = " "
 Const PSep1$ = " "
 Public StsM$()
 Public ErrM$()
+Function IsErBrw() As Boolean
+If AyBrwEr(ErrM) Then
+    Erase ErrM
+    IsErBrw = True
+End If
+End Function
+Function JnVBar$(A)
+JnVBar = Join(A, "|")
+End Function
+Function LoNm_FmlVbl$(A)
+LoNm_FmlVbl = LoNm_XXXVbl(A, "Fml")
+End Function
+Function LoNm_XXXVbl$(A, XXX$)
+If Not HasPfx(A, "T_") And A <> "*" Then Stop
+Dim Rs As DAO.Recordset
+Set Rs = QapRs("Select FldNm & ' ' & ? from [Lo?] where LoNm='?' order by Seq,FldNm", XXX, XXX, A)
+LoNm_XXXVbl = JnVBar(RsSy(Rs)) 'Note: it is OK to have @XX having no Formula, ie return "" as LoFmlVbl
+End Function
+Function LoNm_FmtVbl$(A)
+LoNm_FmtVbl = JnVBar(ApSy(LoNm_XXXVbl("*", "Fmt"), LoNm_XXXVbl(A, "Fmt")))
+End Function
+Function QapRs(QQSql, ParamArray Ap()) As DAO.Recordset
 Dim Av()
+Av = Ap
+Set QapRs = DbqavRs(CurrentDb, QQSql, Av)
+End Function
+Function QQV(QQSql, ParamArray Ap())
+Dim Av()
+Av = Ap
+QQV = DbqavV(CurrentDb, QQSql, Av)
+End Function
+Function DbqavV(A As Database, QQSql, Av())
+DbqavV = DbqV(A, FmtQQAv(QQSql, Av))
+End Function
+
+Function DbqapRs(A As Database, QQSql, ParamArray Ap()) As DAO.Recordset
+Dim Av()
+Av = Ap
+Set DbqapRs = SqlRs(FmtQQAv(QQSql, Av))
+End Function
+Function DbqavRs(A As Database, QQSql, Av()) As DAO.Recordset
+Set DbqavRs = DbqRs(A, FmtQQAv(QQSql, Av))
+End Function
+Function LoNm_TblNm$(A)
+If Not HasPfx(A, "T_") Then Stop
+LoNm_TblNm = "@" & Mid(A, 3)
+End Function
+Sub LoRfhFml(A As ListObject)
+LoSetFmlVbl A, LoNm_FmlVbl(A.Name)
+End Sub
+Sub LoRfhFmt(A As ListObject)
+LoSetFmtVbl A, LoNm_FmtVbl(A.Name)
+End Sub
+Sub LoRfhAlignC(A As ListObject)
+LoSetAlignC A, LoNm_AlignCLikSsl(A.Name)
+End Sub
+Function LoNm_AlignCLikSsl$(A$)
+If Not HasPfx(A, "T_") And A <> "*" Then Stop
+Dim LikSsl1$
+Dim LikSsl2$
+    LikSsl1 = SqlV(FmtQQ("Select FldLikSsl from [LoAlignC] where LoNm='?'", A))
+    If A <> "*" Then LikSsl2 = SqlV("Select FldLikSsl from [WsAlignC] where LoNm='*'")
+LoNm_AlignCLikSsl = LikSsl1 & " " & LikSsl2
+End Function
+
+Sub ZZ_DbtpSet()
+TblDrp "Tmp"
+DoCmd.RunSQL "Create Table Tmp (F1 Text)"
+DbtpSet CurrentDb, "Tmp", "XX", "AFdf"
+Debug.Assert DbtpGet(CurrentDb, "Tmp", "XX") = "AFdf"
+End Sub
+Function DbtPrpLoFmlVbl$(A As Database, T)
+DbtPrpLoFmlVbl = DbtpGet(A, T, "LoFmlVbl")
+End Function
+Function TblPrpLoFmlVbl$(T)
+TblPrpLoFmlVbl = DbtPrpLoFmlVbl(CurrentDb, T)
+End Function
+Sub TblSetPrpLoFmlVbl(T, LoFmlVbl$)
+DbtSetPrpLoFmlVbl CurrentDb, T, LoFmlVbl
+End Sub
+Sub DbtSetPrpLoFmlVbl(A As Database, T, LoFmlVbl$)
+DbtpSet A, T, "LoFmlVbl", LoFmlVbl
+End Sub
+Function DbtpGet(A As Database, T, P)
+If Not DbtHasPrp(A, T, P) Then Exit Function
+DbtpGet = A.TableDefs(T).Properties(P).Value
+End Function
+Function DbtHasPrp(A As Database, T, P) As Boolean
+DbtHasPrp = ItrHasNm(A.TableDefs(T).Properties, P)
+End Function
+Sub DbtpSet(A As Database, T, P, Val)
+If DbtHasPrp(A, T, P) Then
+    A.TableDefs(T).Properties(P).Value = Val
+Else
+    With A.TableDefs(T)
+        .Properties.Append .CreateProperty(P, VarDaoTy(Val), Val)
+    End With
+End If
+End Sub
+Function VarDaoTy(A) As DAO.DataTypeEnum
+Dim O As DAO.DataTypeEnum
+Select Case VarType(A)
+Case VbVarType.vbInteger: O = dbInteger
+Case VbVarType.vbLong: O = dbLong
+Case VbVarType.vbString: O = dbText
+Case VbVarType.vbDate: O = dbDate
+Case Else: Stop
+End Select
+VarDaoTy = O
+
+End Function
+Function CvFld2(A As DAO.Field) As DAO.Field2
+Set CvFld2 = A
+End Function
+Sub DbtfAddExpr(A As Database, T, F, Expr$, Optional Ty As DAO.DataTypeEnum = dbText, Optional TxtSz% = 255)
+A.TableDefs(T).Fields.Append DaoFld(F, Ty, TxtSz, Expr)
+End Sub
+Function DaoFld(F, Optional Ty As DAO.DataTypeEnum = dbText, Optional TxtSz% = 255, Optional Expr$) As DAO.Field2
+Dim O As New DAO.Field
+With O
+    .Name = F
+    .Type = Ty
+    If Ty = dbText Then
+        .Size = TxtSz
+    End If
+    If Expr <> "" Then
+        CvFld2(O).Expression = Expr
+    End If
+End With
+Set DaoFld = O
+End Function
+Function DaoTbl(T) As DAO.TableDef
+Dim O As New DAO.TableDef
+With O
+    .Name = T
+    .Fields.Append DaoFld("F1")
+End With
+Set DaoTbl = O
+End Function
+Sub AAA()
+ZZ_DbtfAddExpr
+End Sub
+Sub ZZ_DbtfAddExpr()
+TblDrp "Tmp"
+Dim A As DAO.TableDef
+Set A = DbAddTbl(CurrentDb, "Tmp")
+DbtfAddExpr CurrentDb, "Tmp", "F2", "[F1]+"" hello!"""
+TblDrp "Tmp"
+End Sub
+Sub ZZ_DbAddTbl()
+Dim A As DAO.TableDef
+TblDrp "Tmp"
+Set A = DbAddTbl(CurrentDb, "Tmp")
+TblDrp "Tmp"
+End Sub
+Function DbAddTbl(A As Database, T) As DAO.TableDef
+Dim O As DAO.TableDef
+Set O = DaoTbl(T)
+A.TableDefs.Append O
+Set DbAddTbl = O
+End Function
+Function DbtAddFld(A As Database, T, F, Optional Ty As DAO.DataTypeEnum = dbText, Optional TxtSz% = 255) As DAO.Field2
+Dim O As DAO.Field2
+Set O = DaoFld(F, Ty, TxtSz)
+A.TableDefs(T).Fields.Append O
+Set DbtAddFld = O
+End Function
+Function FldPrpNy(A As DAO.Field) As String()
+FldPrpNy = ItrNy(A.Properties)
+End Function
 Sub BrwSts()
 AyBrwEr StsM
 Erase StsM
@@ -63,7 +232,7 @@ Property Get Apn$()
 Static X As Boolean, Y$
 If Not X Then
     X = True
-    Y = SqlV("Select Apn from PgmPrm")
+    Y = SqlV("Select Apn from [Apn]")
 End If
 Apn = Y
 End Property
@@ -87,10 +256,13 @@ End Function
 Function PnmPth$(A)
 PnmPth = PthEnsSfx(PnmVal(A & "Pth"))
 End Function
-Sub QQ(QQSql, ParamArray Ap())
+Sub QQRun(QQSql, ParamArray Ap())
 Dim Av()
 Av = Ap
 DoCmd.RunSQL FmtQQAv(QQSql, Av)
+End Sub
+Sub WtfAddExpr(T, F, Expr$)
+DbtfAddExpr W, T, F, Expr
 End Sub
 Sub WReOpn()
 WCls
@@ -105,6 +277,51 @@ WtLnkFx ">UOM", IFxUOM
 End Sub
 Sub LoSetFml(A As ListObject, ColNm$, Fml$)
 A.ListColumns(ColNm).DataBodyRange.Formula = Fml
+End Sub
+Sub LoSetFmlVbl(A As ListObject, FmlVbl$)
+If FmlVbl = "" Then Exit Sub
+Dim ColNm$, Fml$, I
+For Each I In SplitVBar(FmlVbl)
+    LinAsgT1T2 I, ColNm, Fml
+    LoSetFml A, ColNm, "=" & Fml
+Next
+End Sub
+Sub LoSetFmtVbl(A As ListObject, FmtVbl$)
+If FmtVbl = "" Then Exit Sub
+Dim ColNy$(), Fmt$(), C As ListColumn, J%, Ay$()
+Ay = SplitVBar(FmtVbl)
+ReDim ColNy(UB(Ay))
+ReDim Fmt(UB(Ay))
+For J = 0 To UB(Ay)
+    LinAsgT1T2 Ay(J), ColNy(J), Fmt(J)
+Next
+For Each C In A.ListColumns
+    For J = 0 To UB(Ay)
+        If C.Name Like ColNy(J) Then
+            C.DataBodyRange.NumberFormat = Fmt(J)
+            Exit For
+        End If
+    Next
+Next
+End Sub
+Sub LinAsgT1T2(A, OT1$, OT2$)
+BrkAsg A, " ", OT1, OT2
+End Sub
+Sub BrkAsg(A, Sep$, O1, O2, Optional NoTrim As Boolean)
+BrkAtAsg A, InStr(A, Sep), Sep, O1, O2, NoTrim
+End Sub
+Sub BrkAtAsg(A, At&, Sep$, O1, O2, Optional NoTrim As Boolean)
+If At = 0 Then
+    MsgAp_Brw "[Str] does not have [Sep].  @BrkAtAsg.", A, Sep
+    Stop
+    Exit Sub
+End If
+O1 = Left(A, At - 1)
+O2 = Mid(A, At + Len(Sep))
+If Not NoTrim Then
+    O1 = Trim(O1)
+    O2 = Trim(O2)
+End If
 End Sub
 Sub WtRen(Fmt$, ToT$, Optional ReOpnFst As Boolean)
 DbtRen W, Fmt, ToT, ReOpnFst
@@ -145,7 +362,6 @@ End Function
 Function WFb$()
 WFb = ApnWFb(Apn)
 End Function
-
 Sub WImp(T$, LnkColStr$, Optional WhBExpr$)
 If FstChr(T) <> ">" Then Stop
 DbtImpMap W, T, LnkColStr, WhBExpr
@@ -185,20 +401,21 @@ Function DbAtt_Exp$(A As Database, Att, ToFfn)
 Dim N%
 N = DbAtt_FilCnt(A, Att)
 If N <> 1 Then
-    Er "DbAtt_Exp|[Att] in [Db] has [FilCnt] which be one.|Not able to export [ToFfn]", _
+    Er "[Att] in [Db] has [FilCnt] which should be one.|Not export to [ToFfn].  (@DbAtt_Exp)", _
         Att, A.Name, N, ToFfn
 End If
-Stop
 DbAtt_Exp = AttRs_Exp(DbAtt_Rs(A, Att), ToFfn)
 MsgAp_Dmp "@[Sub], [Att] is exported [ToFfn]", "DbAtt_Exp", Att, ToFfn
 End Function
+Sub RaiseErr()
+Err.Raise -1, , "Please check messages opened in notepad"
+End Sub
 Sub Er(Msg$, ParamArray Ap())
 Dim Av(), O$()
 Av = Ap
 O = MsgAv_Ly(Msg, Av)
 AyBrw O
-Stop
-Err.Raise 1
+RaiseErr
 End Sub
 Function MsgNy(A) As String()
 Dim O$(), P%, J%
@@ -210,7 +427,7 @@ For J = 0 To UB(O)
 Next
 MsgNy = O
 End Function
-Function NyAv_Ly(A$(), Av()) As String()
+Function NyAv_Ly(A$(), Av(), Optional Indent% = 4) As String()
 Dim W%, O$(), J%, A1$(), A2$()
 W = AyWdt(A)
 A1 = AyAlignL(A)
@@ -218,7 +435,7 @@ A2 = AyAddSfx(A1, " : ")
 For J = 0 To UB(A)
     PushAy O, NmV_Ly(A2(J), Av(J))
 Next
-NyAv_Ly = AyAddPfx(O, Space(4))
+NyAv_Ly = AyAddPfx(O, Space(Indent))
 End Function
 Function NmV_Ly(Nm$, V) As String()
 Dim O$(), S$, J%
@@ -277,7 +494,16 @@ End Sub
 Sub MsgAp_Brw(A$, ParamArray Ap())
 Dim Av()
 Av = Ap
+MsgAv_Brw A, Av
+End Sub
+Sub MsgAv_Brw(A$, Av())
 AyBrw MsgAv_Ly(A, Av)
+End Sub
+Sub MsgAp_BrwStop(A$, ParamArray Ap())
+Dim Av()
+Av = Ap
+MsgAv_Brw A, Av
+Stop
 End Sub
 
 Function MsgAp_Ly(A$, ParamArray Ap()) As String()
@@ -347,6 +573,7 @@ End Function
 Function FcmdRunMax$(A$, ParamArray Ap())
 ' WinSty As VbAppWinStyle = vbMaximizedFocus)
 Dim Cmd$
+    Dim Av()
     Av = Ap
     Cmd = JnSpc(AyQuoteDbl(AyAdd(Array(A), Av)))
 Shell Cmd, vbMaximizedFocus
@@ -363,7 +590,7 @@ Asg A.Value, FldVal
 End Function
 Function DbAtt_Rs(A As Database, Att) As AttRs
 With DbAtt_Rs
-    Set .TblRs = A.OpenRecordset(FmtQQ("Select Att,FilTim,FilSz from Att where AttNm='?'", Att))
+    Set .TblRs = A.OpenRecordset(FmtQQ("Select Att,FilTim,FilSz,AttNm from Att where AttNm='?'", Att))
     If .TblRs.EOF Then
         A.Execute FmtQQ("Insert into Att (AttNm) values('?')", Att)
         Set .TblRs = A.OpenRecordset(FmtQQ("Selectex Att from Att where AttNm='?'", Att))
@@ -525,7 +752,7 @@ Dim S&, T As Date
 S = FfnSz(Ffn)
 T = FfnTim(Ffn)
 If Trc Then
-    MsgAp_Dmp "In 'AttRs_Imp', [Att] is going to import [Ffn] with [Sz] and [Tim]", A.TblRs!AttNm, Ffn, S, T
+    MsgAp_Dmp "In 'AttRs_Imp', [Att] is going to import [Ffn] with [Sz] and [Tim]", FldVal(A.TblRs!AttNm), Ffn, S, T
 End If
 With A
     .TblRs.Edit
@@ -546,7 +773,16 @@ With A
     .TblRs.Update
 End With
 End Sub
-
+Sub RsSetFldVal(A As DAO.Recordset, F, V)
+With A
+    .Edit
+    .Fields(F).Value = V
+    .Update
+End With
+End Sub
+Function FxHasSheet1(A) As Boolean
+FxHasSheet1 = AyHas(FxWsNy(A), "Sheet1")
+End Function
 Function FxDaoCnStr$(A)
 'Excel 8.0;HDR=YES;IMEX=2;DATABASE=D:\Data\MyDoc\Development\ISS\Imports\PO\PUR904 (On-Line).xls;TABLE='PUR904 (On-Line)'
 'INTO [Excel 8.0;HDR=YES;IMEX=2;DATABASE={0}].{1} FROM {2}"
@@ -608,7 +844,7 @@ With Lo.QueryTable
     .AdjustColumnWidth = True
     .RefreshPeriod = 0
     .PreserveColumnInfo = True
-    .ListObject.DisplayName = TnLoNm(A.Name)
+    .ListObject.DisplayName = TblNm_LoNm(A.Name)
     .Refresh BackgroundQuery:=False
 End With
 Set WcAddWs = Ws
@@ -856,13 +1092,6 @@ Function SplitVBar(A) As String()
 SplitVBar = Split(A, "|")
 End Function
 
-Function RmvSqBkt$(A)
-If IsSqBktQuoted(A) Then
-    RmvSqBkt = RmvFstLasChr(A)
-Else
-    RmvSqBkt = A
-End If
-End Function
 Sub ZZ_LinLnkCol()
 Dim A$, Act As LnkCol, Exp As LnkCol
 A = "AA Txt XX"
@@ -885,7 +1114,7 @@ End Function
 Function LinLnkCol(A) As LnkCol
 Dim Nm$, ShtTy$, Extnm$, Ty As DAO.DataTypeEnum
 LinTTRstAsg A, Nm, ShtTy, Extnm
-Extnm = RmvSqBkt(Extnm)
+Extnm = RmvOptSqBkt(Extnm)
 Ty = DaoShtTy_Ty(ShtTy)
 Set LinLnkCol = LnkCol(Nm, Ty, IIf(Extnm = "", Nm, Extnm))
 End Function
@@ -1015,11 +1244,20 @@ End Sub
 Sub LoSetWdt_zC(A As ListObject, W%, C$)
 A.ListColumns(C).DataBodyRange.EntireColumn.ColumnWidth = W
 End Sub
-Sub LoSetAlignC_zC(A As ListObject, C$)
-A.ListColumns(C).DataBodyRange.HorizontalAlignment = XlHAlign.xlHAlignCenter
+Function LikAy_HasNm(A$(), Nm$) As Boolean
+If Sz(A) = 0 Then Exit Function
+Dim Lik
+For Each Lik In A
+    If Nm Like Lik Then LikAy_HasNm = True: Exit Function
+Next
+End Function
+Sub LoCol_AlignC(A As ListColumn, LikColNy$())
+If LikAy_HasNm(LikColNy, A.Name) Then
+    A.DataBodyRange.HorizontalAlignment = XlHAlign.xlHAlignCenter
+End If
 End Sub
-Sub LoSetAlignC(A As ListObject, Cc0)
-AyDoPX CvNy(Cc0), "LoSetFmt_zC", A
+Sub LoSetAlignC(A As ListObject, LikSsl$)
+ItrDoXP A.ListColumns, "LoCol_AlignC", SslSy(LikSsl)
 End Sub
 Sub LoSetFmt_zC(A As ListObject, Fmt$, C$)
 A.ListColumns(C).DataBodyRange.Formula = Fmt
@@ -1054,12 +1292,25 @@ End Function
 Function SqAt_Lo(A, At As Range, Optional LoNm$) As ListObject
 Set SqAt_Lo = RgLo(SqRg(A, At), LoNm)
 End Function
-Function WbLoAy(Tp As Workbook) As ListObject()
+Function WbLoAy(A As Workbook) As ListObject()
 Dim Ws As Worksheet, O() As ListObject, I
-For Each Ws In Tp.Sheets
+For Each Ws In A.Sheets
     OyPushItr O, Ws.ListObjects
 Next
 WbLoAy = O
+End Function
+Sub ZZ_WbTLoAy()
+D OyNy(WbTLoAy(TpWb))
+End Sub
+Sub ZZ_WbLoAy()
+D OyNy(WbLoAy(TpWb))
+End Sub
+Function OyNy(A) As String()
+If Sz(A) = 0 Then Exit Function
+OyNy = ItrNy(A)
+End Function
+Function WbTLoAy(A As Workbook) As ListObject()
+WbTLoAy = OyWhNmHasPfx(WbLoAy(A), "T_")
 End Function
 Sub OyPushItr(OY, Itr)
 Dim I
@@ -1283,8 +1534,6 @@ Debug.Assert AbIsEq(Exp, Act)
 Debug.Assert AyIsEq(Ay, ExpAyAft)
 Return
 End Sub
-
-
 Function AyShift(Ay)
 AyShift = Ay(0)
 Ay = AyRmvEleAt(Ay)
@@ -1305,8 +1554,12 @@ Function ItrFstPrpEq(A, PrpNm$, V)
 Dim I, OP
 For Each I In A
     OP = ObjPrp(I, PrpNm)
-    If OP = V Then Asg I, ItrFstPrpEq: Exit Function
+    If OP = V Then
+        Asg I, ItrFstPrpEq
+        Exit Function
+    End If
 Next
+Exit Function ' If not found return Empty
 'Impossible
 Debug.Print PrpNm, V
 For Each I In A
@@ -1396,10 +1649,38 @@ End Sub
 Function FbDb(A) As Database
 Set FbDb = DBEngine.OpenDatabase(A)
 End Function
+Function PthFnIr(A, Optional Spec$ = "*.*") As VBA.Collection
+Dim O As New Collection
+Dim B$, P$
+P = PthEnsSfx(A)
+B = Dir(P & Spec)
+Dim J%
+While B <> ""
+    J = J + 1
+    If J > 10000 Then Stop
+    O.Add B
+    B = Dir
+Wend
+Set PthFnIr = O
+End Function
+Function PthUp$(A)
+PthUp = TakBefOrAllRev(RmvSfx(A, "\"), "\")
+End Function
+
+Sub PthMovFilUp(A)
+Dim I, Tar$
+Tar$ = PthUp(A)
+For Each I In PthFnIr(A)
+    FfnMov I, Tar
+Next
+End Sub
 
 Function ApnWFb$(A)
 ApnWFb = ApnWPth(A) & "Wrk.accdb"
 End Function
+Sub WPthBrw()
+PthBrw WPth
+End Sub
 Function WPth$()
 WPth = ApnWPth(Apn)
 End Function
@@ -1454,6 +1735,18 @@ End Function
 Function QTbl$(T$, Optional WhBExpr$)
 QTbl = "Select *" & PFm(T) & PWh(WhBExpr)
 End Function
+Function WtPrpLoFmlVbl$(T)
+WtPrpLoFmlVbl = FbtPrpLoFmlVbl(WFb, T)
+End Function
+Sub FbtSetPrpLoFmlVbl(A, T, LoFmlVbl$)
+DbtSetPrpLoFmlVbl FbDb(A), T, LoFmlVbl
+End Sub
+
+Function FbtPrpLoFmlVbl$(A, T)
+If A = "" And T = "" Then Exit Function
+FbtPrpLoFmlVbl = DbtPrpLoFmlVbl(FbDb(A), T)
+End Function
+
 Function FbtFny(A$, T$) As String()
 FbtFny = RsFny(DbqRs(FbDb(A), QTbl(T)))
 End Function
@@ -1733,6 +2026,7 @@ Function RsSy(A As DAO.Recordset, Optional FldNm$) As String()
 Dim O$(), Ix
 Ix = IIf(FldNm = "", 0, FldNm)
 With A
+    If .EOF Then Exit Function
     .MoveFirst
     While Not .EOF
         Push O, .Fields(Ix).Value
@@ -2116,9 +2410,6 @@ If Sz(A) = 1 Then
 End If
 ReDim Preserve A(UB(A) - 1)
 End Sub
-Function JnVBar$(A)
-JnVBar = Join(A, "|")
-End Function
 Sub LSpecAy_Asg(A$(), OTny$(), OLnkColStrAy$(), OWhBExprAy$())
 Dim U%, J%
 U = UB(A)
@@ -2224,6 +2515,9 @@ Case Else: Stop
 End Select
 DaoShtTy_Ty = O
 End Function
+Function TimSz_TSz$(A As Date, Sz&)
+TimSz_TSz = DteDTim(A) & "." & Sz
+End Function
 Function DftFfnAy(FfnAy0) As String()
 Select Case True
 Case IsStr(FfnAy0): DftFfnAy = ApSy(FfnAy0)
@@ -2287,6 +2581,11 @@ End If
 End Function
 Function FfnTim(A) As Date
 If FfnIsExist(A) Then FfnTim = FileDateTime(A)
+End Function
+Function FfnDTim$(A)
+If FfnIsExist(A) Then
+    FfnDTim = DteDTim(FileDateTime(A))
+End If
 End Function
 Function AyTrim(A) As String()
 If Sz(A) = 0 Then Exit Function
@@ -2496,7 +2795,21 @@ For Each Dr In Dry
 Next
 DrsColInto = O
 End Function
-
+Sub RsBrw(A As DAO.Recordset)
+RsBrw_zSingleRec A
+End Sub
+Sub PrmBrw()
+RsBrw TblRs("Prm")
+End Sub
+Sub RsBrw_zSingleRec(A As DAO.Recordset)
+AyBrw RsLy_zSingleRec(A)
+End Sub
+Function RsNy(A As DAO.Recordset) As String()
+RsNy = ItrNy(A.Fields)
+End Function
+Function RsLy_zSingleRec(A As DAO.Recordset)
+RsLy_zSingleRec = NyAv_Ly(RsNy(A), RsVy(A), 0)
+End Function
 Function DrsColSy(A As Drs, F) As String()
 DrsColSy = DrsColInto(A, F, EmpSy)
 End Function
@@ -2523,14 +2836,23 @@ With TT
 End With
 Exit Sub
 X:
-Er "Cannot create [Table] in [Database] from [Source] using [CnStr].  It gets [error]", _
-    T, DbNm(A), S, Cn, Err.Description
+Dim M$
+M = Err.Description
+Er "Cannot create [Table] from [Source] using [CnStr] in [Database].  It gets [error].", _
+    T, S, Cn, DbNm(A), M
 End Sub
 Sub TblLnk(T$, S$, Cn$)
 DbtLnk CurrentDb, T, S, Cn
 End Sub
+Sub TblLnkFb(T, Fb$, Optional FbTbl$)
+DbttLnkFb CurrentDb, T, Fb, FbTbl
+End Sub
+Function CvNothing(A)
+If IsEmpty(A) Then Set CvNothing = Nothing: Exit Function
+Set CvNothing = A
+End Function
 Function WbWsCd(A As Workbook, WsCdNm$) As Worksheet
-Set WbWsCd = ItrFstPrpEq(A.Sheets, "CodeName", WsCdNm)
+Set WbWsCd = CvNothing(ItrFstPrpEq(A.Sheets, "CodeName", WsCdNm))
 End Function
 Function WbLasWs(A As Workbook) As Worksheet
 Set WbLasWs = A.Sheets(A.Sheets.Count)
@@ -2542,7 +2864,13 @@ Function FxWb(A) As Workbook
 Set FxWb = NewXls.Workbooks.Open(A)
 End Function
 Function WsLo(A As Worksheet, LoNm$) As ListObject
-Set WsLo = A.ListObjects(LoNm)
+Dim Lo As ListObject
+For Each Lo In A.ListObjects
+    If Lo.Name = LoNm Then
+        Set WsLo = Lo
+        Exit Function
+    End If
+Next
 End Function
 Function TblRg(A$, At As Range) As Range
 Set TblRg = DbtRg(CurrentDb, A, At)
@@ -2667,6 +2995,9 @@ End Sub
 Function OupFx_Crt$(A)
 OupFx_Crt = AttExp("Tp", A)
 End Function
+Sub TpRfh()
+WbVis WbRfh(TpWb)
+End Sub
 Sub OupFx_Gen(OupFx$, Fb$, ParamArray WbFmtrAp())
 Dim Av()
 Av = WbFmtrAp
@@ -2719,7 +3050,7 @@ O = A
 Erase O
 For Each X In A
     If Run(XP, X, P) Then
-        PushObj A, X
+        PushObj O, X
     End If
 Next
 OyWhPredXP = O
@@ -2794,21 +3125,194 @@ Case "0.0.2"
 End Select
 A.OLEDBConnection.Connection = Cn
 End Sub
+
 Sub WcRfh(A As WorkbookConnection, Optional Fb$)
 If IsNothing(A.OLEDBConnection) Then Exit Sub
 WcRfhCnStr A, Fb
 A.OLEDBConnection.BackgroundQuery = False
 A.OLEDBConnection.Refresh
 End Sub
+
 Sub WcDlt(A As WorkbookConnection)
 A.Delete
 End Sub
 
+Function QtPrpLoFmlVbl$(A As QueryTable)
+QtPrpLoFmlVbl = FbtStr_PrpLoFmlVbl(QtFbtStr(A))
+End Function
+
+Function CnStr_DtaSrc$(A)
+CnStr_DtaSrc = TakBet(A, "Data Source=", ";")
+End Function
+
+Sub ZZZ_TakBet()
+Dim A$, FmStr, ToStr, Exp$
+A = "lkjsdf;dkfjl;Data Source=Johnson;lsdfjldf"
+FmStr = "Data Source="
+ToStr = ";"
+Exp = "Johnson"
+GoSub Tst
+Exit Sub
+Tst:
+    Dim Act$
+    Act = TakBet(A, FmStr, ToStr)
+    Debug.Assert Act = Exp
+    Return
+End Sub
+Function TakBet$(A, FmStr, ToStr)
+Dim P1&, P2&
+P1 = InStr(A, FmStr): If P1 = 0 Then Exit Function
+P2 = InStr(P1, A, ToStr)
+Dim FmIx&, L&
+FmIx = P1 + Len(FmStr)
+L = P2 - FmIx
+TakBet = Mid(A, FmIx, L)
+End Function
+Function TpMainQt() As QueryTable
+Set TpMainQt = WbMainQt(TpWb)
+End Function
+Property Get NowDTim$()
+NowDTim = DteDTim(Now)
+End Property
+Function DteDTim$(Dte)
+If Not IsDte(Dte) Then Exit Function
+DteDTim = Format(Dte, "YYYY-MM-DD HH:MM:SS")
+End Function
+Sub ZZ_WbRfhFml()
+Dim Wb As Workbook
+Set Wb = WbVis(TpWb)
+WbRfhLoFml Wb
+Stop
+End Sub
+Sub ZZ_WbRfhLoAlignC()
+Dim Wb As Workbook
+Set Wb = WbVis(TpWb)
+WbRfhLoAlignC Wb
+Stop
+End Sub
+Sub ZZ_WbRfhLoFmt()
+Dim Wb As Workbook
+Set Wb = WbVis(TpWb)
+WbRfhLoFml Wb
+WbRfhLoFmt Wb
+Stop
+End Sub
+Sub WbRfhLoFmt(A As Workbook)
+AyDo WbLoAy(A), "LoRfhFmt"
+End Sub
+Sub WbRfhLoAlignC(A As Workbook)
+AyDo WbLoAy(A), "LoRfhAlignC"
+End Sub
+Sub WbRfhLoFml(A As Workbook)
+AyDo WbTLoAy(A), "LoRfhFml"
+End Sub
+Function FfnTSz$(A)
+If Not FfnIsExist(A) Then Exit Function
+FfnTSz = FfnDTim(A) & "." & FfnSz(A)
+End Function
+Function TSzTim(A) As Date
+TSzTim = TakBef(A, ".")
+End Function
+Function TpMainLo() As ListObject
+Set TpMainLo = WbMainLo(TpWb)
+End Function
+Function TpMainPrpLoFmlVbl$()
+TpMainPrpLoFmlVbl = LoPrpLoFmlVbl(TpMainLo)
+End Function
+Function QtPrpLoFmtVbl$(A As QueryTable)
+If IsNothing(A) Then Exit Function
+QtPrpLoFmtVbl = FbtStr_PrpLoFmlVbl(QtFbtStr(A))
+End Function
+Function WbMainLo(A As Workbook) As ListObject
+Dim O As Worksheet, Lo As ListObject
+Set O = WbMainWs(A):              If IsNothing(O) Then Exit Function
+Set WbMainLo = WsLo(O, "T_Main")
+End Function
+Function WbMainQt(A As Workbook) As QueryTable
+Dim Lo As ListObject
+Set Lo = WbMainLo(A): If IsNothing(A) Then Exit Function
+Set WbMainQt = Lo.QueryTable
+End Function
+Function WbMainWs(A As Workbook) As Worksheet
+Set WbMainWs = WbWsCd(A, "WsOMain")
+End Function
+Function LoFbtStr$(A As ListObject)
+LoFbtStr = QtFbtStr(A.QueryTable)
+End Function
+Function FbtStr_PrpLoFmlVbl$(A)
+Dim Fb$, T$
+FbtStr_Asg A, Fb, T
+FbtStr_PrpLoFmlVbl = FbtPrpLoFmlVbl(Fb, T)
+End Function
+Sub FbtStr_Asg(A, OFb$, OT$)
+If A = "" Then
+    OFb = ""
+    OT = ""
+    Exit Sub
+End If
+BrkAsg A, "].[", OFb, OT
+If FstChr(OFb) <> "[" Then Stop
+If LasChr(OT) <> "]" Then Stop
+
+OFb = RmvFstChr(OFb)
+OT = RmvLasChr(OT)
+End Sub
+Function HasSqBkt(A) As Boolean
+HasSqBkt = FstChr(A) = "[" And LasChr(A) = "]"
+End Function
+Function RmvSqBkt$(A)
+If Not HasSqBkt(A) Then Stop
+RmvSqBkt = RmvFstLasChr(A)
+End Function
+Function RmvOptSqBkt$(A)
+If Not HasSqBkt(A) Then RmvOptSqBkt = A: Exit Function
+RmvOptSqBkt = RmvFstLasChr(A)
+End Function
+Function LoPrpLoFmlVbl$(A As ListObject)
+LoPrpLoFmlVbl = QtPrpLoFmlVbl(LoQt(A))
+End Function
+Function LoQt(A As ListObject) As QueryTable
+On Error Resume Next
+Set LoQt = A.QueryTable
+End Function
+Function TpMainFbtStr$()
+Dim Wb As Workbook, Qt As QueryTable
+Set Wb = TpWb
+Set Qt = WbMainQt(Wb)
+TpMainFbtStr = QtFbtStr(Qt)
+WbQuit Wb
+End Function
+Sub WbQuit(A As Workbook)
+XlsQuit A.Application
+End Sub
+Sub XlsQuit(A As Excel.Application)
+ItrDo A.Workbooks, "WbClsNoSav"
+A.Quit
+Set A = Nothing
+End Sub
+Sub WbClsNoSav(A As Workbook)
+A.Close False
+End Sub
+Function QtFbtStr$(A As QueryTable)
+If IsNothing(A) Then Exit Function
+Dim Ty As XlCmdType, Tbl$, CnStr$
+With A
+    Ty = .CommandType
+    If Ty <> xlCmdTable Then Exit Function
+    Tbl = .CommandText
+    CnStr = .Connection
+End With
+QtFbtStr = FmtQQ("[?].[?]", CnStr_DtaSrc(CnStr), Tbl)
+End Function
 Sub WsRfh(A As Worksheet)
 ItrDo A.QueryTables, "QtRfh"
 ItrDo A.PivotTables, "PtRfh"
+ItrDo A.ListObjects, "LoRfh"
 End Sub
-
+Sub LoRfh(A As Excel.ListObject)
+'A.QueryTable.Connection
+Stop '
+End Sub
 Sub QtRfh(A As Excel.QueryTable)
 A.BackgroundQuery = False
 A.Refresh
@@ -2979,7 +3483,7 @@ A.TableDefs(T).Fields(Fm).Name = NewCol
 End Sub
 Function DbtAt_Lo(A As Database, T$, At As Range, Optional UseWc As Boolean) As ListObject
 Dim N$, Q As QueryTable
-N = TnLoNm(T)
+N = TblNm_LoNm(T)
 If UseWc Then
     Set Q = RgWs(At).ListObjects.Add(SourceType:=0, Source:=FbAdoCnStr(A.Name), Destination:=At).QueryTable
     With Q
@@ -3009,8 +3513,8 @@ End Function
 Function WbAddDbt(A As Workbook, Db As Database, T$, Optional UseWc As Boolean) As Workbook
 Set WbAddDbt = LoWb(DbtAt_Lo(Db, T, WbA1(A, T), UseWc))
 End Function
-Function TnLoNm$(TblNm)
-TnLoNm = "T_" & RmvFstNonLetter(TblNm)
+Function TblNm_LoNm$(TblNm)
+TblNm_LoNm = "T_" & RmvFstNonLetter(TblNm)
 End Function
 Sub AyDoPPXP(A, PPXP$, P1, P2, P3)
 Dim X
@@ -3045,9 +3549,6 @@ DbtNRec = DbqV(A, FmtQQ("Select Count(*) from [?]", T))
 End Function
 Function DbtCsv(A As Database, T) As String()
 DbtCsv = RsCsvLy(DbtRs(A, T))
-End Function
-Function TblNm_LoNm$(A)
-TblNm_LoNm = "T_" & RmvFstNonLetter(A)
 End Function
 Function DbtLo(A As Database, T$, At As Range) As ListObject
 Set DbtLo = SqAt_Lo(DbtSq(A, T), At, TblNm_LoNm(T))
@@ -3259,7 +3760,6 @@ Sub FfnAssExist(A)
 If AyBrwEr(ErzFileNotFound(A)) Then Stop
 End Sub
 Sub DbtLnkFx(A As Database, T, Fx, Optional WsNm$ = "Sheet1")
-FfnAssExist Fx
 Dim Cn$: Cn = FxDaoCnStr(Fx)
 Dim Src$: Src = WsNm & "$"
 DbtLnk A, T, Src, Cn
@@ -3279,10 +3779,8 @@ Tny = CvNy(TT)
 FbTny = CvNy(Fbtt)
     Select Case True
     Case Sz(FbTny) = Sz(Tny)
-    Case Sz(FbTny) = 0
-        FbTny = Tny
-    Case Else
-        Stop
+    Case Sz(FbTny) = 0:  FbTny = Tny
+    Case Else:           Er "[TT]-[Sz1] and [Fbtt]-[Sz2] are diff.  (@DbttLnkFb)", TT, Sz(Tny), Fbtt, Sz(FbTny)
     End Select
 Dim Cn$: Cn = FbCnStr(Fb)
 Dim J%
@@ -3452,14 +3950,14 @@ X = X + 1
 End Function
 
 Function TmpPth$(Optional Fdr$)
-Dim X$
-   If Fdr <> "" Then
-       X = Fdr & "\"
-   End If
 Dim O$
-   O = TmpHom & X:   PthEns O
-   O = O & TmpNm & "\": PthEns O
-   PthEns O
+    O = WPth
+    If Fdr <> "" Then
+        O = WPth & Fdr & "\"
+        PthEns O
+    End If
+    O = O & TmpNm & "\"
+    PthEns O
 TmpPth = O
 End Function
 Function DbtUpdToDteFld__1(A As Database, T$, KeyFld$, FmDteFld$) As Date()
@@ -3518,7 +4016,9 @@ End Property
 
 Function TmpHom$()
 Static X$
-If X = "" Then X = Fso.GetSpecialFolder(TemporaryFolder) & "\"
+If X = "" Then
+    X = Fso.GetSpecialFolder(TemporaryFolder) & "\"
+End If
 TmpHom = X
 End Function
 
@@ -3750,6 +4250,7 @@ Cnt = SubStrCnt(QQVbl, "?")
 If Cnt <> Sz(Av) Then
     MsgAp_Brw "[QQVal] has [N-?], but not match with [Av]-[Sz]", QQVbl, Cnt, Av, Sz(Av)
     Stop
+    Exit Function
 End If
 For Each I In Av
     O = Replace(O, "?", I, Count:=1)
@@ -3967,6 +4468,17 @@ IsDte = VarType(A) = vbDate
 End Function
 Function IsStr(A) As Boolean
 IsStr = VarType(A) = vbString
+End Function
+Function IsEmp(A) As Boolean
+IsEmp = True
+Select Case True
+Case IsStr(A)
+    IsEmp = Trim(A) = ""
+Case IsArray(A)
+    IsEmp = Sz(A) = 0
+Case IsEmpty(A), IsNothing(A)
+    IsEmp = False
+End Select
 End Function
 Function IsSy(A) As Boolean
 IsSy = VarType(A) = vbString + vbArray
@@ -4337,25 +4849,14 @@ End Function
 Sub TpWrtFfn(Ffn$)
 AttExp "Tp", Ffn
 End Sub
-Sub AAA()
-Dim A As New Excel.Application
-A.Visible = True
-Stop
-End Sub
 Sub TpExp()
 AttExp "Tp", TpFx
 End Sub
 Sub TpImp()
 Dim A$
-Const Trc As Boolean = True
 A = TpFx
 If Not FfnIsExist(A) Then
-    If Trc Then
-        Debug.Print "-----"
-        Debug.Print "TpImp"
-        Debug.Print "Given-Tp   : "; A
-        Debug.Print "Given-Tp is: Not exist"
-    End If
+    D MsgAp_Ly("[Tp] not exist, no TpImp.  (@TpImp)", A)
 End If
 If AttIsOld("Tp", A) Then AttImp "Tp", A
 End Sub
@@ -4363,9 +4864,9 @@ Function AttIsOld(A, Ffn) As Boolean
 Dim T1 As Date, T2 As Date
 T1 = AttTim(A)
 T2 = FfnTim(Ffn)
-If True Then
-    MsgAp_Dmp "In 'AttIsOld', [Att] of [Tim1] comparing with [file] of [Tim2], Att is [Older]", A, T1, Ffn, T2, T1 < T2
-End If
+Dim Msg$
+Msg = FmtQQ("[Att] is ? in comparing with [file] using [Att-Tim] & [file-Tim].  Is Att [Older]?  (@AttIsOld)", IIf(T1 < T2, "older", "newer"), "?")
+MsgAp_Dmp Msg, A, Ffn, T1, T2, T1 < T2
 AttIsOld = T1 < T2
 End Function
 Function TblkfV(T, K, F)
@@ -4417,6 +4918,11 @@ End Function
 Function SqWs(A) As Worksheet
 Set SqWs = LoWs(SqLo(A))
 End Function
+Sub QQ(QQSql, ParamArray Ap())
+Dim Av()
+Av = Ap
+CurrentDb.Execute FmtQQAv(QQSql, Av)
+End Sub
 Sub WImpTbl(TT)
 DbtImpTbl W, TT
 End Sub
@@ -4434,8 +4940,10 @@ Function WtChkCol(T$, LnkColStr$) As String()
 WtChkCol = DbtChkCol(W, T, LnkColStr)
 End Function
 
-Function WqRs(Sql) As Recordset
-Set WqRs = DbqRs(W, Sql)
+Function WQQRs(QQSql, ParamArray Ap()) As Recordset
+Dim Av()
+Av = Ap
+Set WQQRs = DbqRs(W, FmtQQAv(QQSql, Av))
 End Function
 Function WqV(Sql)
 WqV = DbqV(W, Sql)

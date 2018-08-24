@@ -1,11 +1,14 @@
 Att: AttNm Att FilTim FilSz
-InvD: VndShtNm InvNo Sku Sc Amt
-InvH: VndShtNm InvNo Whs Dte Sc Amt DteCrt
-LoadMB52: YYMM
-YMOH: Y M Sku Whs OH Sc Sc_U
-PgmPrm: Apn
+YMInvD: VndShtNm InvNo Sku Sc Amt
+YMInvH: VndShtNm InvNo Whs Dte Sc Amt DteCrt
+Apn: Apn
 Prm: UOMFn UomPth ZHT1Fn ZHT1Pth InvPth MB52Pth InitY
 Prm_C: UOMFn UomPth ZHT1Fn ZHT1Pth MB52Fn MB52Pth
 Prm_N: UOMFn UomPth ZHT1Fn ZHT1Pth MB52Fn MB52Pth
-YMZHT1: Y M ZHT1 Whs RateSc FmDte ToDte DteCrt
-YM: Y M BegOH_LoadDte BegOH_Sc BegOH_Amt BegOH_Fx BegOH_FxSz BegOH_FxTim BegOH_NSku BegOH_NRec RateSc_NRec RateSc_Max RateSc_Min RateSc_Avg RateSc_LoadDte IR_LoadDte IR_Sc IR_Amt IR_NInv IR_NSku IR_NInvLin
+YM: Y M BegOH_LoadDte BegOH_Sc BegOH_Amt BegOH_Fx BegOH_FxSz BegOH_FxTim BegOH_NSku BegOH_NRec RateSc_NRec RateSc_Max RateSc_Min RateSc_Avg RateSc_LoadDte IR_LoadDte IR_Sc IR_Amt IR_NInv IR_NSku IR_NInvLin IR_FxSz IR_FxTim IR_Fx
+YMOH: Y M Sku Whs OH
+YMRate: Y M ZHT1 Whs RateSc FmDte ToDte DteCrt
+LoFml: LoNm FldNm Fml Seq
+LoFmt: LoNm FldNm Seq Fmt
+LoAlignC: LoNm FldLikSsl
+CurYM: Y M
