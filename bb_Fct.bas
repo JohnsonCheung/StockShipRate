@@ -11,20 +11,148 @@ Type XlsLnkInf
     Fx As String
     WsNm As String
 End Type
+Enum EApp
+    EDuty = 1
+    EStkHld = 2
+    EShpRate = 3
+    EShpCst = 4
+    ETaxCmp = 5
+    ETaxAlert = 6
+End Enum
 Public W As Database
 Const PSep$ = " "
 Const PSep1$ = " "
 Public StsM$()
 Public ErrM$()
+Function EAppStr_DtaFb$(A)
+Dim App As EApp
+If Not IsEAppStr(A) Then Exit Function
+EAppStr_DtaFb = EAppDtaFb(EAppStr_EApp(A))
+End Function
+Function IsEAppStr(A) As Boolean
+Select Case A
+Case _
+"Duty", _
+"SkHld", _
+"ShpRate", _
+"ShpCst", _
+"TaxCmp", _
+"TaxAlert"
+IsEAppStr = True
+End Select
+End Function
+Function AppHom$()
+AppHom = "N:\SAPAccessReports\"
+End Function
+Function EAppFdr$(A As EApp)
+Dim O$
+Select Case A
+Case EApp.EDuty: O = "DutyPrepay"
+Case EApp.EStkHld: O = "StockHolding"
+Case EApp.EShpRate: O = "StockShipRate"
+Case EApp.EShpCst: O = "StockShipCost"
+Case EApp.ETaxCmp: O = "TaxExpCmp"
+Case EApp.ETaxAlert: O = "TaxRateAlert"
+Case Else: Stop
+End Select
+EAppFdr = O
+End Function
+Function EAppDtaFn$(A As EApp)
+Dim O$
+Select Case A
+Case EApp.EShpRate: O = "StockShipRate_Data.accdb"
+Case Else: Stop
+End Select
+EAppDtaFn = O
+End Function
+Function EAppPth$(A As EApp)
+EAppPth = AppHom & EAppFdr(A) & "\"
+End Function
+Function EAppDtaFb$(A As EApp)
+EAppDtaFb = EAppPth(A) & EAppDtaFn(A)
+End Function
+Function EAppStr_EApp(A) As EApp
+Dim O As EApp
+Select Case A
+Case "Duty": O = EApp.EDuty
+Case "StkHld": O = EApp.EStkHld
+Case "ShpRate": O = EApp.EShpRate
+Case "ShpCst": O = EApp.EShpCst
+Case "TaxCmp": O = EApp.ETaxCmp
+Case "TaxAlert": O = EApp.ETaxAlert
+Case Else: Stop
+End Select
+EAppStr_EApp = O
+End Function
+Function EAppStr$(A As EApp)
+Dim O$
+Select Case A
+Case EApp.EDuty: O = "Duty"
+Case EApp.EStkHld: O = "StkHld"
+Case EApp.EShpRate: O = "ShpRate"
+Case EApp.EShpCst: O = "ShpCst"
+Case EApp.ETaxCmp: O = "TaxCmp"
+Case EApp.ETaxAlert: O = "TaxAlert"
+Case Else: Stop
+End Select
+EAppStr = O
+End Function
 Function CcmTny() As String()
 CcmTny = DbCcmTny(CurrentDb)
 End Function
+Sub SetCcmTblDes(Des$)
+Dim T
+For Each T In CcmTny
+    TblDes(T) = Des
+Next
+End Sub
+
 Function DbCcmTny(A As Database) As String()
 DbCcmTny = AyWhHasPfx(DbTny(A), "^")
 End Function
-Sub TTLnkCurFb(TT)
 
-End Sub
+Property Get CnSy() As String()
+CnSy = DbCnSy(CurrentDb)
+End Property
+Function AyabNonEmpBLy(A, B, Optional Sep$ = " ") As String()
+Dim J&, O$()
+For J = 0 To UB(A)
+    If Not IsEmp(B(J)) Then
+        Push O, A(J) & Sep & B(J)
+    End If
+Next
+AyabNonEmpBLy = O
+End Function
+Function DbCnSy(A As Database) As String()
+Dim T$(), S()
+T = AyQuoteSqBkt(DbTny(A))
+S = AyMapPX(T, "DbtCnStr", A)
+DbCnSy = AyabNonEmpBLy(T, S)
+End Function
+
+Function AyMapPX(A, PX$, P)
+AyMapPX = AyMapPXInto(A, PX, P, EmpAy)
+End Function
+Function AyMapPXSy(A, PX$, P) As String()
+AyMapPXSy = AyMapPXInto(A, PX, P, EmpSy)
+End Function
+
+Function AyMapPXInto(A, PX$, P, OInto)
+Dim O: O = OInto
+Erase O
+If Sz(A) > 0 Then
+    Dim J&, X
+    ReDim O(UB(A))
+    For Each X In A
+        Asg Run(PX, P, X), O(J)
+        J = J + 1
+    Next
+End If
+AyMapPXInto = O
+End Function
+Function DbtSrc$(A As Database, T)
+DbtSrc = A.TableDefs(T).SourceTableName
+End Function
 Function RsTSz$(A As DAO.Recordset)
 If A.Fields(0).Type <> DAO.dbDate Then Stop
 If A.Fields(1).Type <> DAO.dbLong Then Stop
@@ -520,6 +648,7 @@ Select Case True
 Case IsPrim(V):   VarLy = ApSy(V)
 Case IsArray(V):  VarLy = AySy(V)
 Case IsObject(V): VarLy = ApSy("*Type: " & TypeName(V))
+Case IsEmpty(V): VarLy = ApSy("*Empty")
 Case Else: Stop
 End Select
 End Function
@@ -3613,6 +3742,27 @@ End Function
 Sub DbtRenCol(A As Database, T, Fm, NewCol)
 A.TableDefs(T).Fields(Fm).Name = NewCol
 End Sub
+Function DbDesy(A As Database) As String()
+Dim T$(), D$()
+T = DbTny(A)
+DbDesy = AyRmvEmp(AyMapPXSy(T, "DbtTblDes", A))
+End Function
+Function AyRmvEmp(A)
+Dim O: O = AyCln(A)
+If Sz(A) > 0 Then
+    Dim X
+    For Each X In A
+        PushNonEmpty O, X
+    Next
+End If
+AyRmvEmp = O
+End Function
+Function DbtTblDes$(A As Database, T)
+Dim D$
+D = DbtDes(A, T)
+If D = "" Then Exit Function
+DbtTblDes = T & " " & D
+End Function
 Function DbtAt_Lo(A As Database, T$, At As Range, Optional UseWc As Boolean) As ListObject
 Dim N$, Q As QueryTable
 N = TblNm_LoNm(T)
@@ -3847,6 +3997,31 @@ Set FxLo = WsLo(WbWs(FxWb(A), WsNm), LoNm)
 End Function
 Function TblCnStr$(T$)
 TblCnStr = CurrentDb.TableDefs(T).Connect
+End Function
+Function AutoExec()
+Debug.Print "-Before LnkCcm: CnSy--------------------------"
+D CnSy
+Debug.Print "-Before LnkCcm: Srcy--------------------------"
+D Srcy
+'
+LnkCcm
+Debug.Print "-After LnkCcm: CnSy--------------------------"
+D CnSy
+Debug.Print "-After LnkCcm: Srcy--------------------------"
+D Srcy
+End Function
+Function TblSrc$(T$)
+TblSrc = CurrentDb.TableDefs(T).SourceTableName
+End Function
+Property Get Srcy() As String()
+Srcy = DbSrcy(CurrentDb)
+End Property
+Function DbSrcy(A As Database) As String()
+Dim S()
+Dim T$()
+T = AyQuoteSqBkt(DbTny(A))
+S = AyMapPX(T, "DbtSrc", A)
+DbSrcy = AyabNonEmpBLy(T, S)
 End Function
 Function DbqLng&(A As Database, Sql)
 DbqLng = DbqV(A, Sql)

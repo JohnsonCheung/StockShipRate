@@ -698,16 +698,21 @@ Function DbtPrp(A As Database, T, P)
 If Not DbtHasPrp(A, T, P) Then Exit Function
 DbtPrp = A.TableDefs(T).Properties(P).Value
 End Function
-Function CcmTbl_IsVdt(A$)
-Dim F$
-F = TblDes(A)
-If Not HasPfx(F, "N:\SAPAccessReports\") Then Exit Function
-If Not FfnIsExist(F) Then Exit Function
+Function CcmTbl_IsVdt(A$) As Boolean
+Dim D$, App As EApp, DtaFb$
+D = TblDes(A)
+If Not IsEAppStr(D) Then Exit Function
+App = EAppStr_EApp(D)
+DtaFb = EAppDtaFb(App)
+If Not FfnIsExist(DtaFb) Then Exit Function
 CcmTbl_IsVdt = True
 End Function
 
 Sub CcmTbl_LnkNDrive(A)
-DbttLnkFb CurrentDb, A, TblDes(A), Mid(A, 2)
+Dim EAppStr$, DtaFb$
+EAppStr = TblDes(A)
+DtaFb = EAppStr_DtaFb(EAppStr)
+DbttLnkFb CurrentDb, Mid(A, 2), DtaFb, Mid(A, 2)
 End Sub
 
 Sub CcmTbl_LnkLcl(A)

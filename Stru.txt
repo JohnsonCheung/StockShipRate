@@ -6,9 +6,16 @@
 ^YMInvD: VndShtNm InvNo Sku Sc Amt
 ^YMInvH: VndShtNm InvNo Whs Dte Sc Amt DteCrt
 ^YMOH: Y M Sku Whs OH
-~TMPCLP118651: Y M Sku Whs RateSc
 Apn: Apn
 Att: AttNm Att FilTim FilSz
+Copy Of ^CurYM: Y M
+Copy Of ^IniOH: Sku Whs OH
+Copy Of ^IniRate: Y M
+Copy Of ^IniYM: Y M
+Copy Of ^YM: Y M BegOH_LoadDte BegOH_Sc BegOH_Amt BegOH_Fx BegOH_FxSz BegOH_FxTim BegOH_NSku BegOH_NRec RateSc_NRec RateSc_Max RateSc_Min RateSc_Avg RateSc_LoadDte IR_LoadDte IR_Sc IR_Amt IR_NInv IR_NSku IR_NInvLin IR_FxSz IR_FxTim IR_Fx
+Copy Of ^YMInvD: VndShtNm InvNo Sku Sc Amt
+Copy Of ^YMInvH: VndShtNm InvNo Whs Dte Sc Amt DteCrt
+Copy Of ^YMOH: Y M Sku Whs OH
 LoAlignC: LoNm FldLikSsl
 LoFml: LoNm FldNm Fml Seq
 LoFmt: LoNm FldNm Seq Fmt
