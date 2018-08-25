@@ -52,13 +52,11 @@ Function LoNm_FmtVbl$(A)
 LoNm_FmtVbl = JnVBar(ApSy(LoNm_XXXVbl("*", "Fmt"), LoNm_XXXVbl(A, "Fmt")))
 End Function
 Function QQRs(QQSql, ParamArray Ap()) As DAO.Recordset
-Dim Av()
-Av = Ap
+Dim Av(): Av = Ap
 Set QQRs = DbqqvRs(CurrentDb, QQSql, Av)
 End Function
 Function QQV(QQSql, ParamArray Ap())
-Dim Av()
-Av = Ap
+Dim Av(): Av = Ap
 QQV = DbqqvV(CurrentDb, QQSql, Av)
 End Function
 Function DbqqvV(A As Database, QQSql, Av())
@@ -66,8 +64,7 @@ DbqqvV = DbqV(A, FmtQQAv(QQSql, Av))
 End Function
 
 Function DbqqRs(A As Database, QQSql, ParamArray Ap()) As DAO.Recordset
-Dim Av()
-Av = Ap
+Dim Av(): Av = Ap
 Set DbqqRs = SqlRs(FmtQQAv(QQSql, Av))
 End Function
 Function DbqqvRs(A As Database, QQSql, Av()) As DAO.Recordset
@@ -241,13 +238,11 @@ Sub AyPushMsgAv(A, Msg$, Av())
 PushAy A, MsgAv_Ly(Msg, Av)
 End Sub
 Sub PushErr(Msg$, ParamArray Ap())
-Dim Av()
-Av = Ap
+Dim Av(): Av = Ap
 AyPushMsgAv ErrM, Msg, Av
 End Sub
 Sub PushSts(Msg$, ParamArray Ap())
-Dim Av()
-Av = Ap
+Dim Av(): Av = Ap
 AyPushMsgAv StsM, Msg, Av
 End Sub
 Function YYMM_FstDte(A) As Date
@@ -300,8 +295,7 @@ Function PnmPth$(A)
 PnmPth = PthEnsSfx(PnmVal(A & "Pth"))
 End Function
 Sub QQRun(QQSql, ParamArray Ap())
-Dim Av()
-Av = Ap
+Dim Av(): Av = Ap
 DoCmd.RunSQL FmtQQAv(QQSql, Av)
 End Sub
 Sub WtfAddExpr(T, F, Expr$)
@@ -454,8 +448,8 @@ Sub RaiseErr()
 Err.Raise -1, , "Please check messages opened in notepad"
 End Sub
 Sub Er(Msg$, ParamArray Ap())
-Dim Av(), O$()
-Av = Ap
+Dim Av(): Av = Ap
+Dim O$()
 O = MsgAv_Ly(Msg, Av)
 AyBrw O
 RaiseErr
@@ -470,6 +464,12 @@ For J = 0 To UB(O)
 Next
 MsgNy = O
 End Function
+Function NyLy(A$(), Av(), Optional Indent% = 4) As String()
+NyLy = NyAv_Ly(A, Av, Indent)
+End Function
+Function NyLin$(A$(), Av())
+NyLin = NyAv_Lin(A, Av)
+End Function
 Function NyAv_Ly(A$(), Av(), Optional Indent% = 4) As String()
 Dim W%, O$(), J%, A1$(), A2$()
 W = AyWdt(A)
@@ -479,6 +479,23 @@ For J = 0 To UB(A)
     PushAy O, NmV_Ly(A2(J), Av(J))
 Next
 NyAv_Ly = AyAddPfx(O, Space(Indent))
+End Function
+Function NyAv_Lin$(A$(), Av())
+Dim U&
+U = UB(A)
+If U = -1 Then Exit Function
+Dim O$(), J%
+For J = 0 To U
+    Push O, NmV_Lin(A(J), Av(J))
+Next
+NyAv_Lin = Join(AyAddPfx(O, " | "))
+End Function
+Function EnsSfxDot$(A)
+If LasChr(A) <> "." Then
+    EnsSfxDot = A & "."
+Else
+    EnsSfxDot = A
+End If
 End Function
 Function NmV_Ly(Nm$, V) As String()
 Dim O$(), S$, J%
@@ -494,12 +511,35 @@ For J = 1 To UB(O)
 Next
 NmV_Ly = O
 End Function
+Function NmV_Lin$(Nm$, V)
+NmV_Lin = Nm & "=[" & VarLin(V) & "]"
+End Function
 
 Function VarLy(V) As String()
 Select Case True
 Case IsPrim(V):   VarLy = ApSy(V)
 Case IsArray(V):  VarLy = AySy(V)
 Case IsObject(V): VarLy = ApSy("*Type: " & TypeName(V))
+Case Else: Stop
+End Select
+End Function
+Function AySampleLin$(A)
+Dim S$, U&
+U = UB(A)
+If U >= 0 Then
+    Select Case True
+    Case IsPrim(A(0)): S = "[" & A(0) & "]"
+    Case IsObject(A(0)), IsArray(A(0)): S = "[*Ty:" & TypeName(A(0)) & "]"
+    Case Else: Stop
+    End Select
+End If
+AySampleLin = "*Ay:[" & U & "]" & S
+End Function
+Function VarLin$(V)
+Select Case True
+Case IsPrim(V):   VarLin = V
+Case IsArray(V):  VarLin = AySampleLin(V)
+Case IsObject(V): VarLin = "*Type:" & TypeName(V)
 Case Else: Stop
 End Select
 End Function
@@ -522,47 +562,52 @@ End Select
 End Function
 
 Sub Trc(Fun$, Msg$, ParamArray Ap())
-Dim Av()
-Av = Ap
+Dim Av(): Av = Ap
 FunMsgAv_Dmp Fun, Msg, Av
 End Sub
 Sub FunMsgAv_Dmp(Fun$, Msg$, Av())
 AyDmp FunMsgAv_Ly(Fun, Msg, Av)
 End Sub
 Sub MsgAp_Dmp(A$, ParamArray Ap())
-Dim Av()
-Av = Ap
+Dim Av(): Av = Ap
 AyDmp MsgAv_Ly(A, Av)
 End Sub
 Sub MsgAp_Brw(A$, ParamArray Ap())
-Dim Av()
-Av = Ap
+Dim Av(): Av = Ap
 MsgAv_Brw A, Av
 End Sub
 Sub MsgAv_Brw(A$, Av())
 AyBrw MsgAv_Ly(A, Av)
 End Sub
 Sub MsgAp_BrwStop(A$, ParamArray Ap())
-Dim Av()
+Dim Av():
 Av = Ap
 MsgAv_Brw A, Av
 Stop
 End Sub
 Function MsgLy(A$, ParamArray Ap()) As String()
-Dim Av()
-Av = Ap
+Dim Av(): Av = Ap
 MsgLy = MsgAv_Ly(A, Av)
 End Function
 Function MsgAp_Ly(A$, ParamArray Ap()) As String()
-Dim Av()
-Av = Ap
+Dim Av(): Av = Ap
 MsgAp_Ly = MsgAv_Ly(A, Av)
+End Function
+Function MsgAp_Lin$(A$, ParamArray Ap())
+Dim Av(): Av = Ap
+MsgAp_Lin = MsgAv_Lin(A, Av)
 End Function
 Function MsgAv_Ly(A$, Av()) As String()
 Dim B$(), C$()
 B = SplitVBar(A)
 C = NyAv_Ly(MsgNy(A), Av)
 MsgAv_Ly = AyAdd(B, C)
+End Function
+Function MsgAv_Lin$(A$, Av())
+Dim B$(), C$
+B = SplitVBar(A)
+C = NyLin(MsgNy(A), Av)
+MsgAv_Lin = EnsSfxDot(A) & C
 End Function
 Function CvAv(A) As Variant()
 CvAv = A
@@ -619,9 +664,8 @@ End Function
 
 Function FcmdRunMax$(A$, ParamArray Ap())
 ' WinSty As VbAppWinStyle = vbMaximizedFocus)
+Dim Av(): Av = Ap
 Dim Cmd$
-    Dim Av()
-    Av = Ap
     Cmd = JnSpc(AyQuoteDbl(AyAdd(Array(A), Av)))
 Shell Cmd, vbMaximizedFocus
 FcmdRunMax = A
@@ -850,6 +894,20 @@ Stop
 W.Close False
 Set W = Nothing
 End Sub
+Function AyPredSplit(A, Pred$) As Variant()
+Dim O1, O2
+O1 = AyCln(A)
+O2 = O1
+Dim X
+For Each X In A
+    If Run(Pred, X) Then
+        Push O1, X
+    Else
+        Push O2, X
+    End If
+Next
+AyPredSplit = Array(O1, O2)
+End Function
 Function AyWhHasPfx(A, Pfx$) As String()
 AyWhHasPfx = AyWhPredXP(A, "HasPfx", Pfx)
 End Function
@@ -1959,15 +2017,22 @@ Function FfnNotFndChk(A) As String()
 If FfnIsExist(A) Then Exit Function
 FfnNotFndChk = MsgAp_Ly("[File] not exist", A)
 End Function
-Function ErzThen(ParamArray ErFunNmAp()) As String()
-Dim Av(), O$(), I
-Av = ErFunNmAp
-For Each I In Av
+Function ChkFst(ChkSsl$) As String()
+Dim O$(), I
+For Each I In SslSy(ChkSsl)
     O = Run(I)
     If Sz(O) > 0 Then
-        ErzThen = O
+        ChkFst = O
+        Exit Function
     End If
 Next
+End Function
+Function ChkAll(ChkSsl$) As String()
+Dim O$(), I
+For Each I In SslSy(ChkSsl)
+    PushAy O, Run(I)
+Next
+ChkAll = O
 End Function
 Function UnderLin$(A)
 UnderLin = String(Len(A), "-")
@@ -2882,16 +2947,24 @@ For Each I In A.TableDefs
     End If
 Next
 End Function
+Function MsgLin$(A$, ParamArray Ap())
+Dim Av(): Av = Ap
+MsgLin = MsgAv_Lin(A, Av)
+End Function
 Sub DbtLnk(A As Database, T, S$, Cn$)
 On Error GoTo X
 Dim TT As New DAO.TableDef
-If DbtHasLnk(A, T, S, Cn) Then Exit Sub
+If DbtHasLnk(A, T, S, Cn) Then
+    Debug.Print MsgLin("DbtLnk: [Tbl] has same [Src] in [Db]", T, S, DbNm(A))
+    Exit Sub
+End If
 DbtDrp A, T
 With TT
     .Connect = Cn
     .Name = T
     .SourceTableName = S
     A.TableDefs.Append TT
+    Debug.Print MsgLin("DbtLnk: [Tbl] has linked to [Src] in [Db] with [Cn]", T, S, DbNm(A), Cn)
 End With
 Exit Sub
 X:

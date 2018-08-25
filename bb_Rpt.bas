@@ -660,6 +660,9 @@ End Sub
 Property Get ErCcmTny() As String()
 ErCcmTny = AyWhPredFalse(CcmTny, "CcmTbl_IsVdt")
 End Property
+Property Get VdtCcmTny() As String()
+VdtCcmTny = AyWhPred(CcmTny, "CcmTbl_IsVdt")
+End Property
 Property Get TblDes$(T)
 TblDes = DbtDes(CurrentDb, T)
 End Property
@@ -695,11 +698,16 @@ Function DbtPrp(A As Database, T, P)
 If Not DbtHasPrp(A, T, P) Then Exit Function
 DbtPrp = A.TableDefs(T).Properties(P).Value
 End Function
-Function CcmTbl_IsVdt(A)
-CcmTbl_IsVdt = HasPfx(TblDes(A), "N:\SAPAccessReports\")
+Function CcmTbl_IsVdt(A$)
+Dim F$
+F = TblDes(A)
+If Not HasPfx(F, "N:\SAPAccessReports\") Then Exit Function
+If Not FfnIsExist(F) Then Exit Function
+CcmTbl_IsVdt = True
 End Function
-Sub CcmTbl_LnkNDrive(A)
 
+Sub CcmTbl_LnkNDrive(A)
+DbttLnkFb CurrentDb, A, TblDes(A), Mid(A, 2)
 End Sub
 
 Sub CcmTbl_LnkLcl(A)
@@ -710,8 +718,55 @@ DbttLnkFb CurrentDb, T, CurrentDb.Name, A
 End Sub
 
 Sub LnkCcmNDrive()
-AyDo CcmTny, "CcmTbl_LnkNDrive"
+Dim Vdt$(), Er$(), Av()
+Av = AyPredSplit(CcmTny, "CcmTbl_IsVdt")
+Vdt = Av(0)
+Er = Av(1)
+If Sz(Er) > 0 Then
+    MsgBrw "These [table-des] are not pointing to a data fb", AyAlignT1(AyMap(Er, "TblTblDes"))
+End If
+AyDo Vdt, "CcmTbl_LnkNDrive"
+MsgDmp "These [tables] are linked to data fb", AyMap(Vdt, "TblTblDes")
 End Sub
+Sub AySplit_xInto_T1Ay_RestAy_Asg(A, OT1Ay$(), ORestAy$())
+Dim U&, J&
+U = UB(A)
+If U = -1 Then
+    Erase OT1Ay, ORestAy
+    Exit Sub
+End If
+ReDim OT1Ay(U)
+ReDim ORestAy(U)
+For J = 0 To U
+    BrkAsg A(J), " ", OT1Ay(J), ORestAy(J)
+Next
+End Sub
+Function AyabAdd(A, B, Optional Sep$) As String()
+Dim O$(), J&, U&
+U = UB(A): If U <> UB(B) Then Stop
+If U = -1 Then Exit Function
+ReDim O(U)
+For J = 0 To U
+    O(J) = A(J) & Sep & B(J)
+Next
+AyabAdd = O
+End Function
+Function AyabAddWSpc(A, B) As String()
+AyabAddWSpc = AyabAdd(A, B, " ")
+End Function
+Function AyAlignT1(A) As String()
+Dim T1$(), Rest$()
+    AySplit_xInto_T1Ay_RestAy_Asg A, T1, Rest
+T1 = AyAlignL(T1)
+AyAlignT1 = AyabAddWSpc(T1, Rest)
+End Function
+Sub MsgDmp(A$, ParamArray Ap())
+Dim Av(): Av = Ap
+AyDmp MsgAv_Ly(A, Av)
+End Sub
+Function TblTblDes$(T)
+TblTblDes = T & " " & TblDes(T)
+End Function
 
 Sub TblAddPfx(T, Pfx$)
 DbtAddPfx CurrentDb, T, Pfx
@@ -755,3 +810,12 @@ If Sz(A) > 0 Then
 End If
 AyWhPred = O
 End Function
+
+Function AyMap(A, Map$)
+AyMap = AyMapInto(A, Map, EmpAy)
+End Function
+
+Sub MsgBrw(Msg$, ParamArray Ap())
+Dim Av(): Av = Ap
+MsgAv_Brw Msg, Av
+End Sub
