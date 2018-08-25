@@ -1,9 +1,9 @@
 Option Compare Database
 Option Explicit
 Public LnkColStr As New LnkColStr
-Public Enum What
-    eInv = 1
-    eMB52 = 2
+Public Enum FilKind
+    EInv = 1
+    EMB52 = 2
 End Enum
 Function QQRun(QQ$)
 Dim IQ, Q$
@@ -263,66 +263,65 @@ End Sub
 Property Get MB52FnSpec$()
 MB52FnSpec = "MB52 " & YYYYxMM & "-??.xls"
 End Property
-Function WhatFldPfx$(A As What)
+Function FilKind_FldPfx$(A As FilKind)
 Dim O$
 Select Case A
-Case What.eInv:  O = "IR"
-Case What.eMB52: O = "BegOH"
+Case EInv:  O = "IR"
+Case EMB52: O = "BegOH"
 Case Else: Stop
 End Select
-WhatFldPfx = O
+FilKind_FldPfx = O
 End Function
-Function WhatFx_TSz$(A As What, Fx)
+Function KindFx_TSz$(A As FilKind, Fx)
 Dim P$
-P = WhatFldPfx(A)
+P = FilKind_FldPfx(A)
 Dim Tim As Date, Sz&
 With QQSqlRs("Select ?_FxSz, ?_FxTim from YM where ?_Fx='?' and Y=? and M=?", P, P, P, Fx, Y, M)
     If .EOF Then Exit Function
     Sz = Nz(.Fields(0).Value, 0)
     Tim = Nz(.Fields(1).Value, 0)
 End With
-WhatFx_TSz = DteDTim(Tim) & "." & Sz
+KindFx_TSz = DteDTim(Tim) & "." & Sz
 End Function
 Function InvLoadDTim$()
-InvLoadDTim = WhatLoadDTim(eInv)
+InvLoadDTim = FilKind_LoadDTim(EInv)
 End Function
+
 Function MB52LoadDTim$()
-MB52LoadDTim = WhatLoadDTim(eMB52)
+MB52LoadDTim = FilKind_LoadDTim(EMB52)
 End Function
-Function WhatLoadDTim$(A As What)
-Dim P$
-P = WhatFldPfx(A)
-With QQSqlRs("Select ?_LoadDte from YM where Y=? and M=?", P, Y, M)
-    If .EOF Then Exit Function
-    WhatLoadDTim = DteDTim(.Fields(0).Value)
-End With
+Function FilKind_LoadDTim$(A As FilKind)
+FilKind_LoadDTim = FilKind_LoadTim(A)
 End Function
-Function WhatFx_IsLoaded(A As What, Fx) As Boolean
-Dim IsLoaded As Boolean
-Dim WhatTSz$
-    WhatTSz = WhatFx_TSz(A, Fx)
-IsLoaded = FfnTSz(Fx) = WhatTSz
-If Not IsLoaded Then Exit Function
-Dim Sz&, Tim$, Ld$
-Sz = FfnSz(Fx)
-Tim = FfnDTim(Fx)
-Ld = WhatLoadDTim(A)
-PushSts FmtQQ("[?] file of [time] and [size] is already loaded [at].", WhatStr(A)), Fx, Tim, Sz, Ld
-WhatFx_IsLoaded = True
+
+Function FilKind_LoadTim(A As FilKind) As Date
+FilKind_LoadTim = QQDTim("Select ?_LoadDte from YM where Y=? and M=?", FilKind_FldPfx(A), Y, M)
 End Function
-Function WhatStr$(A As What)
+
+Function KindFx_IsLoaded(A As FilKind, Fx) As Boolean
+Dim RecTSz$
+RecTSz = KindFx_TSz(A, Fx)
+If FfnTSz(Fx) <> RecTSz Then Exit Function
+PushAy StsM, FfnAlreadyLoadedMsgLy(Fx, FilKind_Str(A), FilKind_LoadDTim(A))
+KindFx_IsLoaded = True
+End Function
+
+Function FilKind_Str$(A As FilKind)
 Select Case A
-Case What.eInv: WhatStr = "Invoices"
-Case What.eMB52: WhatStr = "MB52"
+Case EInv: FilKind_Str = "Invoices"
+Case EMB52: FilKind_Str = "MB52"
 Case Else: Stop
 End Select
 End Function
+
 Function MB52IsLoaded() As Boolean
-MB52IsLoaded = WhatFx_IsLoaded(eMB52, IFxMB52)
+MB52IsLoaded = KindFx_IsLoaded(EMB52, IFxMB52)
 End Function
+
 Function InvIsLoaded() As Boolean
-InvIsLoaded = WhatFx_IsLoaded(eInv, IFxInv)
+InvIsLoaded = KindFx_IsLoaded(EInv, IFxInv)
 End Function
+
 Sub LoadMB52(Optional IsForceLoad As Boolean)
 If Not IsForceLoad Then
     If MB52IsLoaded Then Exit Sub
@@ -386,10 +385,10 @@ MB52Pth = PthEnsSfx(PnmVal("MB52Pth")) & 2000 + Y & "\"
 End Property
 
 Function MB52TSz$(A)
-MB52TSz = WhatFx_TSz$(eMB52, A)
+MB52TSz = KindFx_TSz$(EMB52, A)
 End Function
 Function InvTSz$(A)
-InvTSz = WhatFx_TSz(eInv, A)
+InvTSz = KindFx_TSz(EInv, A)
 End Function
 
 Sub Rpt()
@@ -400,7 +399,8 @@ If ChkFil Then Exit Sub
 Lnk
 If ChkCol Then Exit Sub
 Import
-LoadRate
+LoadIniMB52
+LoadIniRate
 LoadMB52
 LoadInv
 Tmp
@@ -408,6 +408,10 @@ Oup
 Upd
 Gen
 WCls
+End Sub
+Sub LoadIniMB52()
+If Not IsFstYM Then Exit Sub
+Stop '
 End Sub
 Function Cfm() As Boolean
 'Reset_YM           this should be put in front of starting the whole process
@@ -582,7 +586,7 @@ WQQ "Update [?] x inner join [$Rate] a on x.Whs=a.Whs and x.M32=a.ZHT1 set x.Rat
 WQQ "Update [?] Set Z2=Left(ZHT1,2), Z5=Left(ZHT1,5), Z8=Left(ZHT1,8) where not ZHT1 is null", A
 End Sub
 
-Sub LoadRate()
+Sub LoadIniRate()
 If Not IsFstYM Then Exit Sub
 WDrp "#Cpy1 #Cpy2 #Cpy"
 WRun "Select '8701' as Whs,x.* into [#Cpy1] from [#IZHT18701] x"
@@ -633,4 +637,11 @@ With QQSqlRs("Select RateSc_Avg,RateSc_Max,RateSc_Min,RateSc_NRec,RateSc_LoadDte
     .Update
     .Close
 End With
+End Sub
+Sub TblAddPfx(T, PFx$)
+
+End Sub
+Sub TTAddPfx(TT, PFx$)
+For Each T In CvTT(TT)
+Next
 End Sub
