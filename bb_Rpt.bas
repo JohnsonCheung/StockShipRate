@@ -638,10 +638,120 @@ With QQSqlRs("Select RateSc_Avg,RateSc_Max,RateSc_Min,RateSc_NRec,RateSc_LoadDte
     .Close
 End With
 End Sub
-Sub TblAddPfx(T, PFx$)
+Sub DbtAddPfx(A As Database, T, Pfx)
+DbtRen A, T, Pfx & T
+End Sub
+Sub LnkCcm()
+'Ccm is stand for Space-[C]ir[c]umflex-accent
+'Develop in local, some N:\ table is needed to be in currentdb.
+'This N:\ table is dup in currentdb as ^xxx CcmTny
+'When in development, each currentdb ^xxx is require to create a xxx table as linking to ^xxx
+'When in N:\SAPAccessReports\ is avaiable, ^xxx is require to link to data-db as in Des
+If IsDev Then
+    Stop
+    LnkCcmLcl
+Else
+    LnkCcmNDrive
+End If
+End Sub
+Sub LnkCcmLcl()
+AyDo CcmTny, "CcmTbl_LnkLcl"
+End Sub
+Property Get ErCcmTny() As String()
+ErCcmTny = AyWhPredFalse(CcmTny, "CcmTbl_IsVdt")
+End Property
+Property Get TblDes$(T)
+TblDes = DbtDes(CurrentDb, T)
+End Property
+Property Let TblDes(T, Des$)
+DbtDes(CurrentDb, T) = Des
+End Property
+Property Let DbtDes(A As Database, T, Des$)
+TblSetPrp T, "Description", Des
+End Property
+Sub TblSetPrp(T, P, V)
+DbtSetPrp CurrentDb, T, P, V
+End Sub
+Sub DbtSetPrp(A As Database, T, P, V)
+If PrpsHasPrp(A.TableDefs(T).Properties, P) Then
+    A.TableDefs(T).Properties(P).Value = V
+Else
+    A.TableDefs(T).Properties.Append DbtCrtPrp(A, T, P, V)
+End If
+End Sub
+Function DbtCrtPrp(A As Database, T, P, V) As DAO.Property
+Set DbtCrtPrp = A.TableDefs(T).CreateProperty(P, VarDaoTy(V), V)
+End Function
+Property Get DbtDes$(A As Database, T)
+DbtDes = DbtPrp(A, T, "Description")
+End Property
+Function DbtHasPrp(A As Database, T, P) As Boolean
+DbtHasPrp = PrpsHasPrp(A.TableDefs(T).Properties, P)
+End Function
+Function PrpsHasPrp(A As DAO.Properties, P) As Boolean
+PrpsHasPrp = ItrHasNm(A, P)
+End Function
+Function DbtPrp(A As Database, T, P)
+If Not DbtHasPrp(A, T, P) Then Exit Function
+DbtPrp = A.TableDefs(T).Properties(P).Value
+End Function
+Function CcmTbl_IsVdt(A)
+CcmTbl_IsVdt = HasPfx(TblDes(A), "N:\SAPAccessReports\")
+End Function
+Sub CcmTbl_LnkNDrive(A)
 
 End Sub
-Sub TTAddPfx(TT, PFx$)
-For Each T In CvTT(TT)
+
+Sub CcmTbl_LnkLcl(A)
+If FstChr(A) <> "^" Then Stop
+Dim T$
+T = Mid(A, 2)
+DbttLnkFb CurrentDb, T, CurrentDb.Name, A
+End Sub
+
+Sub LnkCcmNDrive()
+AyDo CcmTny, "CcmTbl_LnkNDrive"
+End Sub
+
+Sub TblAddPfx(T, Pfx$)
+DbtAddPfx CurrentDb, T, Pfx
+End Sub
+
+Sub DbttAddPfx(A As Database, TT, Pfx)
+AyDoAXB CvTT(TT), "DbtAddPfx", A, Pfx
+End Sub
+Sub AyDoAXB(Ay, AXB$, A, B)
+If Sz(Ay) = 0 Then Exit Sub
+Dim X
+For Each X In Ay
+    Run AXB, A, X, B
 Next
 End Sub
+Sub TTAddPfx(TT, Pfx$)
+DbttAddPfx CurrentDb, TT, Pfx
+End Sub
+
+Function AyWhPredFalse(A, Pred$)
+Dim O, X
+O = AyCln(A)
+If Sz(A) > 0 Then
+    For Each X In A
+        If Not Run(Pred, X) Then
+            Push O, X
+        End If
+    Next
+End If
+AyWhPredFalse = O
+End Function
+Function AyWhPred(A, Pred$)
+Dim O, X
+O = AyCln(A)
+If Sz(A) > 0 Then
+    For Each X In A
+        If Run(Pred, X) Then
+            Push O, X
+        End If
+    Next
+End If
+AyWhPred = O
+End Function
