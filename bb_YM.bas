@@ -1,4 +1,5 @@
 Option Compare Database
+Option Explicit
 Property Get IsFstYM() As Boolean
 IsFstYM = FstY = Y And FstM = M
 End Property
@@ -7,6 +8,12 @@ FstY = SqlV("Select Min(Y) from YM")
 End Property
 Property Get FstM() As Byte
 FstM = QQV("Select Min(M) from YM where Y=?", FstY)
+End Property
+Property Get IniY() As Byte
+IniY = TfVal("IniYM", "Y")
+End Property
+Property Get IniM() As Byte
+IniM = TfVal("IniYM", "M")
 End Property
 Property Get Y() As Byte
 Y = SqlV("Select Y from CurYM")
@@ -53,6 +60,12 @@ NxtM = IIf(M = 12, 1, M + 1)
 End Function
 Function YYYYxMM$()
 YYYYxMM = YYYY & "-" & MM
+End Function
+Function IniPrvYYYYxMM$()
+Dim YYYY$, MM$, Y As Byte, M As Byte
+M = M_PrvM(IniM)
+Y = YM_YofPrvM(IniY, IniM)
+IniPrvYYYYxMM = Y + 2000 & "-" & Format(M, "00")
 End Function
 Function MM$()
 MM = Format(M, "00")

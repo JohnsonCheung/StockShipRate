@@ -1,13 +1,9 @@
 Option Compare Database
 Option Explicit
 Public LnkColStr As New LnkColStr
-Public Enum FilKind
-    EInv = 1
-    EMB52 = 2
-End Enum
-Function QQRun(QQ$)
+Function OSubSsl_Run(A)
 Dim IQ, Q$
-For Each IQ In CvNy(QQ)
+For Each IQ In CvNy(A)
     Q = IQ
     Select Case True
     Case HasPfx(Q, "O"): Q = "@" & Mid(IQ, 2)
@@ -57,7 +53,11 @@ If IsFstYM Then
 WtLnkFx ">ZHT18601", IFxRate, "8601"
 WtLnkFx ">ZHT18701", IFxRate, "8701"
 End If
-WttLnkFb "YMInvH YMInvD YM YMOH YMRate", IFbStkShpRate
+If IsDev Then
+    WttLnkFb "IniYM IniRate IniOH YMInvH YMInvD YM YMOH", IFbStkShpRate, "^IniYM ^IniRate ^IniOH ^YMInvH ^YMInvD ^YM ^YMOH"
+Else
+    WttLnkFb "IniYM IniRate IniOH YMInvH YMInvD YM YMOH", IFbStkShpRate
+End If
 End Sub
 
 Function ChkCol() As Boolean
@@ -160,14 +160,21 @@ For I = 1 To CurM
     End If
 Next
 End Sub
-Sub TblYM_Ini(Y As Byte, M As Byte)
-Dim NRec%
-NRec = SqlV("Select Count(*) from YM where Y<" & Y)
-If NRec > 0 Then
-    If MsgBox(FmtQQ("There are [?] months of data before year[?] month[?].   Delete them", NRec, Y, M) & "?", vbYesNo) <> vbYes Then Exit Sub
-End If
-DoCmd.RunSQL FmtQQ("Delete * from YM where Y<? or (Y=? and M<?)", Y, Y, M)
-'YM_Ins Y, M
+Sub TblYM_Dlt_BelowIniYM()
+QQRun "Delete * from YM where Y<?", IniY
+QQRun "Delete * from YM where Y=? and M<?", IniY, IniM
+End Sub
+Sub TblYM_Ins_UpToCurYM()
+Dim Y As Byte, M As Byte, FmM As Byte, ToM As Byte
+For Y = IniY To CurY
+    FmM = IIf(IniY = Y, IniM, 1)
+    ToM = IIf(CurY = Y, CurM, 12)
+    For M = FmM To ToM
+        If Not QQAny("Select Y from YM where Y=? and M=?", Y, M) Then
+            QQRun "Insert into YM (Y,M) values(?,?)", Y, M
+        End If
+    Next
+Next
 End Sub
 
 Sub ZZ_YM_Ini()
@@ -186,11 +193,15 @@ End Function
 Function IFxInv$()
 IFxInv = InvPth & InvFn
 End Function
+Function InvHom$()
+If IsDev Then
+    InvHom = CurDbPth & "Sample\"
+Else
+    InvHom = PthEns(AppHom & "Import Invoices\")
+End If
+End Function
 Function InvPth$()
-Dim O$
-O = PnmVal("InvPth") & YYYY & "\"
-PthEns O
-InvPth = O
+InvPth = PthEns(InvHom & YYYY & "\")
 End Function
 
 Sub ZZ_InvChk()
@@ -210,6 +221,9 @@ End Function
 Sub InvPthBrw()
 PthBrw InvPth
 End Sub
+Sub LoadRate()
+End Sub
+
 Sub LoadInv(Optional IsForceLoad As Boolean)
 '#IInvH & #IInvD are imported
 'Replace InvH and InvD after validation
@@ -221,119 +235,58 @@ Sub LoadInv(Optional IsForceLoad As Boolean)
 Dim A$
 A = IFxInv
 If Not IsForceLoad Then
-    If InvIsLoaded Then Exit Sub
+    If IsLd_xInv Then Exit Sub
 End If
-WQQ "Delete x.* from [YMInvD] x inner join [YMInvH] a on a.VndShtNm=x.VndShtNm and a.InvNo=x.InvNo where Year(Dte)=? and Month(Dte)=?", Y, M
+WQQ "Delete x.* from [YMInvD] where InvH in (Select InvH from InvH where Year(Dte)=? and Month(Dte)=?)", Y, M
 WQQ "Delete * from [YMInvH] where Year(Dte)=? and Month(Dte)=?", Y, M
 
-WRun "insert into [YMInvD] (VndShtNm,InvNo,Sku,Sc,Amt)" & _
-                 " select VndShtNm,InvNo,Sku,Sc,Amt from [#IInvD]'"
 WRun "insert into [YMInvH] (VndShtNm,InvNo,Whs,Dte,Sc,Amt)" & _
-                 " select VndShtNm,InvNo,Whs,Dte,Sc,Amt from [#IInvH]'"
-Dim NInv%
-Dim NSku
-Dim NInvLin
-Dim Amt@
-Dim Sc#
+                   " select VndShtNm,InvNo,Whs,Dte,Sc,Amt from [#IInvH]'"
+WRun "Alter Table [#IInvD] add column InvH Long"
+WRun "Update [#IInvD] x inner join [YMInvH] a on x.VndShtNm=a.VndShtNm and x.InvNo=a.InvNo set x.InvH=a.InvH"
+WRun "insert into [YMInvD] (InvH,Sku,Sc,Amt)" & _
+                   " select InvH,Sku,Sc,Amt from [#IInvD]'"
+Dim Q$
+    Q = FmtQQ("Select IR_Fx, IR_FxSz, IR_FxTim, IR_Sc, IR_Amt, IR_NInv, IR_NInvLin, IR_NSku, IR_LoadDte from YM where Y=? and M=?", Y, M)
+
+RsUpdDr SqlRs(Q), TmpInvHD_IRDr(A)
+End Sub
+
+Function IRDrLy(A()) As String()
+Dim Fx$, Sz&, Tim As Date, Sc#, Amt@, NInv%, NInvLin%
+AyAsg A, Fx, Sz, Tim, Sc, Amt, NInv, NInvLin
+PushSts "[Invoice file] of [time] and [size] with [n-invoices], [n-lines], [total-Sc] and [total-amt] are loaded in [year] and [month]", _
+    Fx, Tim, FfnSz(A), NInv, NInvLin, Round(Sc, 1), Round(Amt, 2), Y + 2000, M
+
+End Function
+
+Function TmpInvHD_IRDr(Fx) As Variant()
+Dim Sz&, Tim As Date, Sc#, Amt@, NInv%, NInvLin%, NSku%
 With WQQRs("Select Count(*), Sum(Amt), Sum(Sc) from [#IInvH]")
     NInv = .Fields(0).Value
     Amt = .Fields(1).Value
     Sc = .Fields(2).Value
     .Close
 End With
-NSku = WqV("Select Count(*) from (Select Distinct Sku from [#IInvD])")
-NInvLin = WqV("Select Count(*) from [#IInvD]")
-With WQQRs("Select IR_Fx, IR_FxSz, IR_FxTim, IR_LoadDte, IR_Sc, IR_Amt, IR_NInv, IR_NSku, IR_NInvLin from YM where Y=? and M=?", Y, M)
-    .Edit
-    !IR_Fx = A
-    !IR_FxSz = FfnSz(A)
-    !IR_FxTim = FfnTim(A)
-    !IR_LoadDte = Now
-    !IR_Sc = Sc
-    !IR_Amt = Amt
-    !IR_NInv = NInv
-    !IR_NInvLin = NInvLin
-    .Update
-    .Close
-End With
-PushSts "[Invoice file] of [time] and [size] with [n-invoices], [n-lines], [total-Sc] and [total-amt] are loaded in [year] and [month]", _
-    IFxInv, FfnTim(A), FfnSz(A), NInv, NInvLin, Round(Sc, 1), Round(Amt, 2), Y + 2000, M
-End Sub
-
+NSku = WQV("Select Count(*) from (Select Distinct Sku from [#IInvD])")
+NInvLin = WQV("Select Count(*) from [#IInvD]")
+TmpInvHD_IRDr = Array(Fx, Sz, Tim, Sc, Amt, NInv, NInvLin, NSku, Now)
+End Function
 Property Get MB52FnSpec$()
 MB52FnSpec = "MB52 " & YYYYxMM & "-??.xls"
 End Property
-Function FilKind_FldPfx$(A As FilKind)
-Dim O$
-Select Case A
-Case EInv:  O = "IR"
-Case EMB52: O = "BegOH"
-Case Else: Stop
-End Select
-FilKind_FldPfx = O
-End Function
-Function KindFx_TSz$(A As FilKind, Fx)
-Dim P$
-P = FilKind_FldPfx(A)
-Dim Tim As Date, Sz&
-With QQSqlRs("Select ?_FxSz, ?_FxTim from YM where ?_Fx='?' and Y=? and M=?", P, P, P, Fx, Y, M)
-    If .EOF Then Exit Function
-    Sz = Nz(.Fields(0).Value, 0)
-    Tim = Nz(.Fields(1).Value, 0)
-End With
-KindFx_TSz = DteDTim(Tim) & "." & Sz
-End Function
-Function InvLoadDTim$()
-InvLoadDTim = FilKind_LoadDTim(EInv)
-End Function
-
-Function MB52LoadDTim$()
-MB52LoadDTim = FilKind_LoadDTim(EMB52)
-End Function
-Function FilKind_LoadDTim$(A As FilKind)
-FilKind_LoadDTim = FilKind_LoadTim(A)
-End Function
-
-Function FilKind_LoadTim(A As FilKind) As Date
-FilKind_LoadTim = QQDTim("Select ?_LoadDte from YM where Y=? and M=?", FilKind_FldPfx(A), Y, M)
-End Function
-
-Function KindFx_IsLoaded(A As FilKind, Fx) As Boolean
-Dim RecTSz$
-RecTSz = KindFx_TSz(A, Fx)
-If FfnTSz(Fx) <> RecTSz Then Exit Function
-PushAy StsM, FfnAlreadyLoadedMsgLy(Fx, FilKind_Str(A), FilKind_LoadDTim(A))
-KindFx_IsLoaded = True
-End Function
-
-Function FilKind_Str$(A As FilKind)
-Select Case A
-Case EInv: FilKind_Str = "Invoices"
-Case EMB52: FilKind_Str = "MB52"
-Case Else: Stop
-End Select
-End Function
-
-Function MB52IsLoaded() As Boolean
-MB52IsLoaded = KindFx_IsLoaded(EMB52, IFxMB52)
-End Function
-
-Function InvIsLoaded() As Boolean
-InvIsLoaded = KindFx_IsLoaded(EInv, IFxInv)
-End Function
+Property Get IniMB52FnSpec$()
+IniMB52FnSpec = "MB52 " & IniPrvYYYYxMM & "-??.xls"
+End Property
 
 Sub LoadMB52(Optional IsForceLoad As Boolean)
 If Not IsForceLoad Then
-    If MB52IsLoaded Then Exit Sub
+    If IsLd_xMB52 Then Exit Sub
 End If
-
-'#IMB52 is imported
+'#IMB52 is imported into YMTbl and OHTbl
 'Import into YMOH & Update YM
 WDrp "#OH"
 WRun "Select Distinct Sku,Whs,Sum(x.QUnRes+x.QInsp+x.QBlk) as OH into [#OH] from [#IMB52] x group by Sku,Whs"
-WRun "Alter Table [#OH] add column Sc_U double, Sc double"
-WRun "Update [#OH] x inner join [#IUom] a on x.Sku=a.Sku and x.Whs=a.Whs set x.Sc_U=a.Sc_U"
-WRun "Update [#OH] set Sc = OH / Sc_U where Sc_U is not null and Sc_U<>0"
 '
 WQQ "Delete from [YMOH] where Y=? and M=?", Y, M
 WQQ "Insert into [YMOH] (Y,M,Sku,Whs,OH) select ?,?,Sku,Whs,OH from [#OH]", Y, M
@@ -348,20 +301,17 @@ Dim A$
     A = IFxMB52
     Tim = FfnTim(A)
     Sz = FfnSz(A)
-    NRec = DbqV(W, "Select Count(*) from [#IMB52]")
+    NRec = WQQV("Select Count(*) from [#IMB52]")
     Sc = DbqV(W, "Select Sum(Sc) from [#OH]")
     OH = DbqV(W, "Select Sum(OH) from [#OH]")
     NSku = DbqV(W, "Select Count(*) from (Select Distinct Sku From [#OH])")
 
-With WQQRs("Select BegOH_Fx, BegOH_FxSz, BegOH_FxTim, BegOH_NRec, BegOH_LoadDte, BegOH_Sc, BegOH_Amt, BegOH_NSku from YM where Y=? and M=?", Y, M)
+With WQQRs("Select EndOH_Fx, EndOH_FxSz, EndOH_FxTim, EndOH_NRec, EndOH_LoadDte, EndOH_Sc, EndOH_Amt, EndOH_NSku from YM where Y=? and M=?", Y, M)
     .Edit
-    !BegOH_Fx = A
-    !BegOH_FxSz = FfnSz(A)
-    !BegOH_FxTim = FfnTim(A)
-    !BegOH_NRec = NRec
-    !BegOH_NSku = NSku
-    !BegOH_Sc = Sc
-    !BegOH_LoadDte = Now
+    !EndOH_Fx = A
+    !EndOH_FxSz = FfnSz(A)
+    !EndOH_FxTim = FfnTim(A)
+    !EndOH_LoadDte = Now
     .Update
     .Close
 End With
@@ -375,21 +325,26 @@ End Function
 Property Get IFxMB52$()
 IFxMB52 = AyMax(MB52y)
 End Property
+Property Get IFxIniMB52$()
+IFxIniMB52 = AyMax(IniMB52y)
+End Property
+Property Get IFxIniRate$()
+IFxIniRate = PnmFfn("ZHT1")
+End Property
 Property Get MB52y() As String()
 Dim P$
 P = MB52Pth
 MB52y = AyAddPfx(MB52yWhYM(PthFnAy(P, MB52FnSpec)), P)
 End Property
+Property Get IniMB52y() As String()
+Dim P$
+P = MB52Pth
+IniMB52y = AyAddPfx(MB52yWhYM(PthFnAy(P, IniMB52FnSpec)), P)
+End Property
 Property Get MB52Pth$()
 MB52Pth = PthEnsSfx(PnmVal("MB52Pth")) & 2000 + Y & "\"
 End Property
 
-Function MB52TSz$(A)
-MB52TSz = KindFx_TSz$(EMB52, A)
-End Function
-Function InvTSz$(A)
-InvTSz = KindFx_TSz(EInv, A)
-End Function
 
 Sub Rpt()
 'The @Main is the detail of showing how NxtMth YMRate is calculate
@@ -398,18 +353,25 @@ WIni
 If ChkFil Then Exit Sub
 Lnk
 If ChkCol Then Exit Sub
+Dim IsForceLoad As Boolean
+IsForceLoad = True
 Import
-LoadIniMB52
-LoadIniRate
-LoadMB52
-LoadInv
+LoadIniMB52 IsForceLoad
+LoadIniRate IsForceLoad
+LoadMB52 IsForceLoad
+LoadInv IsForceLoad
+LoadRate
+Stop
 Tmp
 Oup
 Upd
 Gen
 WCls
 End Sub
-Sub LoadIniMB52()
+Sub LoadIniMB52(Optional IsForceLoad As Boolean)
+If Not IsForceLoad Then
+    If IsLd_xIniMB52 Then Exit Sub
+End If
 If Not IsFstYM Then Exit Sub
 Stop '
 End Sub
@@ -586,8 +548,15 @@ WQQ "Update [?] x inner join [$Rate] a on x.Whs=a.Whs and x.M32=a.ZHT1 set x.Rat
 WQQ "Update [?] Set Z2=Left(ZHT1,2), Z5=Left(ZHT1,5), Z8=Left(ZHT1,8) where not ZHT1 is null", A
 End Sub
 
-Sub LoadIniRate()
+Sub LoadIniRate(Optional IsForceLoad As Boolean)
 If Not IsFstYM Then Exit Sub
+If Not IsForceLoad Then
+    If IsLd_xIniRate Then
+        Dim Kind$
+        AyDmp FfnAlreadyLoadedMsgLy(IFxIniRate, Kind, LdDTim_xIniRate)
+        Exit Sub
+    End If
+End If
 WDrp "#Cpy1 #Cpy2 #Cpy"
 WRun "Select '8701' as Whs,x.* into [#Cpy1] from [#IZHT18701] x"
 WRun "Select '8601' as Whs,x.* into [#Cpy2] from [#IZHT18601] x"
@@ -603,10 +572,20 @@ WRun "Update [#Cpy] Set" & _
 WQQ "Delete * from [#Cpy]" & _
 " Where not #?# between FmDte and ToDte", YYYYxMM & "-01"
 
-WQQ "Delete from [YMRate] where Y=? and M=?", Y, M
-WQQ "Insert into [YMRate] (Y,M,ZHT1,Whs,RateSc,FmDte,ToDte) select ?,?,ZHT1,Whs,RateSc,FmDte,ToDte from [#Cpy]", Y, M
+WRun "Delete * from [IniRate]"
+WRun "Insert into [IniRate] (ZHT1,Whs,RateSc,FmDte,ToDte) select ZHT1,Whs,RateSc,FmDte,ToDte from [#Cpy]"
 
-TmpRate_Upd_YM "#Cpy"
+Dim A$
+A = IFxIniRate
+With W.OpenRecordset("Select IniRate_Fx, IniRate_FxSz, IniRate_FxTim, IniRate_LoadDte from [IniYM]")
+    .Edit
+    !IniRate_Fx = A
+    !IniRate_FxSz = FfnSz(A)
+    !IniRate_FxTim = FfnTim(A)
+    !IniRate_LoadDte = Now
+    .Update
+    .Close
+End With
 WDrp "#Cpy #Cpy1 #Cpy2"
 End Sub
 
@@ -618,26 +597,6 @@ Sub IFxRateOpn()
 FxOpn IFxRate
 End Sub
 
-Sub TmpRate_Upd_YM(A$)
-Dim Avg#, Max#, Min#, NRec%
-With WQQRs("Select Avg(RateSc) as [Avg], Max(RateSc) as [Max], Min(RateSc) as [Min], Count(*) as NRec from [?]", A)
-    Avg = !Avg
-    Max = !Max
-    Min = !Min
-    NRec = !NRec
-    .Close
-End With
-With QQSqlRs("Select RateSc_Avg,RateSc_Max,RateSc_Min,RateSc_NRec,RateSc_LoadDte from [YM] where Y=? and M=?", Y, M)
-    .Edit
-    !RateSc_Avg = Avg
-    !RateSc_Max = Max
-    !RateSc_Min = Min
-    !RateSc_NRec = NRec
-    !RateSc_LoadDte = Now
-    .Update
-    .Close
-End With
-End Sub
 Sub DbtAddPfx(A As Database, T, Pfx)
 DbtRen A, T, Pfx & T
 End Sub
@@ -647,8 +606,8 @@ Sub LnkCcm()
 'This N:\ table is dup in currentdb as ^xxx CcmTny
 'When in development, each currentdb ^xxx is require to create a xxx table as linking to ^xxx
 'When in N:\SAPAccessReports\ is avaiable, ^xxx is require to link to data-db as in Des
+DrpLnkTbl
 If IsDev Then
-    Stop
     LnkCcmLcl
 Else
     LnkCcmNDrive

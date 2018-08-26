@@ -24,6 +24,13 @@ Const PSep$ = " "
 Const PSep1$ = " "
 Public StsM$()
 Public ErrM$()
+Sub MapNDrive()
+RmvNDrive
+Shell "Subst N: c:\users\user\desktop\MHD"
+End Sub
+Sub RmvNDrive()
+Shell "Subst /d N:"
+End Sub
 Function EAppStr_DtaFb$(A)
 Dim App As EApp
 If Not IsEAppStr(A) Then Exit Function
@@ -41,8 +48,11 @@ Case _
 IsEAppStr = True
 End Select
 End Function
+Function AppRoot$()
+AppRoot = "N:\SAPAccessReports\"
+End Function
 Function AppHom$()
-AppHom = "N:\SAPAccessReports\"
+AppHom = AppRoot & Apn & "\"
 End Function
 Function EAppFdr$(A As EApp)
 Dim O$
@@ -66,7 +76,7 @@ End Select
 EAppDtaFn = O
 End Function
 Function EAppPth$(A As EApp)
-EAppPth = AppHom & EAppFdr(A) & "\"
+EAppPth = AppRoot & EAppFdr(A) & "\"
 End Function
 Function EAppDtaFb$(A As EApp)
 EAppDtaFb = EAppPth(A) & EAppDtaFn(A)
@@ -110,9 +120,12 @@ End Sub
 Function DbCcmTny(A As Database) As String()
 DbCcmTny = AyWhHasPfx(DbTny(A), "^")
 End Function
+Property Get CurDbCnSy() As String()
+CurDbCnSy = DbCnSy(CurrentDb)
+End Property
 
 Property Get CnSy() As String()
-CnSy = DbCnSy(CurrentDb)
+CnSy = CurDbCnSy
 End Property
 Function AyabNonEmpBLy(A, B, Optional Sep$ = " ") As String()
 Dim J&, O$()
@@ -179,25 +192,22 @@ End Function
 Function LoNm_FmtVbl$(A)
 LoNm_FmtVbl = JnVBar(ApSy(LoNm_XXXVbl("*", "Fmt"), LoNm_XXXVbl(A, "Fmt")))
 End Function
+
 Function QQRs(QQSql, ParamArray Ap()) As DAO.Recordset
 Dim Av(): Av = Ap
-Set QQRs = DbqqvRs(CurrentDb, QQSql, Av)
+Set QQRs = DbqRs(CurrentDb, FmtQQAv(QQSql, Av))
 End Function
+
 Function QQV(QQSql, ParamArray Ap())
 Dim Av(): Av = Ap
-QQV = DbqqvV(CurrentDb, QQSql, Av)
-End Function
-Function DbqqvV(A As Database, QQSql, Av())
-DbqqvV = DbqV(A, FmtQQAv(QQSql, Av))
+QQV = DbqV(CurrentDb, FmtQQAv(QQSql, Av))
 End Function
 
 Function DbqqRs(A As Database, QQSql, ParamArray Ap()) As DAO.Recordset
 Dim Av(): Av = Ap
 Set DbqqRs = SqlRs(FmtQQAv(QQSql, Av))
 End Function
-Function DbqqvRs(A As Database, QQSql, Av()) As DAO.Recordset
-Set DbqqvRs = DbqRs(A, FmtQQAv(QQSql, Av))
-End Function
+
 Function LoNm_TblNm$(A)
 If Not HasPfx(A, "T_") Then Stop
 LoNm_TblNm = "@" & Mid(A, 3)
@@ -323,9 +333,6 @@ With O
 End With
 Set DaoTbl = O
 End Function
-Sub AAA()
-ZZ_DbtfAddExpr
-End Sub
 Sub ZZ_DbtfAddExpr()
 TblDrp "Tmp"
 Dim A As DAO.TableDef
@@ -426,6 +433,10 @@ Sub QQRun(QQSql, ParamArray Ap())
 Dim Av(): Av = Ap
 DoCmd.RunSQL FmtQQAv(QQSql, Av)
 End Sub
+Function QQAny(QQSql, ParamArray Ap()) As Boolean
+Dim Av(): Av = Ap
+QQAny = SqlAny(FmtQQAv(QQSql, Av))
+End Function
 Sub WtfAddExpr(T, F, Expr$)
 DbtfAddExpr W, T, F, Expr
 End Sub
@@ -619,11 +630,14 @@ Next
 NyAv_Lin = Join(AyAddPfx(O, " | "))
 End Function
 Function EnsSfxDot$(A)
-If LasChr(A) <> "." Then
-    EnsSfxDot = A & "."
-Else
-    EnsSfxDot = A
-End If
+EnsSfxDot = EnsSfx(A, ".")
+End Function
+Function EnsSfxSC$(A)
+EnsSfxSC = EnsSfx(A, ";")
+End Function
+Function EnsSfx$(A, Sfx$)
+If HasSfx(A, Sfx) Then EnsSfx = A: Exit Function
+EnsSfx = A & Sfx
 End Function
 Function NmV_Ly(Nm$, V) As String()
 Dim O$(), S$, J%
@@ -709,8 +723,7 @@ Sub MsgAv_Brw(A$, Av())
 AyBrw MsgAv_Ly(A, Av)
 End Sub
 Sub MsgAp_BrwStop(A$, ParamArray Ap())
-Dim Av():
-Av = Ap
+Dim Av(): Av = Ap
 MsgAv_Brw A, Av
 Stop
 End Sub
@@ -1177,7 +1190,7 @@ Sub FrmSetCmdNotTabStop(A As Access.Form)
 ItrDo A.Controls, "CmdTurnOffTabStop"
 End Sub
 Function FxAdoCnStr$(A)
-FxAdoCnStr = FmtQQ("Provider=Microsoft.ACE.OLEDB.16.0;Data Source=?;Extended Properties=""Excel 12.0;HDR=YES""", A)
+FxAdoCnStr = FmtQQ("Provider=Microsoft.ACE.OLEDB.16.0;Data Source=?;Extended Properties=""Excel 12.0 Xml;HDR=YES;IMEX=1""", A)
 End Function
 Function FxOleCnStr$(A)
 FxOleCnStr = "OLEDb;" & FxAdoCnStr(A)
@@ -1276,8 +1289,16 @@ Sub PushNoDup(A, M)
 If AyHas(A, M) Then Exit Sub
 Push A, M
 End Sub
+Sub ZZ_FxWsNy()
+Const Fx$ = "Users\user\Desktop\Invoices 2018-02.xlsx"
+D FxWsNy(Fx)
+
+End Sub
 Function FxWsNy(A) As String()
-FxWsNy = AyDist(AyTakBefOrAll(CatTny(FxCat(A)), "$"))
+Dim T$(), C As Catalog
+Set C = FxCat(A)
+T = CatTny(C)
+FxWsNy = AyDist(AyTakBefOrAll(T, "$"))
 End Function
 Function FxHasWs(A, WsNm$) As Boolean
 FxHasWs = AyHas(FxWsNy(A), WsNm)
@@ -1625,6 +1646,7 @@ Static X As Boolean, Y As Access.Application
 On Error GoTo X
 If X Then
     Set Y = New Access.Application
+    Y.Visible = True
     X = True
 End If
 If Y.Application.Name = "Microsoft Access" Then
@@ -1633,6 +1655,7 @@ If Y.Application.Name = "Microsoft Access" Then
 End If
 X:
     Set Y = New Access.Application
+    Y.Visible = True
     Debug.Print "Acs: New Acs instance is crreated."
 Set Acs = Y
 End Function
@@ -1801,7 +1824,7 @@ For Each I In A
 Next
 Stop
 End Function
-Function ObjPrp(A, PrpNm$)
+Function ObjPrp(A, PrpNm)
 On Error GoTo X
 Dim V
 V = CallByName(A, PrpNm, VbGet)
@@ -2214,11 +2237,7 @@ Sub PthBrw(A)
 Shell FmtQQ("Explorer ""?""", A), vbMaximizedFocus
 End Sub
 Function PthEnsSfx$(A)
-If Right(A, 1) <> "\" Then
-    PthEnsSfx = A & "\"
-Else
-    PthEnsSfx = A
-End If
+PthEnsSfx = EnsSfx(A, "\")
 End Function
 Function ItrNy(A) As String()
 Dim O$(), I
@@ -2289,11 +2308,6 @@ Const S$ = "SELECT qSku.*" & _
 " FROM [N:\SAPAccessReports\DutyPrepay5\DutyPrepay5 (With Import).accdb].[qSku] AS qSku;"
 AyBrw RsCsvLy(SqlRs(S))
 End Sub
-Function QQSqlRs(A, ParamArray Ap()) As DAO.Recordset
-Dim Av()
-Av = Ap
-Set QQSqlRs = SqlRs(FmtQQAv(A, Av))
-End Function
 
 Function SqlRs(A) As DAO.Recordset
 Set SqlRs = CurrentDb.OpenRecordset(A)
@@ -3065,17 +3079,31 @@ End Function
 Function DbNm$(A As Database)
 DbNm = ObjNm(A)
 End Function
+
 Function DbtHasLnk(A As Database, T, S$, Cn$)
 Dim I As DAO.TableDef
 For Each I In A.TableDefs
     If I.Name = T Then
+    Stop
         If I.SourceTableName <> S Then Exit Function
-        If I.Connect <> Cn Then Exit Function
+        If EnsSfxSC(I.Connect) <> EnsSfxSC(Cn) Then Exit Function
         DbtHasLnk = True
         Exit Function
     End If
 Next
 End Function
+Sub CrtDtaFb()
+If IsDev Then Exit Sub
+If FfnIsExist(DtaFb) Then Exit Sub
+FbCrt DtaFb
+Dim Src, Tar$, TarFb$
+TarFb = DtaFb
+For Each Src In CcmTny
+    Tar = Mid(Src, 2)
+    Application.DoCmd.CopyObject TarFb, Tar, acTable, Src
+    Debug.Print MsgLin("CrtDtaFb: Cpy [Src] to [Tar]", Src, Tar)
+Next
+End Sub
 Function MsgLin$(A$, ParamArray Ap())
 Dim Av(): Av = Ap
 MsgLin = MsgAv_Lin(A, Av)
@@ -3084,7 +3112,7 @@ Sub DbtLnk(A As Database, T, S$, Cn$)
 On Error GoTo X
 Dim TT As New DAO.TableDef
 If DbtHasLnk(A, T, S, Cn) Then
-    Debug.Print MsgLin("DbtLnk: [Tbl] has same [Src] in [Db]", T, S, DbNm(A))
+    'Debug.Print MsgLin("DbtLnk: [Tbl] has same [Src] & [Cn] in [Db]", T, S, Cn, DbNm(A))
     Exit Sub
 End If
 DbtDrp A, T
@@ -3093,7 +3121,7 @@ With TT
     .Name = T
     .SourceTableName = S
     A.TableDefs.Append TT
-    Debug.Print MsgLin("DbtLnk: [Tbl] has linked to [Src] in [Db] with [Cn]", T, S, DbNm(A), Cn)
+    'Debug.Print MsgLin("DbtLnk: [Tbl] has linked to [Src] in [Db] with [Cn]", T, S, DbNm(A), Cn)
 End With
 Exit Sub
 X:
@@ -3140,9 +3168,9 @@ Function DbtRg(A As Database, T$, At As Range) As Range
 Set DbtRg = SqRg(DbtSq(A, T), At)
 End Function
 Function AyAddAp(ParamArray Ap())
-Dim Av(), O, J%
+Dim Av(): Av = Ap
+Dim O, J%
 O = Ap(0)
-Av = Ap
 For J = 1 To UB(Av)
     PushAy O, Av(J)
 Next
@@ -3238,6 +3266,9 @@ For Each I In A
     Run DoXPNm, I, P
 Next
 End Sub
+Function IsProd() As Boolean
+IsProd = Not IsDev
+End Function
 Function IsDev() As Boolean
 Static X As Boolean, Y As Boolean
 If Not X Then
@@ -3260,8 +3291,7 @@ Sub TpRfh()
 WbVis WbRfh(TpWb)
 End Sub
 Sub OupFx_Gen(OupFx$, Fb$, ParamArray WbFmtrAp())
-Dim Av()
-Av = WbFmtrAp
+Dim Av(): Av = WbFmtrAp
 TpWrtFfn OupFx
 WbFmt FxRfh(OupFx, Fb), Av
 End Sub
@@ -3280,8 +3310,7 @@ End If
 WbMax(WbVis(A)).Save
 End Sub
 Sub TpGenFx(TpFx$, OupFx$, Fb$, ParamArray WbFmtrAp())
-Dim Av()
-Av = WbFmtrAp
+Dim Av(): Av = WbFmtrAp
 FfnCpy TpFx, OupFx
 WbFmt FxRfh(OupFx, Fb), Av
 End Sub
@@ -4030,8 +4059,7 @@ Function SqlLng&(A)
 SqlLng = DbqLng(CurrentDb, A)
 End Function
 Function QQSqlV(A, ParamArray Ap())
-Dim Av()
-Av = Ap
+Dim Av(): Av = Ap
 QQSqlV = SqlV(FmtQQAv(A, Av))
 End Function
 Function SqlV(A)
@@ -4371,6 +4399,12 @@ xx:
     X = True
     GoTo Beg
 End Function
+Sub AcsQuit()
+Dim A As Access.Application
+Set A = Acs
+A.Quit
+Set A = Nothing
+End Sub
 Function DbtPutAtByCn(A As Database, T$, At As Range, Optional LoNm0$) As ListObject
 If FstChr(T) <> "@" Then Stop
 Dim LoNm$, Lo As ListObject
@@ -4553,7 +4587,7 @@ End Function
 Sub ZZ_FmtQQAv()
 Debug.Print FmtQQ("klsdf?sdf?dsklf", 2, 1)
 End Sub
-Function FmtQQAv$(QQVbl, Av)
+Function FmtQQAv$(QQVbl, Av())
 Dim O$, I, Cnt
 O = Replace(QQVbl, "|", vbCrLf)
 Cnt = SubStrCnt(QQVbl, "?")
@@ -4841,7 +4875,7 @@ If AyIsEmpty(Dry) Then Exit Function
 Dim O$()
 Dim Dr
 For Each Dr In Dry
-    Push O, FmtQQAv(QQStr, Dr)
+    Push O, FmtQQAv(QQStr, CvAv(Dr))
 Next
 SqlQQStr_Sy = O
 End Function
@@ -5229,8 +5263,7 @@ Function SqWs(A) As Worksheet
 Set SqWs = LoWs(SqLo(A))
 End Function
 Sub QQ(QQSql, ParamArray Ap())
-Dim Av()
-Av = Ap
+Dim Av(): Av = Ap
 CurrentDb.Execute FmtQQAv(QQSql, Av)
 End Sub
 Sub WImpTbl(TT)
@@ -5251,15 +5284,14 @@ WtChkCol = DbtChkCol(W, T, LnkColStr)
 End Function
 
 Function WQQRs(QQSql, ParamArray Ap()) As Recordset
-Dim Av()
-Av = Ap
+Dim Av(): Av = Ap
 Set WQQRs = DbqRs(W, FmtQQAv(QQSql, Av))
 End Function
-Function WqV(Sql)
-WqV = DbqV(W, Sql)
+Function WQV(Sql)
+WQV = DbqV(W, Sql)
 End Function
-Sub WttLnkFb(TT, Fb$)
-DbttLnkFb W, TT, Fb
+Sub WttLnkFb(TT, Fb$, Optional Fbtt)
+DbttLnkFb W, TT, Fb, Fbtt
 End Sub
 
 Sub WQuit()
@@ -5287,10 +5319,16 @@ WKill
 WOpn
 End Sub
 Sub WQQ(A, ParamArray Ap())
-Dim Av()
-Av = Ap
+Dim Av(): Av = Ap
 WRun FmtQQAv(A, Av)
 End Sub
+Function QV(A)
+QV = SqlV(A)
+End Function
+Function WQQV(A, ParamArray Ap())
+Dim Av(): Av = Ap
+WQQV = DbqV(W, FmtQQAv(A, Av))
+End Function
 Sub WtRenCol(T, Fm, NewCol)
 DbtRenCol W, T, Fm, NewCol
 End Sub
@@ -5314,13 +5352,11 @@ Msg = FmtQQ("[?] file of [time] and [size] is already loaded [at].", FilKind)
 FfnAlreadyLoadedMsgLy = MsgAp_Ly(Msg, A, Tim, Sz, LoadTim)
 End Function
 Function QQDTim$(QQSql$, ParamArray Ap())
-Dim Av()
-Av = Ap
+Dim Av(): Av = Ap
 QQDTim = DbqDTim(CurrentDb, FmtQQAv(QQSql, Av))
 End Function
 Function QQTim(QQSql$, ParamArray Ap()) As Date
-Dim Av()
-Av = Ap
+Dim Av(): Av = Ap
 QQTim = DbqTim(CurrentDb, FmtQQAv(QQSql, Av))
 End Function
 Function DbqDTim$(A As Database, Sql)
@@ -5355,4 +5391,94 @@ Else
 End If
 Asg M, O(At)
 AyIns = O
+End Function
+Sub AA()
+Debug.Print TblCnStr("Att")
+End Sub
+Sub BB(A As DAO.TableDef, Optional B, Optional C)
+Debug.Print A.Name, A.Connect
+End Sub
+Function TdHasCnStr(A As DAO.TableDef) As Boolean
+TdHasCnStr = A.Connect <> ""
+End Function
+Property Get CurDbLnkTny() As String()
+CurDbLnkTny = DbLnkTny(CurrentDb)
+End Property
+Property Get LnkTny() As String()
+LnkTny = CurDbLnkTny
+End Property
+Function ItrWhPredPrpAyInto(A, Pred$, P, OInto)
+Dim O: O = OInto
+Erase O
+Dim X
+For Each X In A
+    If Run(Pred, X) Then
+        Push O, ObjPrp(X, P)
+    End If
+Next
+ItrWhPredPrpAyInto = O
+End Function
+Function ItrWhPredPrpAy(A, Pred$, P)
+ItrWhPredPrpAy = ItrWhPredPrpAyInto(A, Pred, P, EmpAy)
+End Function
+Function ItrWhPredPrpSy(A, Pred$, P) As String()
+ItrWhPredPrpSy = ItrWhPredPrpAyInto(A, Pred, P, EmpSy)
+End Function
+Function DbLnkTny(A As Database) As String()
+DbLnkTny = ItrWhPredPrpSy(A.TableDefs, "TdHasCnStr", "Name")
+End Function
+Sub DrpLnkTbl()
+CurDbDrpLnkTbl
+End Sub
+Sub CurDbDrpLnkTbl()
+DbDrpLnkTbl CurrentDb
+End Sub
+Sub DbDrpLnkTbl(A As Database)
+DbttDrp A, DbLnkTny(A)
+End Sub
+Sub RsUpd(A As DAO.Recordset, ParamArray Ap())
+Dim Av(): Av = Ap
+RsUpdDr A, Av
+End Sub
+Sub RsUpdDr(A As DAO.Recordset, Dr())
+Dim J%, V
+With A
+    .Edit
+    For Each V In Dr
+        .Fields(J).Value = V
+        J = J + 1
+    Next
+    .Update
+End With
+End Sub
+Sub AyAsg(A, ParamArray OAp())
+Dim Av(): Av = OAp
+Dim J%
+For J = 0 To UB(Av)
+    Asg A(J), OAp(J)
+Next
+End Sub
+Function NewAcs(Optional Hid As Boolean) As Access.Application
+Dim O As New Access.Application
+If Not Hid Then O.Visible = True
+Set NewAcs = O
+End Function
+Sub BrwDtaFb()
+Acs.OpenCurrentDatabase DtaFb
+End Sub
+Property Get DtaFn$()
+DtaFn = Apn & "_Data.accdb"
+End Property
+Property Get DtaFb$()
+DtaFb = AppHom & DtaFn
+End Property
+Function TfVal(T, F)
+TfVal = DbtfVal(CurrentDb, T, F)
+End Function
+
+Function M_PrvM(M As Byte) As Byte
+M_PrvM = IIf(M = 1, 12, M - 1)
+End Function
+Function YM_YofPrvM(Y As Byte, M As Byte) As Byte
+YM_YofPrvM = IIf(M = 1, Y - 1, Y)
 End Function
