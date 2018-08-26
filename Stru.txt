@@ -1,26 +1,22 @@
 ^CurYM: Y M
-^IniOH: Sku Whs OH
-^IniRate: ZHT1 Whs RateSc FmDte ToDte
-^IniYM: Y M IniOH_Fx IniOH_FxSz IniOH_FxTim IniOH_LoadDte IniRate_Fx IniRate_FxSz IniRate_FxTim IniRate_LoadDte
-^YM: Y M EndOH_Fx EndOH_FxSz EndOH_FxTim EndOH_LoadDte IR_Fx IR_FxSz IR_FxTim IR_LoadDte RateSc_LoadDte
-^InvD: Id InvHId Sku Sc Amt
-^InvH: Id VndShtNm InvNo Whs Dte Sc Amt DteCrt
-^YMOH: Y M Sku Whs OH
-Apn: Apn
-Att: AttNm Att FilTim FilSz
-LoAlignC: LoNm FldLikSsl
-LoFml: LoNm FldNm Fml Seq
-LoFmt: LoNm FldNm Seq Fmt
-Prm: UOMFn UomPth ZHT1Fn ZHT1Pth InvPth MB52Pth InitY
-Prm_C: UOMFn UomPth ZHT1Fn ZHT1Pth MB52Fn MB52Pth
-Prm_N: UOMFn UomPth ZHT1Fn ZHT1Pth MB52Fn MB52Pth
-^YMRate: Y M Sku Whs OH
+^IniRate: ZHT1 Whs | RateSc FmDte ToDte
+^IniRateH: Fx FxSz FxTim LoadDte
+^InvD: InvD | InvH Sku Sc Amt
+^InvH: InvH | VndShtNm InvNo Whs Dte Sc Amt DteCrt
+^YM: Y M | EndOH_Fx EndOH_FxSz EndOH_FxTim EndOH_LoadDte IR_Fx IR_FxSz IR_FxTim IR_LoadDte RateSc_LoadDte
+^YMOH: Y M Sku Whs | OH
+^YMRate: Y M Sku Whs | RateSc
+Apn: Apn | 
+Att: AttNm | Att FilTim FilSz
 CurYM: Y M
-IniOH: Sku Whs OH
-IniRate: ZHT1 Whs RateSc FmDte ToDte
-IniYM: Y M IniOH_Fx IniOH_FxSz IniOH_FxTim IniOH_LoadDte IniRate_Fx IniRate_FxSz IniRate_FxTim IniRate_LoadDte
-YM: Y M EndOH_Fx EndOH_FxSz EndOH_FxTim EndOH_LoadDte IR_Fx IR_FxSz IR_FxTim IR_LoadDte RateSc_LoadDte
-InvD: Id InvHId Sku Sc Amt
-InvH: Id VndShtNm InvNo Whs Dte Sc Amt DteCrt
-YMOH: Y M Sku Whs OH
-YMRate: Y M Sku Whs OH
+IniRate: ZHT1 Whs | RateSc FmDte ToDte
+IniRateH: Fx FxSz FxTim LoadDte
+InvD: InvD | InvH Sku Sc Amt
+InvH: InvH | VndShtNm InvNo Whs Dte Sc Amt DteCrt
+LoAlignC: LoNm FldLikSsl
+LoFml: LoNm FldNm | Fml Seq
+LoFmt: LoNm FldNm | Seq Fmt
+Prm: UOMFn UomPth ZHT1Fn ZHT1Pth InvPth MB52Pth
+YM: Y M | EndOH_Fx EndOH_FxSz EndOH_FxTim EndOH_LoadDte IR_Fx IR_FxSz IR_FxTim IR_LoadDte RateSc_LoadDte
+YMOH: Y M Sku Whs | OH
+YMRate: Y M Sku Whs | RateSc

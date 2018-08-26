@@ -19,6 +19,7 @@ Enum EApp
     ETaxCmp = 5
     ETaxAlert = 6
 End Enum
+Public Q$
 Public W As Database
 Const PSep$ = " "
 Const PSep1$ = " "
@@ -251,9 +252,6 @@ End Sub
 Function DbtpGet(A As Database, T, P)
 If Not DbtHasPrp(A, T, P) Then Exit Function
 DbtpGet = A.TableDefs(T).Properties(P).Value
-End Function
-Function DbtHasPrp(A As Database, T, P) As Boolean
-DbtHasPrp = ItrHasNm(A.TableDefs(T).Properties, P)
 End Function
 Sub DbtpSet(A As Database, T, P, Val)
 If DbtHasPrp(A, T, P) Then
@@ -663,6 +661,7 @@ Case IsPrim(V):   VarLy = ApSy(V)
 Case IsArray(V):  VarLy = AySy(V)
 Case IsObject(V): VarLy = ApSy("*Type: " & TypeName(V))
 Case IsEmpty(V): VarLy = ApSy("*Empty")
+Case IsMissing(V): VarLy = ApSy("*Missing")
 Case Else: Stop
 End Select
 End Function
@@ -2382,12 +2381,6 @@ End Sub
 Function TblFny(A) As String()
 TblFny = DbtFny(CurrentDb, A)
 End Function
-Function DbtFny_zAutoQuote(A As Database, T) As String()
-Dim O$()
-O = DbtFny(A, T)
-If DbtIsXls(A, T) Then O = AyQuoteSqBkt(O)
-DbtFny_zAutoQuote = O
-End Function
 
 Function DbtFny(A As Database, T) As String()
 DbtFny = RsFny(DbtRs(A, T))
@@ -3084,7 +3077,6 @@ Function DbtHasLnk(A As Database, T, S$, Cn$)
 Dim I As DAO.TableDef
 For Each I In A.TableDefs
     If I.Name = T Then
-    Stop
         If I.SourceTableName <> S Then Exit Function
         If EnsSfxSC(I.Connect) <> EnsSfxSC(Cn) Then Exit Function
         DbtHasLnk = True
@@ -3160,6 +3152,9 @@ For Each Lo In A.ListObjects
         Exit Function
     End If
 Next
+End Function
+Function TblPk(T) As String()
+TblPk = DbtPk(CurrentDb, T)
 End Function
 Function TblRg(A$, At As Range) As Range
 Set TblRg = DbtRg(CurrentDb, A, At)
@@ -3842,15 +3837,84 @@ End Function
 Function DbqSy(A As Database, Sql) As String()
 DbqSy = RsSy(A.OpenRecordset(Sql))
 End Function
+Function LinesSrt$(A)
+LinesSrt = JnCrLf(AySrt(LinesSplit(A)))
+End Function
+Function LinesSplit(A) As String()
+LinesSplit = SplitCrLf(A)
+End Function
+Function AySrt(A)
+If Sz(A) = 0 Then Exit Function
+Dim O: O = A
+AyQSrt O, 0, UB(A)
+AySrt = O
+End Function
+Sub ZZ_AySrt()
+Dim A, Exp
+A = Array(9, 2, 4, 3, 4)
+Exp = Array(2, 3, 4, 4, 9)
+GoSub Tst
+Exit Sub
+Tst:
+Dim Act
+Act = AySrt(A)
+Debug.Assert AyIsEq(Act, Exp)
+Return
+End Sub
+Sub AyQSrt(A, L&, H&)
+If L >= H Then Exit Sub
+Dim P&
+P = AyPartition(A, L, H)
+AyQSrt A, L, P
+AyQSrt A, P + 1, H
+End Sub
+Function AyReverse(A)
+Dim O: O = A
+Dim J&, U&
+U = UB(O)
+For J = 0 To U
+    O(J) = A(U - J)
+Next
+AyReverse = O
+End Function
+Function AyPartition&(A, L&, H&)
+Dim V, I&, J&, X
+V = A(L)
+I = L - 1
+J = H + 1
+Dim Z&
+Do
+    Z = Z + 1
+    If Z > 1000 Then Stop
+    Do
+        I = I + 1
+    Loop Until A(I) >= V
+    
+    Do
+        J = J - 1
+    Loop Until A(J) <= V
+
+    If I >= J Then
+        AyPartition = J
+        Exit Function
+    End If
+
+     X = A(I)
+     A(I) = A(J)
+     A(J) = X
+Loop
+End Function
 Function DbStru$(A As Database)
 DbStru = DbttStru(A, DbTny(A))
 End Function
-
+Property Get CurDbTny() As String()
+CurDbTny = DbTny(CurrentDb)
+End Property
 Property Get Tny() As String()
-Tny = DbTny(CurrentDb)
+Tny = CurDbTny
 End Property
 Function DbTny(A As Database) As String()
-DbTny = DbqSy(A, "Select Name from MSysObjects where Type in (1,6) and Name not Like 'MSys*' and Name not Like 'f_????????????????????????????????_*'")
+DbTny = DbqSy(A, "Select Name from MSysObjects where Type in (1,6) and Name not Like 'MSys*' and Name not Like 'f_????????????????????????????????_*' and Name not like '~TMP*'")
 End Function
 Function IsPfx(A$, Pfx$) As Boolean
 IsPfx = Left(A, Len(Pfx)) = Pfx
@@ -4028,16 +4092,17 @@ Function TblCnStr$(T$)
 TblCnStr = CurrentDb.TableDefs(T).Connect
 End Function
 Function AutoExec()
-Debug.Print "-Before LnkCcm: CnSy--------------------------"
-D CnSy
-Debug.Print "-Before LnkCcm: Srcy--------------------------"
-D Srcy
+'D "AutoExec:"
+'D "-Before LnkCcm: CnSy--------------------------"
+'D CnSy
+'D "-Before LnkCcm: Srcy--------------------------"
+'D Srcy
 '
 LnkCcm
-Debug.Print "-After LnkCcm: CnSy--------------------------"
-D CnSy
-Debug.Print "-After LnkCcm: Srcy--------------------------"
-D Srcy
+'D "-After LnkCcm: CnSy--------------------------"
+'D CnSy
+'D "-After LnkCcm: Srcy--------------------------"
+'D Srcy
 End Function
 Function TblSrc$(T$)
 TblSrc = CurrentDb.TableDefs(T).SourceTableName
@@ -4147,21 +4212,55 @@ End Function
 Function AyQuoteSqBkt(A) As String()
 AyQuoteSqBkt = AyQuote(A, "[]")
 End Function
-Function DbtPk(A As Database, T) As String()
+Function ItrWhPrpIsTrueInto(A, P, OInto)
+Dim O: O = OInto: Erase O
+Dim X
+For Each X In A
+    If ObjPrp(A, P) Then
+        Push O, X
+    End If
+Next
+ItrWhPrpIsTrueInto = O
+End Function
 
+Function ItrWhPrpIsTrue(A, P)
+ItrWhPrpIsTrue = ItrWhPrpIsTrueInto(A, P, EmpAy)
+End Function
+
+Function DbtPk(A As Database, T) As String()
+Dim I As DAO.Index
+Set I = DbtPIdx(A, T): If IsNothing(I) Then Exit Function
+DbtPk = ItrNy(I.Fields)
+End Function
+Function DbtPIdx(A As Database, T) As DAO.Index
+Dim O As DAO.Index
+For Each O In A.TableDefs(T).Indexes
+    If O.Primary Then Set DbtPIdx = O: Exit Function
+Next
 End Function
 Function AyQuoteSng(A) As String()
 AyQuoteSng = AyQuote(A, "'")
 End Function
 
 Function DbtStru$(A As Database, T$)
-Dim Ay$()
-Ay = DbtFny_zAutoQuote(A, T)
-DbtStru = T & ": " & JnSpc(Ay)
+Dim F$(), X$(), Y$(), XX$, YY$
+F = DbtFny(A, T)
+If DbtIsXls(A, T) Then
+    F = AyQuoteSqBkt(F)
+    DbtStru = T & ": " & JnSpc(F)
+    Exit Function
+End If
+X = DbtPk(A, T)
+Y = AyMinus(F, X)
+If Sz(X) > 0 Then
+    XX = JnSpc(X) & " | "
+End If
+YY = JnSpc(Y)
+DbtStru = T & ": " & XX & YY
 End Function
 Function DbttStru$(A As Database, TT)
 Dim Tny$(), O$(), J%
-Tny = CvNy(TT)
+Tny = AySrt(CvNy(TT))
 For J = 0 To UB(Tny)
     Push O, DbtStru(A, Tny(J))
 Next
@@ -4389,13 +4488,13 @@ If Not X Then
     X = True
     Set Y = New Excel.Application
 End If
-On Error GoTo xx
+On Error GoTo XX
 Dim A$
 A = Y.Name
 Set Xls = Y
 If Vis Then XlsVis Y
 Exit Function
-xx:
+XX:
     X = True
     GoTo Beg
 End Function
@@ -4563,11 +4662,7 @@ Next
 AyQuote = O
 End Function
 Function FldsDr(A As DAO.Fields) As Variant()
-Dim O(), F As DAO.Field
-For Each F In A
-    Push O, F.Value
-Next
-FldsDr = O
+FldsDr = ItrVy(A)
 End Function
 Function SubStrCnt%(A, SubStr$)
 Dim J&, O%, P%, L%
@@ -5287,6 +5382,9 @@ Function WQQRs(QQSql, ParamArray Ap()) As Recordset
 Dim Av(): Av = Ap
 Set WQQRs = DbqRs(W, FmtQQAv(QQSql, Av))
 End Function
+Function WQRs(Sql)
+Set WQRs = DbqRs(W, Sql)
+End Function
 Function WQV(Sql)
 WQV = DbqV(W, Sql)
 End Function
@@ -5320,7 +5418,7 @@ WOpn
 End Sub
 Sub WQQ(A, ParamArray Ap())
 Dim Av(): Av = Ap
-WRun FmtQQAv(A, Av)
+W.Execute FmtQQAv(A, Av)
 End Sub
 Function QV(A)
 QV = SqlV(A)
@@ -5440,7 +5538,11 @@ Sub RsUpd(A As DAO.Recordset, ParamArray Ap())
 Dim Av(): Av = Ap
 RsUpdDr A, Av
 End Sub
-Sub RsUpdDr(A As DAO.Recordset, Dr())
+Function FfnStamp(A) As Variant()
+FfnStamp = Array(A, FfnSz(A), FfnTim(A), Now)
+End Function
+
+Sub RsUpdDr(A As DAO.Recordset, Dr)
 Dim J%, V
 With A
     .Edit
@@ -5482,3 +5584,189 @@ End Function
 Function YM_YofPrvM(Y As Byte, M As Byte) As Byte
 YM_YofPrvM = IIf(M = 1, Y - 1, Y)
 End Function
+
+Sub AySplit_xInto_T1Ay_RestAy_Asg(A, OT1Ay$(), ORestAy$())
+Dim U&, J&
+U = UB(A)
+If U = -1 Then
+    Erase OT1Ay, ORestAy
+    Exit Sub
+End If
+ReDim OT1Ay(U)
+ReDim ORestAy(U)
+For J = 0 To U
+    BrkAsg A(J), " ", OT1Ay(J), ORestAy(J)
+Next
+End Sub
+Function AyabAdd(A, B, Optional Sep$) As String()
+Dim O$(), J&, U&
+U = UB(A): If U <> UB(B) Then Stop
+If U = -1 Then Exit Function
+ReDim O(U)
+For J = 0 To U
+    O(J) = A(J) & Sep & B(J)
+Next
+AyabAdd = O
+End Function
+Function AyabAddWSpc(A, B) As String()
+AyabAddWSpc = AyabAdd(A, B, " ")
+End Function
+Function AyAlignT1(A) As String()
+Dim T1$(), Rest$()
+    AySplit_xInto_T1Ay_RestAy_Asg A, T1, Rest
+T1 = AyAlignL(T1)
+AyAlignT1 = AyabAddWSpc(T1, Rest)
+End Function
+Sub MsgDmp(A$, ParamArray Ap())
+Dim Av(): Av = Ap
+AyDmp MsgAv_Ly(A, Av)
+End Sub
+Function TblTblDes$(T)
+TblTblDes = T & " " & TblDes(T)
+End Function
+
+Sub TblAddPfx(T, Pfx$)
+DbtAddPfx CurrentDb, T, Pfx
+End Sub
+
+Sub DbttAddPfx(A As Database, TT, Pfx)
+AyDoAXB CvTT(TT), "DbtAddPfx", A, Pfx
+End Sub
+Sub AyDoAXB(Ay, AXB$, A, B)
+If Sz(Ay) = 0 Then Exit Sub
+Dim X
+For Each X In Ay
+    Run AXB, A, X, B
+Next
+End Sub
+Sub TTAddPfx(TT, Pfx$)
+DbttAddPfx CurrentDb, TT, Pfx
+End Sub
+
+Function AyWhPredFalse(A, Pred$)
+Dim O, X
+O = AyCln(A)
+If Sz(A) > 0 Then
+    For Each X In A
+        If Not Run(Pred, X) Then
+            Push O, X
+        End If
+    Next
+End If
+AyWhPredFalse = O
+End Function
+Function AyWhPred(A, Pred$)
+Dim O, X
+O = AyCln(A)
+If Sz(A) > 0 Then
+    For Each X In A
+        If Run(Pred, X) Then
+            Push O, X
+        End If
+    Next
+End If
+AyWhPred = O
+End Function
+
+
+Sub DbtAddPfx(A As Database, T, Pfx)
+DbtRen A, T, Pfx & T
+End Sub
+Sub LnkCcm()
+'Ccm is stand for Space-[C]ir[c]umflex-accent
+'Develop in local, some N:\ table is needed to be in currentdb.
+'This N:\ table is dup in currentdb as ^xxx CcmTny
+'When in development, each currentdb ^xxx is require to create a xxx table as linking to ^xxx
+'When in N:\SAPAccessReports\ is avaiable, ^xxx is require to link to data-db as in Des
+DrpLnkTbl
+If IsDev Then
+    LnkCcmLcl
+Else
+    LnkCcmNDrive
+End If
+End Sub
+Sub LnkCcmLcl()
+AyDo CcmTny, "CcmTbl_LnkLcl"
+End Sub
+Property Get ErCcmTny() As String()
+ErCcmTny = AyWhPredFalse(CcmTny, "CcmTbl_IsVdt")
+End Property
+Property Get VdtCcmTny() As String()
+VdtCcmTny = AyWhPred(CcmTny, "CcmTbl_IsVdt")
+End Property
+Property Get TblDes$(T)
+TblDes = DbtDes(CurrentDb, T)
+End Property
+Property Let TblDes(T, Des$)
+DbtDes(CurrentDb, T) = Des
+End Property
+Property Let DbtDes(A As Database, T, Des$)
+TblSetPrp T, "Description", Des
+End Property
+Sub TblSetPrp(T, P, V)
+DbtSetPrp CurrentDb, T, P, V
+End Sub
+Function DbtHasPrp(A As Database, T, P) As Boolean
+DbtHasPrp = ItrHasNm(A.TableDefs(T).Properties, P)
+End Function
+Sub DbtSetPrp(A As Database, T, P, V)
+If DbtHasPrp(A, T, P) Then
+    A.TableDefs(T).Properties(P).Value = V
+Else
+    A.TableDefs(T).Properties.Append DbtCrtPrp(A, T, P, V)
+End If
+End Sub
+Function DbtCrtPrp(A As Database, T, P, V) As DAO.Property
+Set DbtCrtPrp = A.TableDefs(T).CreateProperty(P, VarDaoTy(V), V)
+End Function
+Property Get DbtDes$(A As Database, T)
+DbtDes = DbtPrp(A, T, "Description")
+End Property
+Function DbtPrp(A As Database, T, P)
+If Not DbtHasPrp(A, T, P) Then Exit Function
+DbtPrp = A.TableDefs(T).Properties(P).Value
+End Function
+Function CcmTbl_IsVdt(A$) As Boolean
+Dim D$, App As EApp, DtaFb$
+D = TblDes(A)
+If Not IsEAppStr(D) Then Exit Function
+App = EAppStr_EApp(D)
+DtaFb = EAppDtaFb(App)
+If Not FfnIsExist(DtaFb) Then Exit Function
+CcmTbl_IsVdt = True
+End Function
+
+Sub CcmTbl_LnkNDrive(A)
+Dim EAppStr$, DtaFb$
+EAppStr = TblDes(A)
+DtaFb = EAppStr_DtaFb(EAppStr)
+DbttLnkFb CurrentDb, Mid(A, 2), DtaFb, Mid(A, 2)
+End Sub
+
+Sub CcmTbl_LnkLcl(A)
+If FstChr(A) <> "^" Then Stop
+Dim T$
+T = Mid(A, 2)
+DbttLnkFb CurrentDb, T, CurrentDb.Name, A
+End Sub
+
+Sub LnkCcmNDrive()
+Dim Vdt$(), Er$(), Av()
+Av = AyPredSplit(CcmTny, "CcmTbl_IsVdt")
+Vdt = Av(0)
+Er = Av(1)
+If Sz(Er) > 0 Then
+    MsgBrw "These [table-des] are not pointing to a data fb", AyAlignT1(AyMap(Er, "TblTblDes"))
+End If
+AyDo Vdt, "CcmTbl_LnkNDrive"
+MsgDmp "These [tables] are linked to data fb", AyMap(Vdt, "TblTblDes")
+End Sub
+
+Function AyMap(A, Map$)
+AyMap = AyMapInto(A, Map, EmpAy)
+End Function
+
+Sub MsgBrw(Msg$, ParamArray Ap())
+Dim Av(): Av = Ap
+MsgAv_Brw Msg, Av
+End Sub
