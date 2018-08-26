@@ -14,7 +14,8 @@ End Property
 Function FxLdTSz$(A, FldPfx$)
 Dim P$
 P = FldPfx
-FxLdTSz = RsTSz(QQRs("Select ?_FxTim,?_FxSz from YM where ?_Fx='?' and Y=? and M=?", P, P, P, A, Y, M))
+Q = FmtQQ("Select ?_FxTim,?_FxSz from YM where ?_Fx='?' and Y=? and M=?", P, P, P, A, Y, M)
+FxLdTSz = RsTSz(W.OpenRecordset(Q))
 End Function
 Function IniFx_LdTSz$(A, FldPfx$)
 Dim P$

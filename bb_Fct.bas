@@ -204,11 +204,6 @@ Dim Av(): Av = Ap
 QQV = DbqV(CurrentDb, FmtQQAv(QQSql, Av))
 End Function
 
-Function DbqqRs(A As Database, QQSql, ParamArray Ap()) As DAO.Recordset
-Dim Av(): Av = Ap
-Set DbqqRs = SqlRs(FmtQQAv(QQSql, Av))
-End Function
-
 Function LoNm_TblNm$(A)
 If Not HasPfx(A, "T_") Then Stop
 LoNm_TblNm = "@" & Mid(A, 3)
@@ -309,16 +304,24 @@ End Function
 Sub DbtfAddExpr(A As Database, T, F, Expr$, Optional Ty As DAO.DataTypeEnum = dbText, Optional TxtSz% = 255)
 A.TableDefs(T).Fields.Append DaoFld(F, Ty, TxtSz, Expr)
 End Sub
-Function DaoFld(F, Optional Ty As DAO.DataTypeEnum = dbText, Optional TxtSz% = 255, Optional Expr$) As DAO.Field2
+Function DaoFld(F, Optional Ty As DAO.DataTypeEnum = dbText, Optional TxtSz% = 255, Optional Expr$, Optional IsId As Boolean, Optional Dft$) As DAO.Field2
 Dim O As New DAO.Field
 With O
     .Name = F
-    .Type = Ty
-    If Ty = dbText Then
-        .Size = TxtSz
-    End If
-    If Expr <> "" Then
-        CvFld2(O).Expression = Expr
+    If IsId Then
+        .Type = dbLong
+        .Attributes = DAO.FieldAttributeEnum.dbAutoIncrField
+    Else
+        .Type = Ty
+        If Ty = dbText Then
+            .Size = TxtSz
+        End If
+        If Expr <> "" Then
+            CvFld2(O).Expression = Expr
+        End If
+        If Dft <> "" Then
+            O.DefaultValue = Dft
+        End If
     End If
 End With
 Set DaoFld = O
@@ -654,13 +657,17 @@ End Function
 Function NmV_Lin$(Nm$, V)
 NmV_Lin = Nm & "=[" & VarLin(V) & "]"
 End Function
+Function VarLines$(V)
+VarLines = JnCrLf(VarLy(V))
+End Function
 
 Function VarLy(V) As String()
 Select Case True
-Case IsPrim(V):   VarLy = ApSy(V)
-Case IsArray(V):  VarLy = AySy(V)
-Case IsObject(V): VarLy = ApSy("*Type: " & TypeName(V))
-Case IsEmpty(V): VarLy = ApSy("*Empty")
+Case IsStr(V):     VarLy = SplitCrLf(V)
+Case IsPrim(V):    VarLy = ApSy(V)
+Case IsArray(V):   VarLy = AySy(V)
+Case IsObject(V):  VarLy = ApSy("*Type: " & TypeName(V))
+Case IsEmpty(V):   VarLy = ApSy("*Empty")
 Case IsMissing(V): VarLy = ApSy("*Missing")
 Case Else: Stop
 End Select
@@ -1636,6 +1643,9 @@ Sub SavRec()
 DoCmd.RunCommand acCmdSaveRecord
 End Sub
 
+Function DbqSy(A As Database, Sql) As String()
+DbqSy = RsSy(A.OpenRecordset(Sql))
+End Function
 Function DbqRs(A As Database, Sql) As DAO.Recordset
 Set DbqRs = A.OpenRecordset(Sql)
 End Function
@@ -2036,6 +2046,8 @@ AySy = ItrAy(A, EmpSy)
 End Function
 Function EmpSy() As String()
 End Function
+Function EmpLngAy() As Long()
+End Function
 Function EmpAy() As Variant()
 End Function
 Sub TpMinLo()
@@ -2281,18 +2293,29 @@ End Function
 Private Sub ZZ_TblFny()
 AyDmp TblFny(">KE24")
 End Sub
-Function RsSy(A As DAO.Recordset, Optional FldNm$) As String()
-Dim O$(), Ix
+Function RsAy(A As DAO.Recordset, Optional FldNm$) As Variant()
+RsAy = RsAyInto(A, FldNm, EmpAy)
+End Function
+Function RsAyInto(A As DAO.Recordset, FldNm$, OInto)
+Dim O: O = OInto: Erase O
+Dim Ix
 Ix = IIf(FldNm = "", 0, FldNm)
 With A
-    If .EOF Then Exit Function
+    If .EOF Then RsAyInto = O: Exit Function
     .MoveFirst
     While Not .EOF
         Push O, .Fields(Ix).Value
         .MoveNext
     Wend
+    .Close
 End With
-RsSy = O
+RsAyInto = O
+End Function
+Function RsSy(A As DAO.Recordset, Optional FldNm$) As String()
+RsSy = RsAyInto(A, FldNm, EmpSy)
+End Function
+Function RsLngAy(A As DAO.Recordset, Optional FldNm$) As Long()
+RsLngAy = RsAyInto(A, FldNm, EmpLngAy)
 End Function
 Sub ZZ_SqlFny()
 Const S$ = "SELECT qSku.*" & _
@@ -2326,6 +2349,9 @@ SqpzInBExpr = FmtQQ(C, FldNm, B)
 End Function
 Function SqlSy(A) As String()
 SqlSy = DbqSy(CurrentDb, A)
+End Function
+Function SqlLngAy(A) As Long()
+SqlLngAy = DbqLngAy(CurrentDb, A)
 End Function
 Function AyAdd(A, B)
 Dim O
@@ -3834,8 +3860,23 @@ AyDoPPXP CvTT(TT), "WbAddDbt", A, Db, UseWc
 Set WbAddDbtt = A
 End Function
 
-Function DbqSy(A As Database, Sql) As String()
-DbqSy = RsSy(A.OpenRecordset(Sql))
+Sub ZZ_RsAsg()
+Dim Y As Byte, M As Byte
+RsAsg TblRs("YM"), Y, M
+Stop
+End Sub
+Sub RsAsg(A As DAO.Recordset, ParamArray OAp())
+Dim F As DAO.Field, J%, U%
+Dim Av(): Av = OAp
+U = UB(Av)
+For Each F In A.Fields
+    OAp(J) = F.Value
+    If J = U Then Exit Sub
+    J = J + 1
+Next
+End Sub
+Function DbqLngAy(A As Database, Sql) As Long()
+DbqLngAy = RsLngAy(A.OpenRecordset(Sql))
 End Function
 Function LinesSrt$(A)
 LinesSrt = JnCrLf(AySrt(LinesSplit(A)))
@@ -5377,17 +5418,17 @@ End Sub
 Function WtChkCol(T$, LnkColStr$) As String()
 WtChkCol = DbtChkCol(W, T, LnkColStr)
 End Function
-
-Function WQQRs(QQSql, ParamArray Ap()) As Recordset
-Dim Av(): Av = Ap
-Set WQQRs = DbqRs(W, FmtQQAv(QQSql, Av))
-End Function
-Function WQRs(Sql)
-Set WQRs = DbqRs(W, Sql)
-End Function
-Function WQV(Sql)
-WQV = DbqV(W, Sql)
-End Function
+'
+'Function WQQRs(QQSql, ParamArray Ap()) As Recordset
+'Dim Av(): Av = Ap
+'Set WQQRs = DbqRs(W, FmtQQAv(QQSql, Av))
+'End Function
+'Function W.OpenRecordset(Sql)
+'Set W.OpenRecordset = DbqRs(W, Sql)
+'End Function
+'Function WQV(Sql)
+'WQV = DbqV(W, Sql)
+'End Function
 Sub WttLnkFb(TT, Fb$, Optional Fbtt)
 DbttLnkFb W, TT, Fb, Fbtt
 End Sub
@@ -5769,4 +5810,48 @@ End Function
 Sub MsgBrw(Msg$, ParamArray Ap())
 Dim Av(): Av = Ap
 MsgAv_Brw Msg, Av
+End Sub
+
+Sub TdAddId(A As DAO.TableDef)
+A.Fields.Append DaoFld(A.Name, IsId:=True)
+End Sub
+
+Sub TdAddStamp(A As DAO.TableDef, F)
+A.Fields.Append DaoFld(F, DAO.dbDate, Dft:="Now")
+End Sub
+
+Function CvFF(FF) As String()
+CvFF = CvNy(FF)
+End Function
+
+Sub TdAddLngFld(A As DAO.TableDef, FF)
+Dim F
+For Each F In CvFF(FF)
+    A.Fields.Append DaoFld(F, dbLong)
+Next
+End Sub
+Sub TdAddTxtFld(A As DAO.TableDef, FF, Optional Sz% = 255)
+Dim F
+For Each F In CvFF(FF)
+    A.Fields.Append DaoFld(F, dbText, Sz)
+Next
+End Sub
+Sub TdAddLngTxt(A As DAO.TableDef, FF)
+Dim F
+For Each F In CvFF(FF)
+    A.Fields.Append DaoFld(F, dbMemo)
+Next
+End Sub
+
+Sub DbtCrtPk(A As Database, T)
+A.Execute FmtQQ("Create Index PrimaryKey on ? (?) with Primary", T, T)
+End Sub
+
+Sub DbttCrtPk(A As Database, TT)
+AyDoPX CvTT(TT), "DbtCrtPk", A
+End Sub
+
+Sub DbtCrtSk(A As Database, T, SKey, FF)
+Q = FmtQQ("Create Unique Index ? on ? (?)", SKey, T, JnComma(CvFF(FF)))
+A.Execute Q
 End Sub

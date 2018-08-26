@@ -202,16 +202,16 @@ End If
 Dim A$, Q$
 A = IFxInv
 Q = FmtQQ("Delete x.* from [InvD] where InvH in (Select InvH from InvH where Year(Dte)=? and Month(Dte)=?)", Y, M): W.Execute Q
-Q = FmtQQ("Delete * from [YMInvH] where Year(Dte)=? and Month(Dte)=?", Y, M): W.Execute Q
+Q = FmtQQ("Delete * from [InvH] where Year(Dte)=? and Month(Dte)=?", Y, M): W.Execute Q
 W.Execute "insert into [InvH] (VndShtNm,InvNo,Whs,Dte,Sc,Amt)" & _
                    " select VndShtNm,InvNo,Whs,Dte,Sc,Amt from [#IInvH]'"
 W.Execute "Alter Table [#IInvD] add column InvH Long"
-W.Execute "Update [#IInvD] x inner join [YMInvH] a on x.VndShtNm=a.VndShtNm and x.InvNo=a.InvNo set x.InvH=a.InvH"
-W.Execute "insert into [YMInvD] (InvH,Sku,Sc,Amt)" & _
+W.Execute "Update [#IInvD] x inner join [InvH] a on x.VndShtNm=a.VndShtNm and x.InvNo=a.InvNo set x.InvH=a.InvH"
+W.Execute "insert into [InvD] (InvH,Sku,Sc,Amt)" & _
                    " select InvH,Sku,Sc,Amt from [#IInvD]'"
 Q = FmtQQ("Select IR_Fx, IR_FxSz, IR_FxTim, IR_LoadDte from YM where Y=? and M=?", Y, M)
 
-RsUpdDr WQRs(Q), FfnStamp(IFxInv)
+RsUpdDr W.OpenRecordset(Q), FfnStamp(IFxInv)
 End Sub
 
 Function IRDrLy(A()) As String()
@@ -224,14 +224,14 @@ End Function
 
 Function TmpInvHD_IRDr(Fx) As Variant()
 Dim Sz&, Tim As Date, Sc#, Amt@, NInv%, NInvLin%, NSku%
-With WQQRs("Select Count(*), Sum(Amt), Sum(Sc) from [#IInvH]")
+With W.OpenRecordset("Select Count(*), Sum(Amt), Sum(Sc) from [#IInvH]")
     NInv = .Fields(0).Value
     Amt = .Fields(1).Value
     Sc = .Fields(2).Value
     .Close
 End With
-NSku = WQV("Select Count(*) from (Select Distinct Sku from [#IInvD])")
-NInvLin = WQV("Select Count(*) from [#IInvD]")
+NSku = W.OpenRecordset("Select Count(*) from (Select Distinct Sku from [#IInvD])").Fields(0).Value
+NInvLin = W.OpenRecordset("Select Count(*) from [#IInvD]").Fields(0).Value
 TmpInvHD_IRDr = Array(Fx, Sz, Tim, Sc, Amt, NInv, NInvLin, NSku, Now)
 End Function
 Property Get MB52FnSpec$()
@@ -254,7 +254,7 @@ Q = FmtQQ("Insert into [YMOH] (Y,M,Sku,Whs,OH) select ?,?,Sku,Whs,OH from [#OH]"
 
 'Update YM: Y M *Fx *FxTim *FxSz *NRec *NSku *Sc *DteLoad
 Q = FmtQQ("Select EndOH_Fx, EndOH_FxSz, EndOH_FxTim, EndOH_LoadDte from YM where Y=? and M=?", Y, M)
-RsUpdDr WQRs(Q), FfnStamp(IFxMB52)
+RsUpdDr W.OpenRecordset(Q), FfnStamp(IFxMB52)
 WDrp "#OH"
 End Sub
 Property Get IFxMB52$()
@@ -302,7 +302,7 @@ OMain
 End Sub
 Sub Upd()
 'YMRate: Y M ZHT1 Whs RateSc FmDte ToDte DteCrt
-WQQ "Delete * from [YMRate] where Y=? and M=?", Y, M
+Q = FmtQQ("Delete * from [YMRate] where Y=? and M=?", Y, M): W.Execute Q
 'WQQ "Insert into YMRate (Y,M,ZHT1,Whs,RateSc) Select ?,?,ZHT1,Whs,RateSc from [$ZHT1]", Y, M
 'TmpRate_Upd_YM "$ZHT1"
 Stop
@@ -314,14 +314,14 @@ TmpRate
 End Sub
 Sub TmpRate()
 WDrp "$Rate"
-WQQ "Select ZHT1,Whs,RateSc into [$Rate] from [YMRate] where Y=? and M=?", Y, M
-WQQ "Create Index Pk on [$Rate] (ZHT1,Whs) with primary"
+Q = FmtQQ("Select ZHT1,Whs,RateSc into [$Rate] from [YMRate] where Y=? and M=?", Y, M): W.Execute Q
+Q = FmtQQ("Create Index Pk on [$Rate] (ZHT1,Whs) with primary"):                        W.Execute Q
 End Sub
 Sub OMain()
 'YMRate: Y M ZHT1 Whs RateSc FmDte ToDte DteCrt
 'YMOH:   Y M Sku Whs OH Sc Sc_U
-'YMInvD: VndShtNm InvNo Sku Sc Amt
-'YMInvH: VndShtNm InvNo Whs Dte Sc Amt DteCrt
+'InvD: VndShtNm InvNo Sku Sc Amt
+'InvH: VndShtNm InvNo Whs Dte Sc Amt DteCrt
 '#IUom   Sku Whs Des StkUom Sc_U ProdH
 'Given: BegOHSc   =  100(Sc)
 '       BegRateSc =  $0.5/Sc  => BegAmt = $50
@@ -343,23 +343,23 @@ Sub OMain()
 WDrp "#BegOH #EndOH #IR #SkuWhs #SkuWhs1 @Main"
 
 '#EndOH Sku Whs EndOH EndOHSc Sc_U
-WQQ "Select Sku,Whs,OH as EndOH into [#EndOH] from [YMOH] where Y=? and M=?", Y, M
+Q = FmtQQ("Select Sku,Whs,OH as EndOH into [#EndOH] from [YMOH] where Y=? and M=?", Y, M): W.Execute Q
 W.Execute "Alter Table [#EndOH] Add Column Sc_U Single, EndOHSc Single"
 W.Execute "Update [#EndOH] x inner join [#IUom] a on x.Sku=a.Sku and x.Whs=a.Sku set x.Sc_U=a.Sc_U"
 W.Execute "Update [#EndOH] set EndOHSc=EndOH/Sc_U where Sc_U is not null"
 
 '#BegOH Sku Whs BegOH BegOHSc Sc_U
-WQQ "Select Sku,Whs,OH as BegOH into [#BegOH] from [YMOH] where Y=? and M=?", BegY, BegM
+Q = FmtQQ("Select Sku,Whs,OH as BegOH into [#BegOH] from [YMOH] where Y=? and M=?", BegY, BegM): W.Execute Q
 W.Execute "Alter Table [#BegOH] Add Column Sc_U Single, BegOHSc Single"
 W.Execute "Update [#BegOH] x inner join [#IUom] a on x.Sku=a.Sku and x.Whs=a.Whs set x.Sc_U=a.Sc_U"
 W.Execute "Update [#BegOH] set BegOHSc=BegOH/Sc_U where Sc_U is not null"
 
 '#IR Sku Whs IRSc IRAmt
-WQQ "Select Distinct Sku,Whs,Sum(x.Sc) as IRSc, Sum(a.Amt) as IRAmt into [#IR]" & _
-" from [YMInvD] x inner join [YMInvH] a on x.InvNo=a.InvNo and x.VndShtNm=a.VndShtNm" & _
+Q = FmtQQ("Select Distinct Sku,Whs,Sum(x.Sc) as IRSc, Sum(a.Amt) as IRAmt into [#IR]" & _
+" from [InvD] x inner join [InvH] a on x.InvNo=a.InvNo and x.VndShtNm=a.VndShtNm" & _
 " where a.Dte between #?# and #?#" & _
 " group by Sku,Whs", _
-FmYYYYxMMxDD, ToYYYYxMMxDD
+FmYYYYxMMxDD, ToYYYYxMMxDD): W.Execute Q
 
 '#SkuWhs
 W.Execute "Select Sku,Whs into [#SkuWhs1] from [#BegOH]"
@@ -500,7 +500,7 @@ WQQ "Delete * from [#Cpy]" & _
 Q = "Delete * from [IniRate]": W.Execute Q
 Q = "Insert into [IniRate] (ZHT1,Whs,RateSc,FmDte,ToDte) select ZHT1,Whs,RateSc,FmDte,ToDte from [#Cpy]": W.Execute Q
 Q = "Select Fx, FxSz, FxTim, LoadDte from [IniRateH]"
-RsUpdDr WQRs(Q), FfnStamp(IFxRate)
+RsUpdDr W.OpenRecordset(Q), FfnStamp(IFxRate)
 WDrp "#Cpy #Cpy1 #Cpy2"
 End Sub
 Function IFxRate$()
