@@ -74,7 +74,7 @@ With L.TableDefs("Msg").OpenRecordset
     End If
 End With
 End Sub
-Sub WrtLg(Fun$, MsgTxt$)
+Private Sub WrtLg(Fun$, MsgTxt$)
 With L.TableDefs("Lg").OpenRecordset
     .AddNew
     !Sess = X_Sess
@@ -127,7 +127,7 @@ Sub SessBrw(Optional A&)
 AyBrw SessLy(CvSess(A))
 End Sub
 
-Function CvSess&(A&)
+Private Function CvSess&(A&)
 If A > 0 Then CvSess = A: Exit Function
 CvSess = DbqV(L, "select Max(Sess) from Sess")
 End Function
@@ -142,18 +142,35 @@ Dim LgAy&()
 LgAy = SessLgAy(A)
 SessLy = AyOfAy_Ay(AyMap(LgAy, "LgLy"))
 End Function
-
+Sub LgAsg_xSess_xDTim(A&, OSess&, ODTim$, OFun$, OMsgTxt$)
+Q = FmtQQ("select Fun,MsgTxt,Sess,x.Dte from Lg x inner join Msg a on x.Msg=a.Msg where Lg=?", A)
+Dim D As Date
+RsAsg L.OpenRecordset(Q), OFun, OMsgTxt, OSess, D
+ODTim = DteDTim(D)
+End Sub
 Function LgLy(A&) As String()
-Dim Fun$, MsgTxt$
-Q = FmtQQ("select Fun,MsgTxt from Msg where Msg in (Select Msg from Lg where Lg=?)", A)
-RsAsg L.OpenRecordset(Q), Fun, MsgTxt
-LgLy = FunMsgAv_Ly(Fun, MsgTxt, LgValAy(A))
+Dim Fun$, MsgTxt$, LgDTim$, LgSess&, Sfx$
+LgAsg_xSess_xDTim A, LgSess, LgDTim, Fun, MsgTxt
+Sfx = FmtQQ(" @? Sess(?) Lg(?)", LgDTim, LgSess, A)
+LgLy = FunMsgAv_Ly(Fun & Sfx, MsgTxt, LgValAy(A))
 End Function
 
 Function LgValAy(A&) As Variant()
 Q = FmtQQ("Select Val from LgV where Lg = ? order by LgV", A)
 LgValAy = RsAy(L.OpenRecordset(Q))
 End Function
+Sub LgLis(Optional Top% = 50)
+Dim Fun$, MsgTxt$
+With L.OpenRecordset(FmtQQ("Select Top ? * from Lg order by Sess desc,Lg", Top))
+    While Not .EOF
+        Q = FmtQQ("Select Fun,MsgTxt from Msg where Msg=?", !Msg)
+        RsAsg L.OpenRecordset(Q), Fun, MsgTxt
+        D JnSpc(Array(!Sess, !Lg, DteDTim(!Dte), Fun, MsgTxt))
+        .MoveNext
+    Wend
+    .Close
+End With
+End Sub
 
 Sub SessLis(Optional Top% = 50)
 With L.OpenRecordset(FmtQQ("Select Top ? * from sess order by Sess desc", Top))

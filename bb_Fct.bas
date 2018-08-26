@@ -610,11 +610,21 @@ End Function
 Function NyLin$(A$(), Av())
 NyLin = NyAv_Lin(A, Av)
 End Function
+Sub AyabSetSamMax(A, B)
+Dim U1&, U2&
+U1 = UB(A)
+U2 = UB(B)
+Select Case True
+Case U1 > U2: ReDim Preserve B(U1)
+Case U1 < U2: ReDim Preserve A(U2)
+End Select
+End Sub
 Function NyAv_Ly(A$(), Av(), Optional Indent% = 4) As String()
 Dim W%, O$(), J%, A1$(), A2$()
 W = AyWdt(A)
 A1 = AyAlignL(A)
 A2 = AyAddSfx(A1, " : ")
+AyabSetSamMax A2, Av
 For J = 0 To UB(A)
     PushAy O, NmV_Ly(A2(J), Av(J))
 Next
@@ -3977,6 +3987,9 @@ TakAftDotOrAll = TakAftOrAll(A, ".")
 End Function
 Function LoWs(A As ListObject) As Worksheet
 Set LoWs = A.Parent
+End Function
+Function JnSC$(A)
+JnSC = Join(A, ";")
 End Function
 Function DbtRs(A As Database, T) As DAO.Recordset
 Set DbtRs = A.OpenRecordset(T)
