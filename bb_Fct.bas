@@ -772,17 +772,11 @@ BldCommitFcmd = AyWrt(O, Fcmd.Commit)
 End Function
 
 Function BldPushAppFcmd$()
-Dim O$(), Cd$, GitPush, BldA1$, BldA2$, DelA1
+Dim O$(), Cd$, GitPush
 Cd = FmtQQ("Cd ""?""", SrcPth)
-BldA1 = "echo johnsoncheung>a"
-BldA2 = "echo j@hns0nC4>>a"
-GitPush = "git push -u origin master <a"
-DelA = "del a"
+GitPush = "git push -u https://johnsoncheung:j%40hns0nC4@github.com/johnsoncheung/StockShipRate.git master"
 Push O, Cd
-Push O, BldA1
-Push O, BldA2
 Push O, GitPush
-Push O, DelA
 Push O, "Pause"
 BldPushAppFcmd = AyWrt(O, Fcmd.PushApp)
 End Function
