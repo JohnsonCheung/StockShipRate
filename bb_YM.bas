@@ -3,17 +3,20 @@ Option Explicit
 Property Get IsFstYM() As Boolean
 IsFstYM = FstY = Y And FstM = M
 End Property
+Property Get IsSndYM() As Boolean
+IsSndYM = SndY = Y And SndM = M
+End Property
+Property Get SndY() As Byte
+SndY = YM_YofNxtM(FstY, FstM)
+End Property
+Property Get SndM() As Byte
+SndM = M_NxtM(FstM)
+End Property
 Property Get FstY() As Byte
 FstY = SqlV("Select Min(Y) from YM")
 End Property
 Property Get FstM() As Byte
 FstM = QQV("Select Min(M) from YM where Y=?", FstY)
-End Property
-Property Get IniY() As Byte
-IniY = TfVal("IniYM", "Y")
-End Property
-Property Get IniM() As Byte
-IniM = TfVal("IniYM", "M")
 End Property
 Property Get Y() As Byte
 Y = SqlV("Select Y from CurYM")
@@ -28,12 +31,6 @@ Property Let Y(V As Byte)
 RsSetFldVal TblRs("CurYM"), "Y", V
 End Property
 
-Property Get CurYM$()
-With SqlRs("Select Y,M from CurYM")
-    CurYM = !Y & "." & !M
-    .Close
-End With
-End Property
 Function FmDte() As Date
 FmDte = DateSerial(Y, M, 1)
 End Function
@@ -55,21 +52,30 @@ End Function
 Function NxtY() As Byte
 NxtY = IIf(M = 12, Y + 1, Y)
 End Function
+
 Function NxtM() As Byte
 NxtM = IIf(M = 12, 1, M + 1)
 End Function
+
 Function YYYYxMM$()
 YYYYxMM = YYYY & "-" & MM
 End Function
-Function IniPrvYYYYxMM$()
-Dim YYYY$, MM$, Y As Byte, M As Byte
-M = M_PrvM(IniM)
-Y = YM_YofPrvM(IniY, IniM)
-IniPrvYYYYxMM = Y + 2000 & "-" & Format(M, "00")
+
+Function YYYYxMMxLasDD$()
+YYYYxMMxLasDD = Format(YM_LasDte(Y, M), "YYYY-MM-DD")
 End Function
+
+Function PrvYYYYxMM$()
+Dim YYYY$, MM$, Y As Byte, M As Byte
+M = M_PrvM(FstM)
+Y = YM_YofPrvM(FstY, FstM)
+PrvYYYYxMM = Y + 2000 & "-" & Format(M, "00")
+End Function
+
 Function MM$()
 MM = Format(M, "00")
 End Function
+
 Function YYYY$()
 YYYY = Format(2000 + Y)
 End Function

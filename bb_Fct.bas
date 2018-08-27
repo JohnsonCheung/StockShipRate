@@ -23,8 +23,6 @@ Public Q$
 Public W As Database
 Const PSep$ = " "
 Const PSep1$ = " "
-Public StsM$()
-Public ErrM$()
 Sub MapNDrive()
 RmvNDrive
 Shell "Subst N: c:\users\user\desktop\MHD"
@@ -49,12 +47,12 @@ Case _
 IsEAppStr = True
 End Select
 End Function
-Function AppRoot$()
+Property Get AppRoot$()
 AppRoot = "N:\SAPAccessReports\"
-End Function
-Function AppHom$()
+End Property
+Property Get AppHom$()
 AppHom = AppRoot & Apn & "\"
-End Function
+End Property
 Function EAppFdr$(A As EApp)
 Dim O$
 Select Case A
@@ -108,9 +106,9 @@ Case Else: Stop
 End Select
 EAppStr = O
 End Function
-Function CcmTny() As String()
+Property Get CcmTny() As String()
 CcmTny = DbCcmTny(CurrentDb)
-End Function
+End Property
 Sub SetCcmTblDes(Des$)
 Dim T
 For Each T In CcmTny
@@ -171,12 +169,6 @@ Function RsTSz$(A As DAO.Recordset)
 If A.Fields(0).Type <> DAO.dbDate Then Stop
 If A.Fields(1).Type <> DAO.dbLong Then Stop
 RsTSz = DteDTim(A.Fields(0).Value) & "." & A.Fields(1).Value
-End Function
-Function IsErBrw() As Boolean
-If AyBrwEr(ErrM) Then
-    Erase ErrM
-    IsErBrw = True
-End If
 End Function
 Function JnVBar$(A)
 JnVBar = Join(A, "|")
@@ -362,24 +354,8 @@ End Function
 Function FldPrpNy(A As DAO.Field) As String()
 FldPrpNy = ItrNy(A.Properties)
 End Function
-Sub BrwSts()
-AyBrwEr StsM
-Erase StsM
-End Sub
-Sub BrwBrw()
-AyBrwEr ErrM
-Erase ErrM
-End Sub
 Sub AyPushMsgAv(A, Msg$, Av())
 PushAy A, MsgAv_Ly(Msg, Av)
-End Sub
-Sub PushErr(Msg$, ParamArray Ap())
-Dim Av(): Av = Ap
-AyPushMsgAv ErrM, Msg, Av
-End Sub
-Sub PushSts(Msg$, ParamArray Ap())
-Dim Av(): Av = Ap
-AyPushMsgAv StsM, Msg, Av
 End Sub
 Function YYMM_FstDte(A) As Date
 YYMM_FstDte = DateSerial(Left(A, 2), Mid(A, 3, 2), 1)
@@ -450,7 +426,7 @@ Set RgRCC = RgRCRC(A, R, C1, R, C2)
 End Function
 
 Sub ZZ_WtLnkFx()
-WtLnkFx ">UOM", IFxUOM
+WtLnkFx ">UOM", IFxUom
 End Sub
 Sub LoSetFml(A As ListObject, ColNm$, Fml$)
 A.ListColumns(ColNm).DataBodyRange.Formula = Fml
@@ -560,6 +536,10 @@ AttRs = DbAtt_Rs(CurrentDb, A)
 End Function
 Function AttFny() As String()
 AttFny = ItrNy(DbFstAttRs(CurrentDb).AttRs.Fields)
+End Function
+Function RsV(A As DAO.Recordset)
+If A.EOF Then Exit Function
+RsV = A.Fields(0).Value
 End Function
 Function AttRs_Exp$(A As AttRs, ToFfn)
 'Export the only File in {AttRs} {ToFfn}
@@ -738,6 +718,9 @@ End Sub
 Sub MsgAv_Brw(A$, Av())
 AyBrw MsgAv_Ly(A, Av)
 End Sub
+Sub FunMsgAv_Brw(A, Msg$, Av())
+AyBrw FunMsgAv_Ly(A, Msg, Av)
+End Sub
 Sub MsgAp_BrwStop(A$, ParamArray Ap())
 Dim Av(): Av = Ap
 MsgAv_Brw A, Av
@@ -828,7 +811,7 @@ Dim Cmd$
 Shell Cmd, vbMaximizedFocus
 FcmdRunMax = A
 End Function
-Function FunMsgAv_Ly(A$, Msg$, Av()) As String()
+Function FunMsgAv_Ly(A, Msg$, Av()) As String()
 Dim B$(), C$()
 B = SplitVBar(Msg)
 C = NyAv_Ly(CvSy(AyAdd(ApSy("Fun"), MsgNy(Msg))), CvAv(AyAdd(Array(A), Av)))
@@ -1029,8 +1012,8 @@ With A
     .Update
 End With
 End Sub
-Function FxHasSheet1(A) As Boolean
-FxHasSheet1 = AyHas(FxWsNy(A), "Sheet1")
+Function FxHasWs(A, Optional WsNy0 = "Sheet1") As Boolean
+FxHasWs = AyHasAy(FxWsNy(A), CvNy(WsNy0))
 End Function
 Function FxDaoCnStr$(A)
 'Excel 8.0;HDR=YES;IMEX=2;DATABASE=D:\Data\MyDoc\Development\ISS\Imports\PO\PUR904 (On-Line).xls;TABLE='PUR904 (On-Line)'
@@ -1308,16 +1291,30 @@ End Sub
 Sub ZZ_FxWsNy()
 Const Fx$ = "Users\user\Desktop\Invoices 2018-02.xlsx"
 D FxWsNy(Fx)
-
 End Sub
-Function FxWsNy(A) As String()
-Dim T$(), C As Catalog
-Set C = FxCat(A)
-T = CatTny(C)
-FxWsNy = AyDist(AyTakBefOrAll(T, "$"))
+Function IsSngQuoted(A) As Boolean
+IsSngQuoted = IsQuoted(A, "'")
 End Function
-Function FxHasWs(A, WsNm$) As Boolean
-FxHasWs = AyHas(FxWsNy(A), WsNm)
+Function IsSqBktQuoted(A) As Boolean
+IsSqBktQuoted = IsQuoted(A, "[", "]")
+End Function
+Function IsQuoted(A, Q1$, Optional ByVal Q2$) As Boolean
+If Q2 = "" Then Q2 = Q1
+If FstChr(A) <> Q1 Then Exit Function
+If LasChr(A) <> Q2 Then Exit Function
+IsQuoted = True
+End Function
+Function RmvSngQuote$(A)
+If Not IsSngQuoted(A) Then RmvSngQuote = A: Exit Function
+RmvSngQuote = RmvFstLasChr(A)
+End Function
+Function AyRmvSngQuote(A) As String()
+AyRmvSngQuote = AyMapSy(A, "RmvSngQuote")
+End Function
+Function FxWsNy(A) As String()
+Dim T$()
+T = CatTny(FxCat(A))
+FxWsNy = AyDist(AyTakBefOrAll(AyRmvSngQuote(T), "$"))
 End Function
 
 Sub DbtImpTbl(A As Database, TT)
@@ -1414,11 +1411,6 @@ Ay = LnkColStr_LnkColAy(A)
 LnkColStr_ImpSql = LnkColAy_ImpSql(Ay, T, WhBExpr)
 End Function
 
-Function IsSqBktQuoted(A) As Boolean
-If FstChr(A) <> "[" Then Exit Function
-If LasChr(A) <> "]" Then Exit Function
-IsSqBktQuoted = True
-End Function
 
 Function FstChr$(A)
 FstChr = Left(A, 1)
@@ -2087,13 +2079,16 @@ Set W = Nothing
 X.Quit
 Set X = Nothing
 End Function
-Function TpFxm$()
-TpFxm = TpPth & Apn & "(Template).xlsm"
-End Function
+Property Get TpFxm$()
+TpFxm = PgmObjPth & TpFnn & ".xlsm"
+End Property
+Property Get TpFx$()
+TpFx = PgmObjPth & TpFnn & ".xlsx"
+End Property
+Property Get TpFnn$()
+TpFnn = Apn & "(Template)"
+End Property
 
-Function TpFx$()
-TpFx = TpPth & Apn & "(Template).xlsx"
-End Function
 Sub TpOpn()
 FxOpn TpFx
 End Sub
@@ -2135,8 +2130,8 @@ Function YYYYMMDD_IsVdt(A) As Boolean
 On Error Resume Next
 YYYYMMDD_IsVdt = Format(CDate(A), "YYYY-MM-DD") = A
 End Function
-Function TpPth$()
-TpPth = PthEns(CurDbPth & "Template\")
+Function PgmObjPth$()
+PgmObjPth = PthEns(CurDbPth & "PgmObj\")
 End Function
 Function FfnPth$(A)
 Dim P%: P = InStrRev(A, "\")
@@ -2362,6 +2357,29 @@ SqlSy = DbqSy(CurrentDb, A)
 End Function
 Function SqlLngAy(A) As Long()
 SqlLngAy = DbqLngAy(CurrentDb, A)
+End Function
+Function FxChkWs(A, Optional FxKind$ = "Excel file", Optional WsNy0$ = "Sheet1") As String()
+If Not FfnIsExist(A) Then
+    Dim M$
+    M = FmtQQ("[?] not found in [folder]", FxKind)
+    FxChkWs = MsgLy(M, FfnFn(A), FfnPth(A))
+    Exit Function
+End If
+If FxHasWs(A, WsNy0) Then Exit Function
+M = FmtQQ("[?] in [folder] does not have [expected worksheets], but [these worksheets].", FxKind)
+FxChkWs = MsgAp_Ly(M, FfnFn(A), FfnPth(A), CvNy(WsNy0), FxWsNy(A))
+End Function
+Sub ABAsg(AB$, OA$, OB$)
+BrkAsg AB, " ", OA, OB
+End Sub
+Function Either(A As Boolean, ABFun$)
+Dim Fst$, Snd$
+ABAsg ABFun, Fst, Snd
+If A Then
+    Either = Run(Fst)
+Else
+    Either = Run(Snd)
+End If
 End Function
 Function AyAdd(A, B)
 Dim O
@@ -3780,10 +3798,12 @@ If FfnIsExist(A) Then Kill A
 End Sub
 
 Function PthIsExist(A) As Boolean
+If A = "" Then Exit Function
 On Error Resume Next
 PthIsExist = Dir(A, vbDirectory) <> ""
 End Function
 Function FfnIsExist(A) As Boolean
+If A = "" Then Exit Function
 On Error Resume Next
 FfnIsExist = Dir(A) <> ""
 End Function
@@ -5349,7 +5369,8 @@ Sub TpImp()
 Dim A$
 A = TpFx
 If Not FfnIsExist(A) Then
-    D MsgAp_Ly("[Tp] not exist, no TpImp.  (@TpImp)", A)
+    FunMsgBrw "TpImp", "[Tp] not exist, no TpImp.", A
+    Exit Sub
 End If
 If AttIsOld("Tp", A) Then AttImp "Tp", A
 End Sub
@@ -5359,7 +5380,7 @@ T1 = AttTim(A)
 T2 = FfnTim(Ffn)
 Dim Msg$
 Msg = FmtQQ("[Att] is ? in comparing with [file] using [Att-Tim] & [file-Tim].  Is Att [Older]?  (@AttIsOld)", IIf(T1 < T2, "older", "newer"), "?")
-MsgAp_Dmp Msg, A, Ffn, T1, T2, T1 < T2
+FunMsgDmp "AttIsOld", Msg, A, Ffn, T1, T2, T1 < T2
 AttIsOld = T1 < T2
 End Function
 Function TblkfV(T, K, F)
@@ -5469,10 +5490,6 @@ Sub WIni()
 'TpImp
 WKill
 WOpn
-End Sub
-Sub WQQ(A, ParamArray Ap())
-Dim Av(): Av = Ap
-W.Execute FmtQQAv(A, Av)
 End Sub
 Function QV(A)
 QV = SqlV(A)
@@ -5635,8 +5652,14 @@ End Function
 Function M_PrvM(M As Byte) As Byte
 M_PrvM = IIf(M = 1, 12, M - 1)
 End Function
+Function M_NxtM(M As Byte) As Byte
+M_NxtM = IIf(M = 12, 1, M + 1)
+End Function
 Function YM_YofPrvM(Y As Byte, M As Byte) As Byte
 YM_YofPrvM = IIf(M = 1, Y - 1, Y)
+End Function
+Function YM_YofNxtM(Y As Byte, M As Byte) As Byte
+YM_YofNxtM = IIf(M = 12, Y + 1, Y)
 End Function
 
 Sub AySplit_xInto_T1Ay_RestAy_Asg(A, OT1Ay$(), ORestAy$())
@@ -5674,6 +5697,10 @@ End Function
 Sub MsgDmp(A$, ParamArray Ap())
 Dim Av(): Av = Ap
 AyDmp MsgAv_Ly(A, Av)
+End Sub
+Sub FunMsgDmp(A, Msg$, ParamArray Ap())
+Dim Av(): Av = Ap
+AyDmp FunMsgAv_Ly(A, Msg, Av)
 End Sub
 Function TblTblDes$(T)
 TblTblDes = T & " " & TblDes(T)
@@ -5824,6 +5851,10 @@ Sub MsgBrw(Msg$, ParamArray Ap())
 Dim Av(): Av = Ap
 MsgAv_Brw Msg, Av
 End Sub
+Sub FunMsgBrw(Fun$, Msg$, ParamArray Ap())
+Dim Av(): Av = Ap
+AyBrw FunMsgAv_Ly(Fun, Msg, Av)
+End Sub
 
 Sub TdAddId(A As DAO.TableDef)
 A.Fields.Append DaoFld(A.Name, IsId:=True)
@@ -5857,14 +5888,86 @@ Next
 End Sub
 
 Sub DbtCrtPk(A As Database, T)
-A.Execute FmtQQ("Create Index PrimaryKey on ? (?) with Primary", T, T)
+Q = FmtQQ("Create Index PrimaryKey on ? (?) with Primary", T, T): A.Execute Q
 End Sub
 
 Sub DbttCrtPk(A As Database, TT)
 AyDoPX CvTT(TT), "DbtCrtPk", A
 End Sub
 
+Function DbtSk(A As Database, T) As String()
+'Sk is Fny of a table with same name as Table name and with Unique
+Dim I As DAO.Index:
+Set I = DbtSkIdx(A, T): If IsNothing(I) Then Exit Function
+DbtSk = ItrNy(I.Fields)
+End Function
+
+Function ItrXPPredFst(A, XP$, P)
+Dim X
+For Each X In A
+    If Run(XP, X, P) Then Asg X, ItrXPPredFst: Exit Function
+Next
+End Function
+
+Function IdxIsSk(A As DAO.Index, T) As Boolean
+If A.Name <> T Then Exit Function
+IdxIsSk = A.Unique
+End Function
+
+Function DbtSkIdx(A As Database, T) As DAO.Index
+DbtSkIdx = ItrXPPredFst(A.TableDefs(T).Indexes, "IdxIsSk", T)
+End Function
+
 Sub DbtCrtSk(A As Database, T, SKey, FF)
-Q = FmtQQ("Create Unique Index ? on ? (?)", SKey, T, JnComma(CvFF(FF)))
-A.Execute Q
+Q = FmtQQ("Create Unique Index ? on ? (?)", SKey, T, JnComma(CvFF(FF))): A.Execute Q
+End Sub
+
+Function NewNmFsn(NmFsnVbl$) As Dictionary
+
+End Function
+
+Function NewSfxFsn(SfxFsnVbl$) As Dictionary
+
+End Function
+
+Sub TsnAsg(A, OTd As DAO.TableDef, OFny$())
+', OAtt As DAO.TableDefAttributeEnum)
+End Sub
+Sub SchemaImp()
+
+End Sub
+Sub SchemaExp()
+
+End Sub
+Property Get SchemaFt$()
+SchemaFt = PgmObjPth & SchemaFn
+End Property
+Property Get SchemaFn$()
+SchemaFn = Apn & "(Schema).txt"
+End Property
+Function NewFld(F, SfxFsn As Dictionary, NmFsn As Dictionary) As DAO.Field2
+
+End Function
+
+Function TsnTd(A, SfxFsn As Dictionary, NmFsn As Dictionary) As DAO.TableDef
+Dim Td As DAO.TableDef, Fny$(), F
+TsnAsg A, Td, Fny
+For Each F In Fny
+    Td.Fields.Append NewFld(F, SfxFsn, NmFsn)
+Next
+Set TsnTd = Td
+End Function
+
+Sub DbCrtSchema(A As Database, SsnLines$)
+DbCrtTT A, TsnLines
+A.TableDefs.Append TsnTd(Tsn, SfxFsnDic, NmFsnDic)
+End Sub
+
+Sub DbCrtTT(A As Database, TsnLines$, SfxFsnLines$, NmFsnLines$)
+
+A.TableDefs.Append TsnTd(Tsn, SfxFsn, NmFsn)
+End Sub
+
+Sub DbCrtTbl(A As Database, Tsn$, SfxFsnDic As Dictionary, NmFsnDic As Dictionary)
+A.TableDefs.Append TsnTd(Tsn, SfxFsnDic, NmFsnDic)
 End Sub

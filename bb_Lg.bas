@@ -4,15 +4,19 @@ Private X_L As Database
 Private X_Sess&
 Private X_Msg&
 Private X_Lg&
+
 Private Function L() As Database
 If IsNothing(X_L) Then
     Set X_L = FbDb(LgFb)
 End If
 Set L = X_L
 End Function
+
 Sub LgEns()
-If Not FfnIsExist(LgFb) Then LgCrt
+'If Not FfnIsExist(LgFb) Then bb_LgV1.LgCrt
+If Not FfnIsExist(LgFb) Then bb_LgV1.LgCrt
 End Sub
+
 Sub LgCrt()
 FbCrt LgFb
 Dim Db As Database, T As DAO.TableDef
@@ -50,6 +54,7 @@ Db.TableDefs.Append T
 DbttCrtPk Db, "Sess Msg Lg LgV"
 DbtCrtSk Db, "Msg", "Msg", "Fun MsgTxt"
 End Sub
+
 Private Sub EnsSess()
 If X_Sess > 0 Then Exit Sub
 With L.TableDefs("Sess").OpenRecordset
@@ -59,6 +64,7 @@ With L.TableDefs("Sess").OpenRecordset
     .Close
 End With
 End Sub
+
 Private Sub EnsMsg(Fun$, MsgTxt$)
 With L.TableDefs("Msg").OpenRecordset
     .Index = "Msg"
@@ -74,6 +80,7 @@ With L.TableDefs("Msg").OpenRecordset
     End If
 End With
 End Sub
+
 Private Sub WrtLg(Fun$, MsgTxt$)
 With L.TableDefs("Lg").OpenRecordset
     .AddNew
@@ -83,6 +90,7 @@ With L.TableDefs("Lg").OpenRecordset
     .Update
 End With
 End Sub
+
 Sub Lg(Fun$, MsgTxt$, ParamArray Ap())
 EnsSess
 EnsMsg Fun, MsgTxt

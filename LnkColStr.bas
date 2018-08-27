@@ -32,8 +32,8 @@ MB52 = _
 End Property
 '>InvH: [Vendor] [InvNo] [Date] [Amt] [Sc]
 '>InvD: [InvNo] [Sku] [Sc] [Amt]
-'InvH: VndShtNm InvNo Whs Dte Sc Amt DteCrt
-'InvD: VndShtNm InvNo Sku Sc Amt
+'InvD: InvD | InvH Sku Sc Amt
+'InvH: InvH | VndShtNm InvNo Whs Dte Sc Amt DteCrt
 Property Get InvH$()
 InvH = _
     " VndShtNm Txt |" & _
