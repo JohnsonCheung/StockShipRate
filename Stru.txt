@@ -17,6 +17,7 @@ LoAlignC: LoNm FldLikSsl
 LoFml: LoNm FldNm | Fml Seq
 LoFmt: LoNm FldNm | Seq Fmt
 Prm: UOMFn UomPth ZHT1Fn ZHT1Pth InvPth MB52Pth
+Spec: Schema Schema_FtSz Schema_FtTim
 YM: Y M | EndOH_Fx EndOH_FxSz EndOH_FxTim EndOH_LoadDte IR_Fx IR_FxSz IR_FxTim IR_LoadDte RateSc_LoadDte
 YMOH: Y M Sku Whs | EndOH
 YMRate: Y M Sku Whs | RateSc

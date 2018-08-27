@@ -13,8 +13,11 @@ Set L = X_L
 End Function
 
 Sub LgEns()
-'If Not FfnIsExist(LgFb) Then bb_LgV1.LgCrt
-If Not FfnIsExist(LgFb) Then bb_LgV1.LgCrt
+If Not FfnIsExist(LgFb) Then LgCrt_v1
+End Sub
+Sub LgCrt_v1()
+FbCrt LgFb
+DbCrtSchema FbDb(LgFb), SchemaLines
 End Sub
 
 Sub LgCrt()

@@ -398,7 +398,7 @@ W.Close
 Set W = Nothing
 End Sub
 Sub WDrp(TT)
-DbttDrp W, TT
+DbDrpTT W, TT
 End Sub
 Function PnmFfn$(A)
 PnmFfn = PnmPth(A) & PnmFn(A)
@@ -882,6 +882,18 @@ If IsNothing(F2) Then Stop
 F2.SaveToFile ToFfn
 DbAttExpFfn = ToFfn
 End Function
+Sub DbDrpAtt(A As Database, Att)
+A.Execute FmtQQ("Delete * from Att where AttNm='?'", Att)
+End Sub
+Sub AttDrp(Att)
+DbDrpAtt CurrentDb, Att
+End Sub
+Sub AttyDrp(Atty0)
+DbDrpAtty CurrentDb, Atty0
+End Sub
+Sub DbDrpAtty(A As Database, Atty0)
+AyDoPX CvNy(Atty0), "DbDrpAtt", A
+End Sub
 Sub AttClr(A)
 DbAtt_Clr CurrentDb, A
 End Sub
@@ -950,9 +962,12 @@ With A
 End With
 RsNRec = O
 End Function
+Function AttRs_FilCnt%(A As AttRs)
+AttRs_FilCnt = RsNRec(A.AttRs)
+End Function
 Function DbAtt_FilCnt%(A As Database, Att)
 'DbAtt_FilCnt = DbAtt_AttRs(A, Att).AttRs.RecordCount
-DbAtt_FilCnt = RsNRec(DbAtt_AttRs(A, Att).AttRs)
+DbAtt_FilCnt = AttRs_FilCnt(DbAtt_AttRs(A, Att))
 End Function
 Function AttFilCnt%(A)
 AttFilCnt = DbAtt_FilCnt(CurrentDb, A)
@@ -973,9 +988,20 @@ End Sub
 Function AttFstFn$(A)
 AttFstFn = DbAtt_FstFn(CurrentDb, A)
 End Function
-
+Function AttRs_FstFn$(A As AttRs)
+With A.AttRs
+    If .EOF Then
+        If .BOF Then
+            FunMsgDmp "AttRs_FstFn", "[AttNm] has no attachment files", AttRs_AttNm(A)
+            Exit Function
+        End If
+    End If
+    .MoveFirst
+    AttRs_FstFn = !FileName
+End With
+End Function
 Function DbAtt_FstFn(A As Database, Att)
-DbAtt_FstFn = DbAtt_AttRs(A, Att).AttRs!FileName
+DbAtt_FstFn = AttRs_FstFn(DbAtt_AttRs(A, Att))
 End Function
 
 Function RsHasFldV(A As DAO.Recordset, F$, V) As Boolean
@@ -990,9 +1016,15 @@ With A
     Wend
 End With
 End Function
-Function AttNy() As String()
-AttNy = CDbAttNy
+Function DbAttNy(A As Database) As String()
+Q = "Select AttNm from Att order by AttNm": DbAttNy = RsSy(A.OpenRecordset(Q))
 End Function
+Property Get CDbAttNy() As String()
+CDbAttNy = DbAttNy(CurrentDb)
+End Property
+Property Get AttNy() As String()
+AttNy = CDbAttNy
+End Property
 Function AttRs_AttNm$(A As AttRs)
 AttRs_AttNm = A.TblRs!AttNm
 End Function
@@ -1026,11 +1058,36 @@ End Sub
 Function AttLines$(A)
 AttLines = DbAtt_Lines(CurrentDb, A)
 End Function
-Function DbAtt_Lines$(A As Database, A)
-
+Function DbAtt_Lines$(A As Database, Att)
+DbAtt_Lines = AttRs_Lines(DbAtt_AttRs(A, Att))
+End Function
+Function AttRs_Lines$(A As AttRs)
+Dim F As DAO.Field2, N%, Fn$
+N = AttRs_FilCnt(A)
+If N <> 1 Then
+    FunMsgDmp "AttRs_Lines", "The [AttNm] should have one 1 attachment, but now [n-attachments]", AttRs_AttNm(A), N
+    Exit Function
+End If
+Fn = FfnExt(AttRs_FstFn(A))
+If Fn <> ".txt" Then
+    FunMsgDmp "AttRs_Lines", "The [AttNm] has [Att-Fn] not being [.txt].  Cannot return Lines", AttRs_AttNm(A), Fn
+    Exit Function
+End If
+AttRs_Lines = Fld2Lines(A.AttRs!FileData)
+End Function
+Function Fld2Lines$(A As DAO.Field2)
+Dim O$, M$, Off&
+X:
+M = A.GetChunk(Off, 1024)
+O = O & M
+If Len(M) = 1024 Then
+    Off = Off + 1024
+    GoTo X
+End If
+Fld2Lines = O
 End Function
 Property Get SchemaLines$()
-SchemaLines = AttLines("Schema")
+SchemaLines = TfVal("Spec", "Schema")
 End Property
 
 Sub RsSetFldVal(A As DAO.Recordset, F, V)
@@ -1351,7 +1408,7 @@ Sub DbtImpTbl(A As Database, TT)
 Dim Tny$(), J%, S$
 Tny = CvNy(TT)
 For J = 0 To UB(Tny)
-    DbtDrp A, "#I" & Tny(J)
+    DbDrpTbl A, "#I" & Tny(J)
     S = FmtQQ("Select * into [#I?] from [?]", Tny(J), Tny(J))
     A.Execute S
 Next
@@ -1431,7 +1488,7 @@ End If
 'Create [#I?] T
 Dim S$
 S = LnkColStr_ImpSql(LnkColStr, T, WhBExpr)
-DbtDrp A, "#I" & Mid(T, 2)
+DbDrpTbl A, "#I" & Mid(T, 2)
 A.Execute S
 End Sub
 
@@ -1665,10 +1722,10 @@ For J = A.ListRows.Count To 2 Step -1
     A.ListRows(J).Delete
 Next
 End Sub
-Sub DbttDrp(A As Database, TT)
-AyDoPX CvNy(TT), "DbtDrp", A
+Sub DbDrpTT(A As Database, TT)
+AyDoPX CvNy(TT), "DbDrpTbl", A
 End Sub
-Sub DbtDrp(A As Database, T)
+Sub DbDrpTbl(A As Database, T)
 If DbHasTbl(A, T) Then A.Execute FmtQQ("Drop Table [?]", T)
 End Sub
 Sub SavRec()
@@ -2450,7 +2507,7 @@ Next
 Jn = Join(Ky, " and ")
 A.Execute FmtQQ("Select Distinct ?,Count(*) as Cnt into [?] from [?] group by ? having Count(*)>1", K, Tmp, T, K)
 A.Execute FmtQQ("Select x.* into [?] from [?] x inner join [?] a on ?", TarTbl, T, Tmp, Jn)
-DbtDrp A, Tmp
+DbDrpTbl A, Tmp
 End Sub
 Sub D(A)
 AyDmp VarLy(A)
@@ -2544,10 +2601,10 @@ Sub TblCls(T)
 DoCmd.Close acTable, T
 End Sub
 Sub TblDrp(T$)
-DbtDrp CurrentDb, T
+DbDrpTbl CurrentDb, T
 End Sub
 Sub TTDrp(TT)
-DbttDrp CurrentDb, TT
+DbDrpTT CurrentDb, TT
 End Sub
 
 Function DbHasQry(A As Database, Q) As Boolean
@@ -3191,7 +3248,7 @@ If DbtHasLnk(A, T, S, Cn) Then
     'Debug.Print MsgLin("DbtLnk: [Tbl] has same [Src] & [Cn] in [Db]", T, S, Cn, DbNm(A))
     Exit Sub
 End If
-DbtDrp A, T
+DbDrpTbl A, T
 With TT
     .Connect = Cn
     .Name = T
@@ -3578,6 +3635,15 @@ End Sub
 Function FfnTSz$(A)
 If Not FfnIsExist(A) Then Exit Function
 FfnTSz = FfnDTim(A) & "." & FfnSz(A)
+End Function
+Function FfnTSzAsg(A, OTim As Date, OSz&)
+If Not FfnIsExist(A) Then
+    OTim = 0
+    OSz = 0
+    Exit Function
+End If
+OTim = FfnTim(A)
+OSz = FfnSz(A)
 End Function
 Function TSzTim(A) As Date
 TSzTim = TakBef(A, ".")
@@ -5419,7 +5485,6 @@ If AttIsOld("Tp", A) Then AttImp "Tp", A
 End Sub
 
 Function AttIsOld(A, Ffn) As Boolean
-AttEns A
 Dim T1 As Date, T2 As Date
 T1 = AttTim(A)
 T2 = FfnTim(Ffn)
@@ -5648,7 +5713,7 @@ Sub CDbDrpLnkTbl()
 DbDrpLnkTbl CurrentDb
 End Sub
 Sub DbDrpLnkTbl(A As Database)
-DbttDrp A, DbLnkTny(A)
+DbDrpTT A, DbLnkTny(A)
 End Sub
 Sub RsUpd(A As DAO.Recordset, ParamArray Ap())
 Dim Av(): Av = Ap
@@ -5982,32 +6047,68 @@ Sub SchemaImp()
 Dim A$
 A = SchemaFt
 If Not FfnIsExist(A) Then
-    FunMsgBrw "SchemaImp", "[Schema] not exist, no TpImp.", A
+    FunMsgDmp "SchemaImp", "[SchemaFt] not exist, no SchemaImp.", A
     Exit Sub
 End If
-If AttIsOld("Schema", A) Then AttImp "Schema", A
+Dim T As Date, Sz&
+FfnTSzAsg A, T, Sz
+If SchemaFt_IsNew(A) Then
+    TfImpFt "Spec", "Schema", A
+    Q = FmtQQ("Update Spec set Schema_FtTim=#?#, Schema_FtSz=?", T, Sz)
+    CurrentDb.Execute Q
+    FunMsgDmp "SchemaImp", "[SchemaFt] of [time] and [size] is imported", A, T, Sz
+Else
+    FunMsgDmp "SchemaImp", "[SchemaFt-Tim] is same or older than [Imported-Schema-Tim], no import.  They have [Sz1] and [Sz2]", _
+        T, SchemaFtTim, Sz, SchemaFtSz
+End If
 End Sub
-Sub SchemaExp()
 
+Sub TfImpFt(T, F, Ft$)
+DbtfImpFt CurrentDb, T, F, Ft
 End Sub
+Function FtLines$(A)
+FtLines = Fso.GetFile(A).OpenAsTextStream.ReadAll
+End Function
+Sub DbtfImpFt(A As Database, T, F, Ft$)
+Q = FmtQQ("Select [?] from [?]", F, T) ' assume there is only 1-and-only-1 record in T
+RsUpd A.OpenRecordset(Q), FtLines(Ft)
+End Sub
+Function SchemaFt_IsNew(A) As Boolean
+SchemaFt_IsNew = FfnTim(A) > SchemaFtTim
+End Function
+Property Get SchemaFtTim() As Date
+SchemaFtTim = Nz(TfVal("Spec", "Schema_FtTim"), 0)
+End Property
+Property Get SchemaFtSz&()
+SchemaFtSz = Nz(TfVal("Spec", "Schema_FtSz"), 0)
+End Property
+Sub SchemaExp(Optional OvrWrt As Boolean)
+StrWrt SchemaLines, SchemaFt, Not OvrWrt
+End Sub
+
 Property Get SchemaFt$()
 SchemaFt = PgmObjPth & SchemaFn
 End Property
+
 Function FfnPing(A) As Boolean
 If Not FfnIsExist(A) Then Debug.Print "[" & A & "] not found": FfnPing = True
 End Function
+
 Sub SchemaBrw()
 FtBrw SchemaFt
 End Sub
+
 Sub SchemaIni()
 Dim A$: A = SchemaFt
 If FfnIsExist(A) Then Debug.Print "Schema[" & A & "] already exist": Exit Sub
 StrWrt "", A
 Debug.Print "Schema[" & A & "] created"
 End Sub
+
 Property Get SchemaFn$()
 SchemaFn = Apn & "(Schema).txt"
 End Property
+
 Function NewFld(F, SfxFsn As Dictionary, NmFsn As Dictionary) As DAO.Field2
 
 End Function
@@ -6022,13 +6123,13 @@ Set TsnTd = Td
 End Function
 
 Sub DbCrtSchema(A As Database, SsnLines$)
-DbCrtTT A, TsnLines
-A.TableDefs.Append TsnTd(Tsn, SfxFsnDic, NmFsnDic)
+Dim Tsn$, SfxFsn$, NmFsn$
+DbCrtTT A, Tsn, SfxFsn, NmFsn
+'A.TableDefs.Append TsnTd(Tsn, NewSfxFsn(SfxFsn),NewSfxF NmFsnDic)
 End Sub
 
 Sub DbCrtTT(A As Database, TsnLines$, SfxFsnLines$, NmFsnLines$)
-
-A.TableDefs.Append TsnTd(Tsn, SfxFsn, NmFsn)
+'A.TableDefs.Append TsnTd(Tsn, SfxFsn, NmFsn)
 End Sub
 
 Sub DbCrtTbl(A As Database, Tsn$, SfxFsnDic As Dictionary, NmFsnDic As Dictionary)
