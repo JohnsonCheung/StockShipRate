@@ -6128,10 +6128,10 @@ DbCrtTT A, Tsn, SfxFsn, NmFsn
 'A.TableDefs.Append TsnTd(Tsn, NewSfxFsn(SfxFsn),NewSfxF NmFsnDic)
 End Sub
 
-Sub DbCrtTT(A As Database, TsnLines$, SfxFsnLines$, NmFsnLines$)
-'A.TableDefs.Append TsnTd(Tsn, SfxFsn, NmFsn)
+Sub DbCrtTT(A As Database, S As Schm)
+AyDoPX S.TdAy, "DbAppTd", A
 End Sub
 
-Sub DbCrtTbl(A As Database, Tsn$, SfxFsnDic As Dictionary, NmFsnDic As Dictionary)
-A.TableDefs.Append TsnTd(Tsn, SfxFsnDic, NmFsnDic)
+Sub DbAppTd(A As Database, Td As Dao.TableDefs)
+A.TableDefs.Append Td
 End Sub
