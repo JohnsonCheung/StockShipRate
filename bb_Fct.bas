@@ -119,12 +119,12 @@ End Sub
 Function DbCcmTny(A As Database) As String()
 DbCcmTny = AyWhHasPfx(DbTny(A), "^")
 End Function
-Property Get CurDbCnSy() As String()
-CurDbCnSy = DbCnSy(CurrentDb)
+Property Get CDbCnSy() As String()
+CDbCnSy = DbCnSy(CurrentDb)
 End Property
 
 Property Get CnSy() As String()
-CnSy = CurDbCnSy
+CnSy = CDbCnSy
 End Property
 Function AyabNonEmpBLy(A, B, Optional Sep$ = " ") As String()
 Dim J&, O$()
@@ -532,7 +532,7 @@ AyDmp RsCsvLyByFny0(A, Fny0)
 A.MoveFirst
 End Sub
 Function AttRs(A) As AttRs
-AttRs = DbAtt_Rs(CurrentDb, A)
+AttRs = DbAtt_AttRs(CurrentDb, A)
 End Function
 Function AttFny() As String()
 AttFny = ItrNy(DbFstAttRs(CurrentDb).AttRs.Fields)
@@ -561,7 +561,7 @@ If N <> 1 Then
     Er "[Att] in [Db] has [FilCnt] which should be one.|Not export to [ToFfn].  (@DbAtt_Exp)", _
         Att, A.Name, N, ToFfn
 End If
-DbAtt_Exp = AttRs_Exp(DbAtt_Rs(A, Att), ToFfn)
+DbAtt_Exp = AttRs_Exp(DbAtt_AttRs(A, Att), ToFfn)
 MsgAp_Dmp "@[Sub], [Att] is exported [ToFfn]", "DbAtt_Exp", Att, ToFfn
 End Function
 Sub RaiseErr()
@@ -820,13 +820,18 @@ End Function
 Function FldVal(A As DAO.Field)
 Asg A.Value, FldVal
 End Function
-Function DbAtt_Rs(A As Database, Att) As AttRs
-With DbAtt_Rs
-    Set .TblRs = A.OpenRecordset(FmtQQ("Select Att,FilTim,FilSz,AttNm from Att where AttNm='?'", Att))
-    If .TblRs.EOF Then
-        A.Execute FmtQQ("Insert into Att (AttNm) values('?')", Att)
-        Set .TblRs = A.OpenRecordset(FmtQQ("Selectex Att from Att where AttNm='?'", Att))
-    End If
+Function DbAtt_AttRs(A As Database, Att) As AttRs
+Q = FmtQQ("Select Att,FilTim,FilSz,AttNm from Att where AttNm='?'", Att)
+With DbAtt_AttRs
+    Set .TblRs = A.OpenRecordset(Q)
+    With .TblRs
+        If .EOF Then
+            .AddNew
+            !AttNm = Att
+            .Update
+            .MoveFirst
+        End If
+    End With
     Set .AttRs = FldVal(.TblRs!Att) '.Fields(0).Value
 End With
 End Function
@@ -849,7 +854,7 @@ If FfnExt(AttFn) <> FfnExt(ToFfn) Then
     Stop
 End If
 If FfnIsExist(ToFfn) Then Stop
-AttRs = DbAtt_Rs(A, Att)
+AttRs = DbAtt_AttRs(A, Att)
 With AttRs
     With .AttRs
         .MoveFirst
@@ -881,7 +886,7 @@ Sub AttClr(A)
 DbAtt_Clr CurrentDb, A
 End Sub
 Sub DbAtt_Clr(A As Database, Att)
-RsClr DbAtt_Rs(A, Att).AttRs
+RsClr DbAtt_AttRs(A, Att).AttRs
 End Sub
 Sub RsClr(A As DAO.Recordset)
 With A
@@ -946,8 +951,8 @@ End With
 RsNRec = O
 End Function
 Function DbAtt_FilCnt%(A As Database, Att)
-'DbAtt_FilCnt = DbAtt_Rs(A, Att).AttRs.RecordCount
-DbAtt_FilCnt = RsNRec(DbAtt_Rs(A, Att).AttRs)
+'DbAtt_FilCnt = DbAtt_AttRs(A, Att).AttRs.RecordCount
+DbAtt_FilCnt = RsNRec(DbAtt_AttRs(A, Att).AttRs)
 End Function
 Function AttFilCnt%(A)
 AttFilCnt = DbAtt_FilCnt(CurrentDb, A)
@@ -956,20 +961,28 @@ Function AttExp$(A, ToFfn)
 'Exporting the only file in Att
 AttExp = DbAtt_Exp(CurrentDb, A, ToFfn)
 End Function
+
 Sub AttImp(A$, FmFfn$)
 DbAtt_Imp CurrentDb, A, FmFfn
 End Sub
+
 Sub DbAtt_Imp(A As Database, Att$, FmFfn$)
-AttRs_Imp DbAtt_Rs(A, Att), FmFfn
+AttRs_Imp DbAtt_AttRs(A, Att), FmFfn
 End Sub
+
 Function AttFstFn$(A)
 AttFstFn = DbAtt_FstFn(CurrentDb, A)
 End Function
+
 Function DbAtt_FstFn(A As Database, Att)
-DbAtt_FstFn = DbAtt_Rs(A, Att).AttRs!FileName
+DbAtt_FstFn = DbAtt_AttRs(A, Att).AttRs!FileName
 End Function
+
 Function RsHasFldV(A As DAO.Recordset, F$, V) As Boolean
 With A
+    If .BOF Then
+        If .EOF Then Exit Function
+    End If
     .MoveFirst
     While Not .EOF
         If .Fields(F) = V Then RsHasFldV = True: Exit Function
@@ -977,23 +990,28 @@ With A
     Wend
 End With
 End Function
+Function AttNy() As String()
+AttNy = CDbAttNy
+End Function
+Function AttRs_AttNm$(A As AttRs)
+AttRs_AttNm = A.TblRs!AttNm
+End Function
+
 Sub AttRs_Imp(A As AttRs, Ffn$)
+Const CSub$ = "AttRs_Imp"
 Dim F2 As Field2
-Const Trc As Boolean = True
-Dim S&, T As Date
+Dim S&, T$
 S = FfnSz(Ffn)
-T = FfnTim(Ffn)
-If Trc Then
-    MsgAp_Dmp "In 'AttRs_Imp', [Att] is going to import [Ffn] with [Sz] and [Tim]", FldVal(A.TblRs!AttNm), Ffn, S, T
-End If
+T = FfnDTim(Ffn)
+FunMsgDmp CSub, "[Att] is going to import [Ffn] with [Sz] and [Tim]", FldVal(A.TblRs!AttNm), Ffn, S, T
 With A
     .TblRs.Edit
     With .AttRs
         If RsHasFldV(A.AttRs, "FileName", FfnFn(Ffn)) Then
-            If Trc Then MsgAp_Dmp "Ffn is found and Att is replaced"
+            MsgDmp "Ffn is found in Att and it is replaced"
             .Edit
         Else
-            If Trc Then MsgAp_Dmp "Ffn is not found in Att, it is imported"
+            MsgDmp "Ffn is not found in Att and it is imported"
             .AddNew
         End If
         Set F2 = !FileData
@@ -1005,6 +1023,16 @@ With A
     .TblRs.Update
 End With
 End Sub
+Function AttLines$(A)
+AttLines = DbAtt_Lines(CurrentDb, A)
+End Function
+Function DbAtt_Lines$(A As Database, A)
+
+End Function
+Property Get SchemaLines$()
+SchemaLines = AttLines("Schema")
+End Property
+
 Sub RsSetFldVal(A As DAO.Recordset, F, V)
 With A
     .Edit
@@ -1012,9 +1040,11 @@ With A
     .Update
 End With
 End Sub
+
 Function FxHasWs(A, Optional WsNy0 = "Sheet1") As Boolean
 FxHasWs = AyHasAy(FxWsNy(A), CvNy(WsNy0))
 End Function
+
 Function FxDaoCnStr$(A)
 'Excel 8.0;HDR=YES;IMEX=2;DATABASE=D:\Data\MyDoc\Development\ISS\Imports\PO\PUR904 (On-Line).xls;TABLE='PUR904 (On-Line)'
 'INTO [Excel 8.0;HDR=YES;IMEX=2;DATABASE={0}].{1} FROM {2}"
@@ -2119,7 +2149,7 @@ End Function
 
 Function OupPth$()
 Dim A$
-A = CurDbPth & "Output\"
+A = CDbPth & "Output\"
 PthEns A
 OupPth = A
 End Function
@@ -2131,7 +2161,7 @@ On Error Resume Next
 YYYYMMDD_IsVdt = Format(CDate(A), "YYYY-MM-DD") = A
 End Function
 Function PgmObjPth$()
-PgmObjPth = PthEns(CurDbPth & "PgmObj\")
+PgmObjPth = PthEns(CDbPth & "PgmObj\")
 End Function
 Function FfnPth$(A)
 Dim P%: P = InStrRev(A, "\")
@@ -2208,8 +2238,8 @@ End Function
 Function UnderLinDbl$(A)
 UnderLinDbl = String(Len(A), "=")
 End Function
-Function CurDbPth$()
-CurDbPth = FfnPth(CurrentDb.Name)
+Function CDbPth$()
+CDbPth = FfnPth(CurrentDb.Name)
 End Function
 Property Get PnmVal(Pnm$)
 PnmVal = CurrentDb.TableDefs("Prm").OpenRecordset.Fields(Pnm).Value
@@ -3978,11 +4008,11 @@ End Function
 Function DbStru$(A As Database)
 DbStru = DbttStru(A, DbTny(A))
 End Function
-Property Get CurDbTny() As String()
-CurDbTny = DbTny(CurrentDb)
+Property Get CDbTny() As String()
+CDbTny = DbTny(CurrentDb)
 End Property
 Property Get Tny() As String()
-Tny = CurDbTny
+Tny = CDbTny
 End Property
 Function DbTny(A As Database) As String()
 DbTny = DbqSy(A, "Select Name from MSysObjects where Type in (1,6) and Name not Like 'MSys*' and Name not Like 'f_????????????????????????????????_*' and Name not like '~TMP*'")
@@ -4414,6 +4444,7 @@ Fso.CreateTextFile(Ft, Overwrite:=Not IsNotOvrWrt).Write A
 StrWrt = Ft
 End Function
 Sub FtBrw(A)
+If FfnPing(A) Then Exit Sub
 'Shell "code.cmd """ & A & """", vbHide
 Shell "notepad.exe """ & A & """", vbMaximizedFocus
 End Sub
@@ -5218,7 +5249,7 @@ Function SrcPth$()
 Dim X As Boolean, Y$
 If Not X Then
     X = True
-    Y = CurDbPth & "Src\"
+    Y = CDbPth & "Src\"
     PthEns Y
 End If
 SrcPth = Y
@@ -5311,6 +5342,7 @@ For J = 0 To U
 Next
 ObjDr = O
 End Function
+
 Function OyDry(A, PrpNy0) As Variant()
 Dim O(), U%, I
 Dim PrpNy$()
@@ -5320,18 +5352,23 @@ For Each I In A
 Next
 OyDry = O
 End Function
+
 Sub ZZ_OyDrs()
 WsVis DrsWs(OyDrs(CurrentDb.TableDefs("ZZ_DbtUpdSeq").Fields, "Name Type OrdinalPosition"))
 End Sub
+
 Function DrsWs(A As Drs) As Worksheet
 Set DrsWs = SqWs(DrsSq(A))
 End Function
+
 Function DrsPutAt(A As Drs, At As Range) As Range
 Set DrsPutAt = SqPutAt(DrsSq(A), At)
 End Function
+
 Function DryWs(A) As Worksheet
 Set DryWs = SqWs(DrySq(A))
 End Function
+
 Function DryNCol%(A)
 Dim O%, Dr
 For Each Dr In A
@@ -5339,6 +5376,7 @@ For Each Dr In A
 Next
 DryNCol = O
 End Function
+
 Function DrySq(A) As Variant()
 Dim O(), C%, R&, Dr
 Dim NC%, NR&
@@ -5353,18 +5391,23 @@ For R = 1 To NR
 Next
 DrySq = O
 End Function
+
 Function DbPth$(A As Database)
 DbPth = FfnPth(A.Name)
 End Function
+
 Function DrsNCol%(A As Drs)
 DrsNCol = Max(Sz(A.Fny), DryNCol(A.Dry))
 End Function
+
 Sub TpWrtFfn(Ffn$)
 AttExp "Tp", Ffn
 End Sub
+
 Sub TpExp()
 AttExp "Tp", TpFx
 End Sub
+
 Sub TpImp()
 Dim A$
 A = TpFx
@@ -5374,7 +5417,9 @@ If Not FfnIsExist(A) Then
 End If
 If AttIsOld("Tp", A) Then AttImp "Tp", A
 End Sub
+
 Function AttIsOld(A, Ffn) As Boolean
+AttEns A
 Dim T1 As Date, T2 As Date
 T1 = AttTim(A)
 T2 = FfnTim(Ffn)
@@ -5570,11 +5615,11 @@ End Sub
 Function TdHasCnStr(A As DAO.TableDef) As Boolean
 TdHasCnStr = A.Connect <> ""
 End Function
-Property Get CurDbLnkTny() As String()
-CurDbLnkTny = DbLnkTny(CurrentDb)
+Property Get CDbLnkTny() As String()
+CDbLnkTny = DbLnkTny(CurrentDb)
 End Property
 Property Get LnkTny() As String()
-LnkTny = CurDbLnkTny
+LnkTny = CDbLnkTny
 End Property
 Function ItrWhPredPrpAyInto(A, Pred$, P, OInto)
 Dim O: O = OInto
@@ -5597,9 +5642,9 @@ Function DbLnkTny(A As Database) As String()
 DbLnkTny = ItrWhPredPrpSy(A.TableDefs, "TdHasCnStr", "Name")
 End Function
 Sub DrpLnkTbl()
-CurDbDrpLnkTbl
+CDbDrpLnkTbl
 End Sub
-Sub CurDbDrpLnkTbl()
+Sub CDbDrpLnkTbl()
 DbDrpLnkTbl CurrentDb
 End Sub
 Sub DbDrpLnkTbl(A As Database)
@@ -5934,7 +5979,13 @@ Sub TsnAsg(A, OTd As DAO.TableDef, OFny$())
 ', OAtt As DAO.TableDefAttributeEnum)
 End Sub
 Sub SchemaImp()
-
+Dim A$
+A = SchemaFt
+If Not FfnIsExist(A) Then
+    FunMsgBrw "SchemaImp", "[Schema] not exist, no TpImp.", A
+    Exit Sub
+End If
+If AttIsOld("Schema", A) Then AttImp "Schema", A
 End Sub
 Sub SchemaExp()
 
@@ -5942,6 +5993,18 @@ End Sub
 Property Get SchemaFt$()
 SchemaFt = PgmObjPth & SchemaFn
 End Property
+Function FfnPing(A) As Boolean
+If Not FfnIsExist(A) Then Debug.Print "[" & A & "] not found": FfnPing = True
+End Function
+Sub SchemaBrw()
+FtBrw SchemaFt
+End Sub
+Sub SchemaIni()
+Dim A$: A = SchemaFt
+If FfnIsExist(A) Then Debug.Print "Schema[" & A & "] already exist": Exit Sub
+StrWrt "", A
+Debug.Print "Schema[" & A & "] created"
+End Sub
 Property Get SchemaFn$()
 SchemaFn = Apn & "(Schema).txt"
 End Property

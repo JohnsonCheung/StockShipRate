@@ -91,7 +91,7 @@ End If
 End Sub
 
 Function OupPth$()
-OupPth = PthEns(CurDbPth & "Output\")
+OupPth = PthEns(CDbPth & "Output\")
 End Function
 
 Function IFbStkShpRate$()
@@ -166,7 +166,7 @@ End Property
 
 Property Get InvHom$()
 If IsDev Then
-    InvHom = CurDbPth & "Sample\"
+    InvHom = CDbPth & "Sample\"
 Else
     InvHom = PthEns(AppHom & "Import Invoices\")
 End If
