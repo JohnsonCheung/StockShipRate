@@ -774,7 +774,7 @@ End Function
 Function BldPushAppFcmd$()
 Dim O$(), Cd$, GitPush
 Cd = FmtQQ("Cd ""?""", SrcPth)
-GitPush = "git push -u https://johnsoncheung:j%40hns0nC4@github.com/johnsoncheung/StockShipRate.git master"
+GitPush = "git push -u https://johnsoncheung@github.com/johnsoncheung/StockShipRate.git master"
 Push O, Cd
 Push O, GitPush
 Push O, "Pause"
