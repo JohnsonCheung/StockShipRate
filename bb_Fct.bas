@@ -1,7 +1,17 @@
 Option Compare Database
 Option Explicit
+Const LgSNm$ = "LgSchm" ' The LgSchm-Spnm
 Public Fso As New Scripting.FileSystemObject
 Public Fcmd As New Fcmd
+Type SchmLinesBrk
+    FldSfx() As String
+    Fld() As String
+    TFld() As String
+    FldDft() As String
+    FldReq() As String
+    FldDes() As String
+    TblDes() As String
+End Type
 Type AttRs
     TblRs As DAO.Recordset
     AttRs As DAO.Recordset
@@ -23,11 +33,227 @@ Public Q$
 Public W As Database
 Const PSep$ = " "
 Const PSep1$ = " "
-Sub MapNDrive()
-RmvNDrive
+
+Sub AAA()
+ZZ_SchmLines_BrkAsg
+End Sub
+
+Sub ZZ_SchmLines_BrkAsg()
+Dim SchmLines$
+SchmLines = _
+"FldSfx Txt   Txt" & vbCrLf & _
+"FldSfx Lines Mem" & vbCrLf & _
+"FldSfx Dte   Dte" & vbCrLf & _
+"Fld    Fun   Txt" & vbCrLf & _
+"FldDft CrtDte Now" & vbCrLf & _
+"TFld Sess * CrtDte" & vbCrLf & _
+"TFld Msg  * Fun *Txt | CrtDte" & vbCrLf & _
+"TFld Lg   * Sess Msg CrtDte" & vbCrLf & _
+"TFld LgV  * Lg Lines" & vbCrLf & _
+"FldDes Fun Function name that call the log" & vbCrLf & _
+"FldReq Lines Fun MsgTxt" & vbCrLf & _
+"TblDes Msg it will a new record when Lg-function is first time using the Fun+MsgTxt"
+Dim Td() As DAO.TableDef, Pk$(), Sk$()
+SchmLines_BrkAsg SchmLines, Td, Pk, Sk
+Stop
+End Sub
+Function SchmLinesBrk_TdAy(A As SchmLinesBrk) As DAO.TableDef()
+Dim O() As DAO.TableDef, U%, Tny$(), J%
+With A
+    Tny = AyMapSy(.TFld, "LinT1")
+    U = UB(Tny)
+    ReDim O(U)
+    For J = 0 To U
+        Set O(J) = SchmLinesBrk_TdAy__1(Tny(J), A)
+    Next
+End With
+SchmLinesBrk_TdAy = O
+End Function
+Sub TdAddFd(A As DAO.TableDef, F As DAO.Field)
+A.Fields.Append F
+End Sub
+Function LyWhT1EqV(A$(), V) As String()
+LyWhT1EqV = AyWhPredXP(A, "LinHasT1", V)
+End Function
+Function LinHasT1(A, T1$) As Boolean
+LinHasT1 = LinT1(A) = T1
+End Function
+Function SchmLinesBrk_FdAy(A As SchmLinesBrk, T) As DAO.Field()
+Dim TFld$(), Fny$(), O() As DAO.Field, J%
+TFld = LyWhT1EqV(A.TFld, T)
+If Sz(TFld) <> 1 Then Stop
+Fny = SslSy(Replace(TFld(0), "*", T))
+ReDim O(UB(Fny))
+For J = 0 To UB(Fny)
+    Set O(J) = SchmLinesBrk_Fd(A, T, Fny(J))
+Next
+SchmLinesBrk_FdAy = O
+End Function
+Sub ZZ_TFldDes()
+TFldDes("Att", "AttNm") = "AttNm"
+End Sub
+Property Get DbtfDes$(A As Database, T, F)
+DbtfDes = DbtfPrp(A, T, F, "Description")
+End Property
+Property Let DbtfDes(A As Database, T, F, Des$)
+DbtfPrp(A, T, F, "Description") = Des
+End Property
+Property Get DbtfPrp(A As Database, T, F, P)
+If Not DbtfHasPrp(A, T, F, P) Then Exit Property
+DbtfPrp = A.TableDefs(T).Properties(P).Value
+End Property
+Property Let DbtfPrp(A As Database, T, F, P, V)
+If DbtfHasPrp(A, T, F, P) Then
+    A.TableDefs(T).Fields(F).Properties(P).Value = V
+Else
+    With A.TableDefs(T)
+        .Fields(F).Properties.Append .CreateProperty(P, VarDaoTy(V), V)
+    End With
+End If
+End Property
+
+Property Get TFldDes$(T, F)
+TFldDes = TFldPrp(T, F, "Description")
+End Property
+Property Let TFldDes(T, F, Des$)
+TFldPrp(T, F, "Description") = Des
+End Property
+Property Get TFldPrp(T, F, P)
+TFldPrp = DbtfPrp(CurrentDb, T, F, P)
+End Property
+Property Let TFldPrp(T, F, P, V)
+DbtfPrp(CurrentDb, T, F, P) = V
+End Property
+Function DbtfHasPrp(A As Database, T, F, P) As Boolean
+DbtfHasPrp = ItrHasNm(A.TableDefs(T).Fields(F).Properties, P)
+End Function
+Function SchmLinesBrk_Fd(A As SchmLinesBrk, T, F) As DAO.Field
+Dim O As DAO.Field, Ty As DAO.DataTypeEnum, TxtSz%, IsId As Boolean, Dft$, Des$, Req As Boolean
+Req = AyHas(A.FldReq, F)
+Stop
+'A.FldReq
+Set O = DaoFld(F, Ty, TxtSz, , IsId, Dft, Req)
+Set SchmLinesBrk_Fd = O
+End Function
+Function SchmLinesBrk_TdAy__1(T, A As SchmLinesBrk) As DAO.TableDef
+Dim O As New DAO.TableDef, FdAy() As DAO.Field
+O.Name = T
+FdAy = SchmLinesBrk_FdAy(A, T)
+AyDoPX FdAy, "TdAddFd", T
+Set SchmLinesBrk_TdAy__1 = O
+End Function
+Function SslAy_Sy(A$()) As String()
+Dim O$()
+If Sz(A) = 0 Then Exit Function
+For Each L In A
+    PushAy O, SslSy(L)
+Next
+SslAy_Sy = O
+End Function
+Sub SchmLines_BrkAsg(A, OTdAy() As DAO.TableDef, OPkSqlAy$(), OSkSqlAy$())
+Dim X As SchmLinesBrk
+With X
+    LinesBrkAsg A, _
+        "Fld   FldDes   FldDft   FldReq   FldSfx   TblDes   TFld", _
+        .Fld, .FldDes, .FldDft, .FldReq, .FldSfx, .TblDes, .TFld
+    .FldReq = SslAy_Sy(.FldReq)
+End With
+Dim PkTny$()
+    Dim B$()
+    B = AyWhPred(X.TFld, "TFLinHasPk")
+    PkTny = AyMapSy(B, "LinT1")
+Dim SkTny$(), SkSslAy$()
+    Dim J%, U%
+    B = AyWhPred(X.TFld, "TFLinHasSk")
+    B = AyMapXPSy(B, "TakBef", "|")
+    SchmLines_BrkAsg__1 B, SkTny, SkSslAy
+OTdAy = SchmLinesBrk_TdAy(X)
+OPkSqlAy = AyMapSy(PkTny, "TnPkSql")
+OSkSqlAy = AyabMapSy(SkTny, SkSslAy, "TnSkSql")
+End Sub
+Private Sub SchmLines_BrkAsg__1(Sk$(), OT$(), OSsl$())
+Dim J%, U%
+U = UB(Sk)
+If U = -1 Then Exit Sub
+ReDim OT(U)
+ReDim OSsl(U)
+For J = 0 To U
+    SchmLines_BrkAsg__2 Sk(J), OT(J), OSsl(J)
+Next
+End Sub
+Private Sub SchmLines_BrkAsg__2(ByVal Sk$, OT$, OSsl$)
+Dim A$
+BrkAsg Sk, " ", OT, A
+OSsl = Replace(RmvPfx(A, "*"), "*", OT)
+End Sub
+
+Function HasSubStr(A, SubStr) As Boolean
+HasSubStr = InStr(A, SubStr) > 0
+End Function
+Function TFLinHasPk(A) As Boolean
+TFLinHasPk = HasSubStr(A, " * ")
+End Function
+Function TFLinHasSk(A) As Boolean
+TFLinHasSk = HasSubStr(A, " | ")
+End Function
+Function LyT1Ay(A) As String()
+Dim O$(), L, J&
+If Sz(A) = 0 Then Exit Function
+ReDim O(UB(A))
+For Each L In A
+    BrkAsg L, " ", O(J)
+    J = J + 1
+Next
+End Function
+Function AyabMapInto(A, B, MapAB$, OInto)
+Dim J&, U&, O
+O = OInto: Erase O
+U = UB(A)
+If U <> UB(B) Then Stop
+For J = 0 To U
+    Push O, Run(MapAB, A(J), B(J))
+Next
+AyabMapInto = O
+End Function
+Function AyabMapSy(A, B, MapAB$) As String()
+AyabMapSy = AyabMapInto(A, B, MapAB, EmpSy)
+End Function
+Function TnPkSql$(A)
+TnPkSql = FmtQQ("Create Index PrimaryKey on [?] (?) with Primary", A, A)
+End Function
+Function TnSkSql$(A, SkNy0)
+TnSkSql = FmtQQ("Create Unique Index [?] on [?] (?)", A, A, JnComma(CvNy(SkNy0)))
+End Function
+Sub LinesBrkAsg(A, Ny0, ParamArray OLyAp())
+Dim Ny$(), L, T1$, T2$, NmDic As Dictionary
+Ny = CvNy(Ny0)
+Set NmDic = AyIxDic(Ny)
+For Each L In SplitCrLf(A)
+    Select Case FstChr(L)
+    Case "'", " "
+    Case Else
+        BrkAsg L, " ", T1, T2
+        If NmDic.Exists(T1) Then
+            Push OLyAp(NmDic(T1)), T2 '<----
+        End If
+    End Select
+Next
+End Sub
+Function AyIxDic(A) As Dictionary
+Dim O As New Dictionary, J&
+For J = 0 To UB(A)
+    O.Add A(J), J
+Next
+Set AyIxDic = O
+End Function
+Function TdHasPkFld(A As DAO.TableDef) As Boolean
+TdHasPkFld = ItrHasNm(A.Fields, A.Name)
+End Function
+Sub NDriveMap()
+NDriveRmv
 Shell "Subst N: c:\users\user\desktop\MHD"
 End Sub
-Sub RmvNDrive()
+Sub NDriveRmv()
 Shell "Subst /d N:"
 End Sub
 Function EAppStr_DtaFb$(A)
@@ -218,37 +444,28 @@ Dim LikSsl2$
 LoNm_AlignCLikSsl = LikSsl1 & " " & LikSsl2
 End Function
 
-Sub ZZ_DbtpSet()
+Sub ZZ_DbtPrp()
 TblDrp "Tmp"
 DoCmd.RunSQL "Create Table Tmp (F1 Text)"
-DbtpSet CurrentDb, "Tmp", "XX", "AFdf"
-Debug.Assert DbtpGet(CurrentDb, "Tmp", "XX") = "AFdf"
+DbtPrp(CurrentDb, "Tmp", "XX") = "AFdf"
+Debug.Assert DbtPrp(CurrentDb, "Tmp", "XX") = "AFdf"
 End Sub
-Function DbtPrpLoFmlVbl$(A As Database, T)
-DbtPrpLoFmlVbl = DbtpGet(A, T, "LoFmlVbl")
-End Function
-Function TblPrpLoFmlVbl$(T)
+Property Get DbtPrpLoFmlVbl$(A As Database, T)
+DbtPrpLoFmlVbl = DbtPrp(A, T, "LoFmlVbl")
+End Property
+Property Get TblPrpLoFmlVbl$(T)
 TblPrpLoFmlVbl = DbtPrpLoFmlVbl(CurrentDb, T)
-End Function
-Sub TblSetPrpLoFmlVbl(T, LoFmlVbl$)
-DbtSetPrpLoFmlVbl CurrentDb, T, LoFmlVbl
-End Sub
-Sub DbtSetPrpLoFmlVbl(A As Database, T, LoFmlVbl$)
-DbtpSet A, T, "LoFmlVbl", LoFmlVbl
-End Sub
-Function DbtpGet(A As Database, T, P)
-If Not DbtHasPrp(A, T, P) Then Exit Function
-DbtpGet = A.TableDefs(T).Properties(P).Value
-End Function
-Sub DbtpSet(A As Database, T, P, Val)
-If DbtHasPrp(A, T, P) Then
-    A.TableDefs(T).Properties(P).Value = Val
-Else
-    With A.TableDefs(T)
-        .Properties.Append .CreateProperty(P, VarDaoTy(Val), Val)
-    End With
-End If
-End Sub
+End Property
+Property Let TblPrpLoFmlVbl(T, LoFmlVbl$)
+DbtPrpLoFmlVbl(CurrentDb, T) = LoFmlVbl
+End Property
+Property Let DbtPrpLoFmlVbl(A As Database, T, LoFmlVbl$)
+DbtPrp(A, T, "LoFmlVbl") = LoFmlVbl
+End Property
+Property Get DbtPrp(A As Database, T, P)
+If Not DbtHasPrp(A, T, P) Then Exit Property
+DbtPrp = A.TableDefs(T).Properties(P).Value
+End Property
 Function VarDaoTy(A) As DAO.DataTypeEnum
 Dim O As DAO.DataTypeEnum
 Select Case VarType(A)
@@ -267,43 +484,63 @@ End Function
 Function DbtfVal(A As Database, T, F)
 DbtfVal = A.TableDefs(T).OpenRecordset.Fields(F).Value
 End Function
-Function DbtfkVal(A As Database, T, F, ParamArray K())
-Dim KAv()
-KAv = K
-DbtfkVal = DbtfkVal_zKAv(A, T, F, KAv)
+Function DbtfkV(A As Database, T, F, K())
+Dim W$, Sk$(), Rs As DAO.Recordset
+Sk = DbtSk(A, T)
+W = KyVy_BExpr(Sk, K)
+Q = FmtQQ("Select ? from [?] where ?", F, T, W)
+Set Rs = A.OpenRecordset(Q)
+DbtfkV = RsV(Rs, F)
 End Function
-Function DbtfkVal_zKAv(A As Database, T, F, KAv())
-Dim Av(), Rs As Recordset
-Av = AyIns(KAv, "=")
-Set Rs = A.TableDefs(T).OpenRecordset
-If Sz(KAv) > 0 Then Rs.Index = "PrimaryKey"
-Select Case Sz(KAv)
-Case 0
-Case 1: Rs.Seek "=", KAv(0)
-Case 2: Rs.Seek "=", KAv(0), KAv(1)
-Case 3: Rs.Seek "=", KAv(0), KAv(1), KAv(2)
-Case 4: Rs.Seek "=", KAv(0), KAv(1), KAv(2), KAv(3)
+Function KyVy_BExpr$(Ky$(), Vy())
+Dim U%, S$
+U = UB(Ky)
+If U <> UB(Vy) Then Stop
+Dim O$(), J%, V
+For J = 0 To U
+    If IsNull(Vy(J)) Then
+        Push O, Ky(J) & " is null"
+    Else
+        V = Vy(J): GoSub X
+        Push O, Ky(J) & "=" & S
+    End If
+Next
+KyVy_BExpr = Join(O, " and ")
+Exit Function
+X:
+Select Case True
+Case IsStr(V): S = "'" & V & "'"
+Case IsDte(V): S = "#" & V & "#"
+Case IsBool(V): S = IIf(V, "TRUE", "FALSE")
+Case IsNull(V): Stop
+Case IsNumeric(V): S = V
 Case Else: Stop
 End Select
-If Rs.EOF Then Exit Function
-DbtfkVal_zKAv = Rs.Fields(F).Value
+Return
 End Function
-Function TfkVal(T, F, ParamArray K())
-Dim KAv()
-KAv = K
-TfkVal = DbtfkVal_zKAv(CurrentDb, T, F, KAv)
+Function TfidV(T, F, Id&)
+TfidV = DbtfidV(CurrentDb, T, F, Id)
+End Function
+Function DbtidRs(A As Database, T, Id&) As DAO.Recordset
+Q = FmtQQ("Select * From ? where ?=?", T, T, Id)
+Set DbtidRs = A.OpenRecordset(Q)
+End Function
+Function DbtfidV(A As Database, T, F, Id&)
+DbtfidV = DbtidRs(A, T, Id).Fields(F).Value
 End Function
 Sub DbtfAddExpr(A As Database, T, F, Expr$, Optional Ty As DAO.DataTypeEnum = dbText, Optional TxtSz% = 255)
 A.TableDefs(T).Fields.Append DaoFld(F, Ty, TxtSz, Expr)
 End Sub
-Function DaoFld(F, Optional Ty As DAO.DataTypeEnum = dbText, Optional TxtSz% = 255, Optional Expr$, Optional IsId As Boolean, Optional Dft$) As DAO.Field2
+Function DaoFld(F, Optional Ty As DAO.DataTypeEnum = dbText, Optional TxtSz% = 255, Optional Expr$, Optional IsId As Boolean, Optional Dft$, Optional Req As Boolean) As DAO.Field2
 Dim O As New DAO.Field
 With O
     .Name = F
     If IsId Then
         .Type = dbLong
         .Attributes = DAO.FieldAttributeEnum.dbAutoIncrField
+        .Required = True
     Else
+        .Required = Req
         .Type = Ty
         If Ty = dbText Then
             .Size = TxtSz
@@ -460,12 +697,28 @@ End Sub
 Sub LinAsgT1T2(A, OT1$, OT2$)
 BrkAsg A, " ", OT1, OT2
 End Sub
-Sub BrkAsg(A, Sep$, O1, O2, Optional NoTrim As Boolean)
+Sub BrkS1Asg(A, Sep$, Optional O1$, Optional O2$, Optional NoTrim As Boolean)
+BrkS1AtAsg A, InStr(A, Sep), Sep, O1, O2, NoTrim
+End Sub
+Sub BrkAsg(A, Sep$, Optional O1, Optional O2, Optional NoTrim As Boolean)
 BrkAtAsg A, InStr(A, Sep), Sep, O1, O2, NoTrim
 End Sub
 Sub BrkAtAsg(A, At&, Sep$, O1, O2, Optional NoTrim As Boolean)
 If At = 0 Then
-    MsgAp_Brw "[Str] does not have [Sep].  @BrkAtAsg.", A, Sep
+    MsgBrw "[Str] does not have [Sep].  @BrkAtAsg.", A, Sep
+    Stop
+    Exit Sub
+End If
+O1 = Left(A, At - 1)
+O2 = Mid(A, At + Len(Sep))
+If Not NoTrim Then
+    O1 = Trim(O1)
+    O2 = Trim(O2)
+End If
+End Sub
+Sub BrkS1AtAsg(A, At&, Sep$, O1, O2, Optional NoTrim As Boolean)
+If At = 0 Then
+    MsgBrw "[Str] does not have [Sep].  @BrkAtAsg.", A, Sep
     Stop
     Exit Sub
 End If
@@ -537,9 +790,9 @@ End Function
 Function AttFny() As String()
 AttFny = ItrNy(DbFstAttRs(CurrentDb).AttRs.Fields)
 End Function
-Function RsV(A As DAO.Recordset)
+Function RsV(A As DAO.Recordset, Optional F = 0)
 If A.EOF Then Exit Function
-RsV = A.Fields(0).Value
+RsV = A.Fields(F).Value
 End Function
 Function AttRs_Exp$(A As AttRs, ToFfn)
 'Export the only File in {AttRs} {ToFfn}
@@ -562,7 +815,7 @@ If N <> 1 Then
         Att, A.Name, N, ToFfn
 End If
 DbAtt_Exp = AttRs_Exp(DbAtt_AttRs(A, Att), ToFfn)
-MsgAp_Dmp "@[Sub], [Att] is exported [ToFfn]", "DbAtt_Exp", Att, ToFfn
+MsgDmp "@[Sub], [Att] is exported [ToFfn]", "DbAtt_Exp", Att, ToFfn
 End Function
 Sub RaiseErr()
 Err.Raise -1, , "Please check messages opened in notepad"
@@ -711,7 +964,7 @@ Sub MsgAp_Dmp(A$, ParamArray Ap())
 Dim Av(): Av = Ap
 AyDmp MsgAv_Ly(A, Av)
 End Sub
-Sub MsgAp_Brw(A$, ParamArray Ap())
+Sub MsgBrw(A$, ParamArray Ap())
 Dim Av(): Av = Ap
 MsgAv_Brw A, Av
 End Sub
@@ -721,7 +974,7 @@ End Sub
 Sub FunMsgAv_Brw(A, Msg$, Av())
 AyBrw FunMsgAv_Ly(A, Msg, Av)
 End Sub
-Sub MsgAp_BrwStop(A$, ParamArray Ap())
+Sub MsgBrwStop(A$, ParamArray Ap())
 Dim Av(): Av = Ap
 MsgAv_Brw A, Av
 Stop
@@ -1061,6 +1314,7 @@ End Function
 Function DbAtt_Lines$(A As Database, Att)
 DbAtt_Lines = AttRs_Lines(DbAtt_AttRs(A, Att))
 End Function
+
 Function AttRs_Lines$(A As AttRs)
 Dim F As DAO.Field2, N%, Fn$
 N = AttRs_FilCnt(A)
@@ -1075,6 +1329,7 @@ If Fn <> ".txt" Then
 End If
 AttRs_Lines = Fld2Lines(A.AttRs!FileData)
 End Function
+
 Function Fld2Lines$(A As DAO.Field2)
 Dim O$, M$, Off&
 X:
@@ -1086,10 +1341,15 @@ If Len(M) = 1024 Then
 End If
 Fld2Lines = O
 End Function
-Property Get SchemaLines$()
-SchemaLines = TfVal("Spec", "Schema")
+
+Property Get LgSchm_Lines$()
+LgSchm_Lines = SpnmLines(LgSNm)
 End Property
 
+Function TfkV(T, F, ParamArray K())
+Dim Av(): Av = K
+TfkV = DbtfkV(CurrentDb, T, F, Av)
+End Function
 Sub RsSetFldVal(A As DAO.Recordset, F, V)
 With A
     .Edit
@@ -1987,9 +2247,9 @@ Sub FbEns(A)
 If FfnIsExist(A) Then Exit Sub
 FbCrt A
 End Sub
-Sub FbCrt(A)
-DBEngine.CreateDatabase A, dbLangGeneral
-End Sub
+Function FbCrt(A) As Database
+Set FbCrt = DBEngine.CreateDatabase(A, dbLangGeneral)
+End Function
 Sub FxRfhWbWcStr(A, Fb$)
 WbRfhCnStr(FxWb(A), Fb).Close True
 End Sub
@@ -2093,14 +2353,14 @@ End Function
 Function WtPrpLoFmlVbl$(T)
 WtPrpLoFmlVbl = FbtPrpLoFmlVbl(WFb, T)
 End Function
-Sub FbtSetPrpLoFmlVbl(A, T, LoFmlVbl$)
-DbtSetPrpLoFmlVbl FbDb(A), T, LoFmlVbl
-End Sub
+Property Let FbtPrpLoFmlVbl(A, T, LoFmlVbl$)
+DbtPrpLoFmlVbl(FbDb(A), T) = LoFmlVbl
+End Property
 
-Function FbtPrpLoFmlVbl$(A, T)
-If A = "" And T = "" Then Exit Function
+Property Get FbtPrpLoFmlVbl$(A, T)
+If A = "" And T = "" Then Exit Property
 FbtPrpLoFmlVbl = DbtPrpLoFmlVbl(FbDb(A), T)
-End Function
+End Property
 
 Function FbtFny(A$, T$) As String()
 FbtFny = RsFny(DbqRs(FbDb(A), QTbl(T)))
@@ -3636,7 +3896,7 @@ Function FfnTSz$(A)
 If Not FfnIsExist(A) Then Exit Function
 FfnTSz = FfnDTim(A) & "." & FfnSz(A)
 End Function
-Function FfnTSzAsg(A, OTim As Date, OSz&)
+Function FfnAsgTSz(A, OTim As Date, OSz&)
 If Not FfnIsExist(A) Then
     OTim = 0
     OSz = 0
@@ -4858,7 +5118,7 @@ Dim O$, I, Cnt
 O = Replace(QQVbl, "|", vbCrLf)
 Cnt = SubStrCnt(QQVbl, "?")
 If Cnt <> Sz(Av) Then
-    MsgAp_Brw "[QQVal] has [N-?], but not match with [Av]-[Sz]", QQVbl, Cnt, Av, Sz(Av)
+    MsgBrw "[QQVal] has [N-?], but not match with [Av]-[Sz]", QQVbl, Cnt, Av, Sz(Av)
     Stop
     Exit Function
 End If
@@ -5075,6 +5335,9 @@ ItrVy = ItrPrpAy(A, "Value")
 End Function
 Function IsDte(A) As Boolean
 IsDte = VarType(A) = vbDate
+End Function
+Function IsBool(A) As Boolean
+IsBool = VarType(A) = vbBoolean
 End Function
 Function IsStr(A) As Boolean
 IsStr = VarType(A) = vbString
@@ -5755,10 +6018,6 @@ End Property
 Property Get DtaFb$()
 DtaFb = AppHom & DtaFn
 End Property
-Function TfVal(T, F)
-TfVal = DbtfVal(CurrentDb, T, F)
-End Function
-
 Function M_PrvM(M As Byte) As Byte
 M_PrvM = IIf(M = 1, 12, M - 1)
 End Function
@@ -5892,31 +6151,28 @@ Property Let TblDes(T, Des$)
 DbtDes(CurrentDb, T) = Des
 End Property
 Property Let DbtDes(A As Database, T, Des$)
-TblSetPrp T, "Description", Des
+DbtPrp(A, T, "Description") = Des
 End Property
-Sub TblSetPrp(T, P, V)
-DbtSetPrp CurrentDb, T, P, V
-End Sub
+Property Let TblPrp(T, P, V)
+DbtPrp(CurrentDb, T, P) = V
+End Property
 Function DbtHasPrp(A As Database, T, P) As Boolean
 DbtHasPrp = ItrHasNm(A.TableDefs(T).Properties, P)
 End Function
-Sub DbtSetPrp(A As Database, T, P, V)
+
+Property Let DbtPrp(A As Database, T, P, V)
 If DbtHasPrp(A, T, P) Then
     A.TableDefs(T).Properties(P).Value = V
 Else
     A.TableDefs(T).Properties.Append DbtCrtPrp(A, T, P, V)
 End If
-End Sub
+End Property
 Function DbtCrtPrp(A As Database, T, P, V) As DAO.Property
 Set DbtCrtPrp = A.TableDefs(T).CreateProperty(P, VarDaoTy(V), V)
 End Function
 Property Get DbtDes$(A As Database, T)
 DbtDes = DbtPrp(A, T, "Description")
 End Property
-Function DbtPrp(A As Database, T, P)
-If Not DbtHasPrp(A, T, P) Then Exit Function
-DbtPrp = A.TableDefs(T).Properties(P).Value
-End Function
 Function CcmTbl_IsVdt(A$) As Boolean
 Dim D$, App As EApp, DtaFb$
 D = TblDes(A)
@@ -5957,7 +6213,7 @@ Function AyMap(A, Map$)
 AyMap = AyMapInto(A, Map, EmpAy)
 End Function
 
-Sub MsgBrw(Msg$, ParamArray Ap())
+Sub MsgAp_Brw(Msg$, ParamArray Ap())
 Dim Av(): Av = Ap
 MsgAv_Brw Msg, Av
 End Sub
@@ -6025,7 +6281,7 @@ IdxIsSk = A.Unique
 End Function
 
 Function DbtSkIdx(A As Database, T) As DAO.Index
-DbtSkIdx = ItrXPPredFst(A.TableDefs(T).Indexes, "IdxIsSk", T)
+Set DbtSkIdx = ItrXPPredFst(A.TableDefs(T).Indexes, "IdxIsSk", T)
 End Function
 
 Sub DbtCrtSk(A As Database, T, SKey, FF)
@@ -6040,98 +6296,204 @@ Function NewSfxFsn(SfxFsnVbl$) As Dictionary
 
 End Function
 
-Sub TsnAsg(A, OTd As DAO.TableDef, OFny$())
-', OAtt As DAO.TableDefAttributeEnum)
+Sub LgSchm_Imp()
+SpecImp "LgSchm"
 End Sub
-Sub SchemaImp()
-Dim A$
-A = SchemaFt
-If Not FfnIsExist(A) Then
-    FunMsgDmp "SchemaImp", "[SchemaFt] not exist, no SchemaImp.", A
-    Exit Sub
-End If
-Dim T As Date, Sz&
-FfnTSzAsg A, T, Sz
-If SchemaFt_IsNew(A) Then
-    TfImpFt "Spec", "Schema", A
-    Q = FmtQQ("Update Spec set Schema_FtTim=#?#, Schema_FtSz=?", T, Sz)
-    CurrentDb.Execute Q
-    FunMsgDmp "SchemaImp", "[SchemaFt] of [time] and [size] is imported", A, T, Sz
-Else
-    FunMsgDmp "SchemaImp", "[SchemaFt-Tim] is same or older than [Imported-Schema-Tim], no import.  They have [Sz1] and [Sz2]", _
-        T, SchemaFtTim, Sz, SchemaFtSz
-End If
+Sub SpecImp(A)
+DbImpSpec CurrentDb, A
 End Sub
+Function SpnmFt$(A)
+SpnmFt = PgmObjPth & SpnmFn(A)
+End Function
+Sub DbImpSpec(A As Database, Spnm)
+Const CSub$ = "DbImpSpec"
+Dim T As Date, FtSz&
+Dim K$, Ft$, Sk$()
+If False Then
+    'Assume Db has T = Spec * SpecNm Lines Ft FtTim FtSz. It has Sk of field = SpecNm
+    'Also, assume T has Ft, XXX_Tim, XXX_Sz, XXX_LdDte field, where XXX is
+    Sk = DbtSk(A, "Spec")
+    If Sz(Sk) <> 1 Then Stop
+    With A.TableDefs("Spec").OpenRecordset
+        .Index = "Spec"
+        .Seek "=", K
+        If .NoMatch Then
+            .AddNew
+            .Fields(Sk(0)).Value = K
+            .Update
+            .Seek "=", K
+        End If
+        .Edit
+        !Lines = FtLines(Ft)
+        !Ft = Ft
+        !FtTim = FfnTim(Ft)
+        !FtSz = FfnSz(Ft)
+        !LdDte = Now
+        .Update
+    End With
+End If
 
-Sub TfImpFt(T, F, Ft$)
-DbtfImpFt CurrentDb, T, F, Ft
+If False Then
+    Ft = SpnmFt(A)
+    If Not FfnIsExist(A) Then
+        FunMsgDmp "LgSchm_Imp", "[LgSchmFt] not exist, no LgSchm_Imp.", A
+        Exit Sub
+    End If
+    FfnAsgTSz A, T, FtSz
+    If SpnmFt_IsNew(A, Ft) Then
+        'SpnmImpFt "LgSchmp", A
+        FunMsgDmp CSub, "[LgSchmFt] of [time] and [size] is imported", A, T, FtSz
+    Else
+        FunMsgDmp "LgSchm_Imp", "[LgSchmFt-Tim] is same or older than [Imported-Schm-Tim], no import.  They have [Sz1] and [Sz2]", _
+            T, LgSchm_Tim, FtSz, LgSchm_Sz
+    End If
+End If
+
+Q = FmtQQ("Select * from Spec with SpecNm = '?'", A)
+Dim Rs As DAO.Recordset
+Set Rs = A.OpenRecordset(Q)
+With Rs
+    If .EOF Then
+        .AddNew
+        !SpecNm = A
+        .Update
+        .Requery
+    End If
+End With
+
+Dim CurOld As Boolean, CurNew As Boolean, SamTim As Boolean 'compare the Rs's tim
+    Dim CurT As Date, LasT As Date 'CurTim and LasTim
+    CurT = FfnTim(Ft)
+    LasT = Rs!FtTim
+    SamTim = CurT = LasT
+    CurOld = CurT < LasT
+    CurNew = CurT > LasT
+Dim SamSz As Boolean, DifSz As Boolean
+    Dim CurS&, LasS&
+    CurS = FfnSz(Ft)
+    LasS = Rs!FtSz
+    SamSz = CurS = LasS
+    DifSz = Not SamSz
+    
+Select Case True
+Case SamTim And SamSz
+    FunMsgDmp CSub, "[Ft] of [SpecNm] with [Tim] & [Sz] is same as [last-time] import.  No import.", _
+        Ft, A, DteDTim(CurT), CurS, SpnmLdDTim(A)
+Case SamTim And DifSz
+    FunMsgDmp CSub, "[Ft] of [SpecNm] with same [Tim] & [Sz] is same as [last-time] import.  No import.  They have [Sz1] and [Sz2]", _
+        Ft, LgSchm_Tim, LasS, CurS
+Case CurOld
+'    FunMsgDmp CSub, "[Ft] of [SpecNm] with same [Tim] & [Sz] is same as [last-time] import.  No import.  They have [Sz1] and [Sz2]", _
+'        Ft, LgSchmFtTim, LasS, CurS
+Case CurNew
+    With Rs
+        .Edit
+        !Ft = FtLines(Ft)
+        !Sz = CurS
+        !Tim = CurT
+        !LdDte = Now
+        .Update
+    End With
+'    FunMsgDmp CSub, "**** IMPORTED ****|[SpecNm] [file] with [time] & [size] is newer than [last-time] with [last-time-Ft-time] and [last-time-Ft-size].", _
+'        Ft, LgSchmFtTim, LasS, CurS
+Case Else: Stop
+End Select
 End Sub
+Function SpnmLdDTim$(Spnm)
+End Function
+
 Function FtLines$(A)
 FtLines = Fso.GetFile(A).OpenAsTextStream.ReadAll
 End Function
-Sub DbtfImpFt(A As Database, T, F, Ft$)
-Q = FmtQQ("Select [?] from [?]", F, T) ' assume there is only 1-and-only-1 record in T
-RsUpd A.OpenRecordset(Q), FtLines(Ft)
-End Sub
-Function SchemaFt_IsNew(A) As Boolean
-SchemaFt_IsNew = FfnTim(A) > SchemaFtTim
+Function SpnmFt_IsNew(A, Ft) As Boolean
+SpnmFt_IsNew = FfnTim(A) > SpnmTim(A)
 End Function
-Property Get SchemaFtTim() As Date
-SchemaFtTim = Nz(TfVal("Spec", "Schema_FtTim"), 0)
+Property Get LgSchm_Tim() As Date
+LgSchm_Tim = SpnmTim(LgSNm)
 End Property
-Property Get SchemaFtSz&()
-SchemaFtSz = Nz(TfVal("Spec", "Schema_FtSz"), 0)
+
+Property Get LgSchm_DTim$()
+LgSchm_DTim = SpnmDTim(LgSNm)
 End Property
-Sub SchemaExp(Optional OvrWrt As Boolean)
-StrWrt SchemaLines, SchemaFt, Not OvrWrt
+
+Function SpnmTim(A) As Date
+SpnmTim = Nz(TfkV("Spec", "Tim", A), 0)
+End Function
+Function SpnmDTim$(A)
+SpnmDTim = DteDTim(SpnmTim(A))
+End Function
+
+Property Get LgSchm_Sz&()
+LgSchm_Sz = Nz(TfkV("Spec", "Sz", "LgSchm"), 0)
+End Property
+
+Sub LgSchm_Exp(Optional OvrWrt As Boolean)
+SpnmExp LgSNm
 End Sub
 
-Property Get SchemaFt$()
-SchemaFt = PgmObjPth & SchemaFn
+Function SpnmLines$(A)
+SpnmLines = TfkV("Spec", "Lines", A)
+End Function
+
+Sub SpnmExp(A, Optional OvrWrt As Boolean)
+StrWrt SpnmLines(A), SpnmFt(A), Not OvrWrt
+End Sub
+Property Get LgSchm_Ft$()
+LgSchm_Ft = SpnmFt(LgSNm)
 End Property
 
 Function FfnPing(A) As Boolean
 If Not FfnIsExist(A) Then Debug.Print "[" & A & "] not found": FfnPing = True
 End Function
 
-Sub SchemaBrw()
-FtBrw SchemaFt
+Sub LgSchm_Brw()
+SpnmBrw LgSNm
 End Sub
 
-Sub SchemaIni()
-Dim A$: A = SchemaFt
-If FfnIsExist(A) Then Debug.Print "Schema[" & A & "] already exist": Exit Sub
-StrWrt "", A
-Debug.Print "Schema[" & A & "] created"
+Sub SpnmBrw(A)
+FtBrw SpnmFt(A)
+End Sub
+Sub SpnmIni(A)
+Dim Ft$: Ft = SpnmFt(A)
+If FfnIsExist(Ft) Then Debug.Print "SpecNm-[" & A & "] of Ft-[" & Ft & "] existed.": Exit Sub
+StrWrt "", Ft
+Debug.Print "SpecNm-[" & A & "] of Ft-[" & Ft & "] is created."
+End Sub
+Sub LgSchm_Ini()
+SpnmIni LgSNm
 End Sub
 
-Property Get SchemaFn$()
-SchemaFn = Apn & "(Schema).txt"
+Property Get SpnmFn$(A)
+SpnmFn = A & ".txt"
+End Property
+
+Property Get SpnmFny() As String()
+SpnmFny = DbtFny(CurrentDb, "Spec")
 End Property
 
 Function NewFld(F, SfxFsn As Dictionary, NmFsn As Dictionary) As DAO.Field2
 
 End Function
 
-Function TsnTd(A, SfxFsn As Dictionary, NmFsn As Dictionary) As DAO.TableDef
-Dim Td As DAO.TableDef, Fny$(), F
-TsnAsg A, Td, Fny
-For Each F In Fny
-    Td.Fields.Append NewFld(F, SfxFsn, NmFsn)
-Next
-Set TsnTd = Td
+Function SchmTd(A, SfxFsn As Dictionary, NmFsn As Dictionary) As DAO.TableDef
+'Dim Td As DAO.TableDef, Fny$(), F
+'TsnAsg A, Td, Fny
+'For Each F In Fny
+'    Td.Fields.Append NewFld(F, SfxFsn, NmFsn)
+'Next
+'Set TsnTd = Td
 End Function
-
-Sub DbCrtSchema(A As Database, SsnLines$)
-Dim Tsn$, SfxFsn$, NmFsn$
-DbCrtTT A, Tsn, SfxFsn, NmFsn
-'A.TableDefs.Append TsnTd(Tsn, NewSfxFsn(SfxFsn),NewSfxF NmFsnDic)
+Sub DbRun(A As Database, Sql)
+A.Execute Sql
+End Sub
+Sub DbCrtSchm(A As Database, SchmLines$)
+Dim Td() As DAO.TableDef, Pk$(), Sk$()
+SchmLines_BrkAsg SchmLines, Td, Pk, Sk
+AyDoPX Td, "DbAppTd", A
+AyDoPX Pk, "DbRun", A
+AyDoPX Sk, "DbRun", A
 End Sub
 
-Sub DbCrtTT(A As Database, TsnLines$, SfxFsnLines$, NmFsnLines$)
-'A.TableDefs.Append TsnTd(Tsn, SfxFsn, NmFsn)
-End Sub
-
-Sub DbCrtTbl(A As Database, Tsn$, SfxFsnDic As Dictionary, NmFsnDic As Dictionary)
-A.TableDefs.Append TsnTd(Tsn, SfxFsnDic, NmFsnDic)
+Sub DbAppTd(A As Database, Td As DAO.TableDef)
+A.TableDefs.Append Td
 End Sub

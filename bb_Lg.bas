@@ -15,9 +15,9 @@ End Function
 Sub LgEns()
 If Not FfnIsExist(LgFb) Then LgCrt_v1
 End Sub
+
 Sub LgCrt_v1()
-FbCrt LgFb
-DbCrtSchema FbDb(LgFb), SchemaLines
+DbCrtSchm FbCrt(LgFb), LgSchm_Lines
 End Sub
 
 Sub LgCrt()
