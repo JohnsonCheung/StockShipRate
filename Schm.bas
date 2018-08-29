@@ -1,6 +1,5 @@
 Option Compare Database
 Option Explicit
-Dim Act$, Exp$
 Private Type SchmLinesBrk
     Ty_TF() As String
     Ty_Fld() As String
@@ -10,12 +9,14 @@ Private Type SchmLinesBrk
     Req() As String
     FDes() As String
     TDes() As String
+    XRmkDic As Dictionary 'Each given pfx-line will have its remark here.  [Rmk] is any [']-line above the lien.  The [Key] is Key+Ix
+    XErLy() As String    'Any line other than given Pfx
 End Type
 Private X As SchmLinesBrk
 Private T, F
-Private Const ZZSchmLines$ = _
+Private Const YSchmLines$ = _
 "Ty_Fld Mem Lines ..          " & vbCrLf & _
-"Ty_Fld Txt Fun ..          " & vbCrLf & _
+"Ty_Fld Txt Fun ..            " & vbCrLf & _
 "Ty_Sfx Dte Dte ..            " & vbCrLf & _
 "Ty_Sfx Txt Txt ..            " & vbCrLf & _
 "Dft Now | CrtDte ..          " & vbCrLf & _
@@ -28,24 +29,26 @@ Private Const ZZSchmLines$ = _
 "FDes Fun Function name that call the log" & vbCrLf & _
 "TDes Msg it will a new record when Lg-function is first time using the Fun+MsgTxt" & _
 "TDes Msg ..."
-
-Private Property Get ZZX() As SchmLinesBrk
-ZZX = SchmLinesBrk(ZZSchmLines)
+Sub AA()
+Stop
+End Sub
+Private Property Get YX() As SchmLinesBrk
+YX = SchmLinesBrk(YSchmLines)
 End Property
 Sub ZZZ_TySz()
 X = ZZX
 T = "Sess"
 F = "CrtDte"
-Exp = "Dte"
+Expect = "Dte"
 GoSub Tst
 Exit Sub
 Tst:
-    Act = TySz
-    Debug.Assert Act = Exp
+    Actual = TySz
+    C
     Return
 End Sub
 
-Sub ZZZ_Req()
+Private Sub ZZZ_Req()
 X = ZZX
 F = "Lines":  Debug.Assert Req = True
 F = "Fun":    Debug.Assert Req = True
@@ -60,7 +63,13 @@ F = "Fun":    Debug.Assert Dft = ""
 End Sub
 
 Sub AAA()
-ZZ_SchmLines_BrkAsg
+ZZZ_Lg
+End Sub
+Private Sub ZZZ_Tny()
+X = ZZX
+Expect = SslSy("Sess Msg Lg LgV")
+Actual = Tny
+C
 End Sub
 
 Sub ZZ_Tny()
@@ -94,7 +103,7 @@ Stop
 End Sub
 Private Function SchmLinesBrk(SchmLines) As SchmLinesBrk
 With SchmLinesBrk
-    LinesBrkAsg SchmLines, _
+    LinesBrkAsg1 SchmLines, .XErLy, .XRmkDic, _
         "FDes   Dft   Req   Ty_Fld   Ty_Sfx   Ty_TF   TDes   TFld", _
         .FDes, .Dft, .Req, .Ty_Fld, .Ty_Sfx, .Ty_TF, .TDes, .TFld
     .Req = SslAy_Sy(.Req)

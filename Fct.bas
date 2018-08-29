@@ -24,6 +24,7 @@ Public Q$
 Public W As Database
 Const PSep$ = " "
 Const PSep1$ = " "
+Public Actual, Expect
 
 Function LyWhT1EqV(A$(), V) As String()
 LyWhT1EqV = AyWhPredXP(A, "LinHasT1", V)
@@ -115,6 +116,32 @@ End Function
 Function TnSkSql$(A, SkNy0)
 TnSkSql = FmtQQ("Create Unique Index [?] on [?] (?)", A, A, JnComma(CvNy(SkNy0)))
 End Function
+Sub LinesBrkAsg1(A, OErLy$(), ORmkDic As Dictionary, Ny0, ParamArray OLyAp())
+Dim Ny$(), L, L1$, T1$, T2$, NmDic As Dictionary, Rmk$(), Ix%
+Ny = CvNy(Ny0)
+Set NmDic = AyIxDic(Ny)
+For Each L In SplitCrLf(A)
+    L1 = LTrim(L)
+    Select Case FstChr(L)
+    Case "'"
+        Push Rmk, L
+    Case ""
+    Case Else
+        BrkS1Asg L1, " ", T1, T2
+        If NmDic.Exists(T1) Then
+            Ix = NmDic(T1)
+            Push OLyAp(Ix), T2 '<----
+            If Sz(Rmk) > 0 Then
+                ORmkDic.Add T1 & "." & UB(OLyAp(Ix)), Rmk
+                Erase Rmk
+            End If
+        Else
+            Push OErLy, L
+        End If
+    End Select
+Next
+End Sub
+
 Sub LinesBrkAsg(A, Ny0, ParamArray OLyAp())
 Dim Ny$(), L, T1$, T2$, NmDic As Dictionary
 Ny = CvNy(Ny0)
@@ -768,7 +795,10 @@ For J = 0 To UB(O)
 Next
 MsgNy = O
 End Function
-
+Sub Ny0LyDmp(A, ParamArray Ap())
+Dim Av(): Av = Ap
+D NyLy(CvNy(A), Av, 0)
+End Sub
 Function NyLy(A$(), Av(), Optional Indent% = 4) As String()
 NyLy = NyAv_Ly(A, Av, Indent)
 End Function
@@ -1289,13 +1319,16 @@ Dim Av(): Av = K
 TfkV = DbtfkV(CurrentDb, T, F, Av)
 End Function
 
-Sub RsSetFldVal(A As DAO.Recordset, F, V)
+Property Let RsF(A As DAO.Recordset, Optional F = 0, V)
 With A
     .Edit
     .Fields(F).Value = V
     .Update
 End With
-End Sub
+End Property
+Property Get RsF(A As DAO.Recordset, Optional F = 0)
+RsF = A.Fields(F).Value
+End Property
 
 Function FxHasWs(A, Optional WsNy0 = "Sheet1") As Boolean
 FxHasWs = AyHasAy(FxWsNy(A), CvNy(WsNy0))
@@ -1845,8 +1878,8 @@ Set At = Lo.Range
 Lo.Delete
 Set SqRplLo = RgLo(SqRg(A, At), LoNm)
 End Function
-Function SqAt_Lo(A, At As Range, Optional LoNm$) As ListObject
-Set SqAt_Lo = RgLo(SqRg(A, At), LoNm)
+Function SqLo(A, At As Range, Optional LoNm$) As ListObject
+Set SqLo = RgLo(SqRg(A, At), LoNm)
 End Function
 Function WbLoAy(A As Workbook) As ListObject()
 Dim Ws As Worksheet, O() As ListObject, I
@@ -2218,7 +2251,7 @@ End Sub
 Function FbDb(A) As Database
 Set FbDb = DBEngine.OpenDatabase(A)
 End Function
-Function PthFnIr(A, Optional Spec$ = "*.*") As VBA.Collection
+Function PthFnIr(A, Optional Spec$ = "*") As VBA.Collection
 Dim O As New Collection
 Dim B$, P$
 P = PthEnsSfx(A)
@@ -2232,8 +2265,8 @@ While B <> ""
 Wend
 Set PthFnIr = O
 End Function
-Function PthUp$(A)
-PthUp = TakBefOrAllRev(RmvSfx(A, "\"), "\")
+Function PthUpOne$(A)
+PthUpOne = TakBefOrAllRev(RmvSfx(A, "\"), "\") & "\"
 End Function
 
 Sub PthMovFilUp(A)
@@ -2531,13 +2564,8 @@ Dim Act
 Act = AyMax(A)
 Stop
 End Sub
-Function AyWhLik(A, Lik$) As String()
-If Sz(A) = 0 Then Exit Function
-Dim O$(), I
-For Each I In A
-    If I Like Lik Then Push O, I
-Next
-AyWhLik = O
+Function AyWhLik(A, Lik) As String()
+AyWhLik = AyWhPredXP(A, "Lik", Lik)
 End Function
 Function AyMax(A)
 Dim O, I
@@ -2722,6 +2750,14 @@ Jn = Join(Ky, " and ")
 A.Execute FmtQQ("Select Distinct ?,Count(*) as Cnt into [?] from [?] group by ? having Count(*)>1", K, Tmp, T, K)
 A.Execute FmtQQ("Select x.* into [?] from [?] x inner join [?] a on ?", TarTbl, T, Tmp, Jn)
 DbDrpTbl A, Tmp
+End Sub
+Sub C()
+Debug.Assert VarType(Actual) = VarType(Expect)
+If IsArray(Actual) Then
+    Debug.Assert AyIsEq(Actual, Expect)
+Else
+    Debug.Assert Actual = Expect
+End If
 End Sub
 Sub D(A)
 AyDmp VarLy(A)
@@ -4310,7 +4346,7 @@ Function DbtCsv(A As Database, T) As String()
 DbtCsv = RsCsvLy(DbtRs(A, T))
 End Function
 Function DbtLo(A As Database, T$, At As Range) As ListObject
-Set DbtLo = SqAt_Lo(DbtSq(A, T), At, TblNm_LoNm(T))
+Set DbtLo = SqLo(DbtSq(A, T), At, TblNm_LoNm(T))
 End Function
 Function DSpecNm$(A)
 DSpecNm = TakAftDotOrAll(LinT1(A))
@@ -5148,7 +5184,7 @@ End Function
 Sub ZZ_PthSel()
 MsgBox FfnSel("C:\")
 End Sub
-Function FfnSel$(A, Optional FSpec$ = "*.*", Optional Tit$ = "Select a file", Optional BtnNm$ = "Use the File Name")
+Function FfnSel$(A, Optional FSpec$ = "*", Optional Tit$ = "Select a file", Optional BtnNm$ = "Use the File Name")
 With FileDialog(msoFileDialogFilePicker)
     .Filters.Clear
     .Title = Tit
@@ -5204,10 +5240,44 @@ For Each I In A
 Next
 AyWhOPred = O
 End Function
-Function PthFfnAy(A, Optional Spec$ = "*.*") As String()
+Function PthFfnAy(A, Optional Spec$ = "*") As String()
 PthFfnAy = AyAddPfx(PthFnAy(A, Spec), PthEnsSfx(A))
 End Function
-Function PthFnAy(A, Optional Spec$ = "*.*") As String()
+Function Lik(A, K) As Boolean
+Lik = A Like K
+End Function
+Function ItrNyWhLik(A, Lik) As String()
+ItrNyWhLik = AyWhLik(ItrNy(A), Lik)
+End Function
+Function PthFdrAy(A, Optional Spec$ = "*", Optional Atr% = 0) As String()
+PthFdrAy = ItrNyWhLik(Fso.GetFolder(A).SubFolders, Spec)
+End Function
+Function PthUp$(A, Optional Up% = 1)
+Dim O$, J%
+O = A
+For J = 1 To Up
+    O = PthUpOne(O)
+Next
+PthUp = O
+End Function
+Function Cd$(Optional A)
+If IsEmp(A) Then
+    Cd = PthEnsSfx(CurDir)
+    Exit Function
+End If
+ChDir A
+Cd = PthEnsSfx(A)
+End Function
+Function TmpFdrAy(Optional Spec$ = "*") As String()
+
+End Function
+Function CurFdrAy(Optional Spec$ = "*") As String()
+CurFdrAy = PthFdrAy(CurDir)
+End Function
+Function CurFnAy(Optional Spec$ = "*") As String()
+CurFnAy = PthFnAy(CurDir, Spec)
+End Function
+Function PthFnAy(A, Optional Spec$ = "*") As String()
 Dim O$(), B$, P$
 P = PthEnsSfx(A)
 B = Dir(P & Spec)
@@ -5324,7 +5394,11 @@ Function IsSy(A) As Boolean
 IsSy = VarType(A) = vbString + vbArray
 End Function
 Function CvSy(A) As String()
-CvSy = A
+Select Case True
+Case IsSy(A): CvSy = A
+Case IsArray(A): CvSy = AySy(A)
+Case Else: CvSy = ApSy(CStr(A))
+End Select
 End Function
 Function FldsVy(A As DAO.Fields, Optional Ky0) As Variant()
 Select Case True
@@ -5771,12 +5845,12 @@ For R = 1 To NR
 Next
 DrsSq = O
 End Function
-Function SqLo(A, Optional LoNm$) As ListObject
-Set SqLo = SqAt_Lo(A, NewA1, LoNm)
-End Function
 Function SqWs(A) As Worksheet
-Set SqWs = LoWs(SqLo(A))
+Set SqWs = LoWs(SqLo(A, NewA1))
 End Function
+Sub SqlRun(A)
+CurrentDb.Execute A
+End Sub
 Sub QQ(QQSql, ParamArray Ap())
 Dim Av(): Av = Ap
 CurrentDb.Execute FmtQQAv(QQSql, Av)
@@ -6269,116 +6343,11 @@ Function NewSfxFsn(SfxFsnVbl$) As Dictionary
 End Function
 
 Sub LgSchm_Imp()
-SpecImp "LgSchm"
+SpnmImp "LgSchm"
 End Sub
-Sub SpecImp(A)
-DbImpSpec CurrentDb, A
-End Sub
-Function SpnmFt$(A)
-SpnmFt = PgmObjPth & SpnmFn(A)
-End Function
-Sub DbImpSpec(A As Database, Spnm)
-Const CSub$ = "DbImpSpec"
-Dim T As Date, FtSz&
-Dim K$, Ft$, Sk$()
-If False Then
-    'Assume Db has T = Spec * SpecNm Lines Ft FtTim FtSz. It has Sk of field = SpecNm
-    'Also, assume T has Ft, XXX_Tim, XXX_Sz, XXX_LdDte field, where XXX is
-    Sk = DbtSk(A, "Spec")
-    If Sz(Sk) <> 1 Then Stop
-    With A.TableDefs("Spec").OpenRecordset
-        .Index = "Spec"
-        .Seek "=", K
-        If .NoMatch Then
-            .AddNew
-            .Fields(Sk(0)).Value = K
-            .Update
-            .Seek "=", K
-        End If
-        .Edit
-        !Lines = FtLines(Ft)
-        !Ft = Ft
-        !FtTim = FfnTim(Ft)
-        !FtSz = FfnSz(Ft)
-        !LdDte = Now
-        .Update
-    End With
-End If
-
-If False Then
-    Ft = SpnmFt(A)
-    If Not FfnIsExist(A) Then
-        FunMsgDmp "LgSchm_Imp", "[LgSchmFt] not exist, no LgSchm_Imp.", A
-        Exit Sub
-    End If
-    FfnAsgTSz A, T, FtSz
-    If SpnmFt_IsNew(A, Ft) Then
-        'SpnmImpFt "LgSchmp", A
-        FunMsgDmp CSub, "[LgSchmFt] of [time] and [size] is imported", A, T, FtSz
-    Else
-        FunMsgDmp "LgSchm_Imp", "[LgSchmFt-Tim] is same or older than [Imported-Schm-Tim], no import.  They have [Sz1] and [Sz2]", _
-            T, LgSchm_Tim, FtSz, LgSchm_Sz
-    End If
-End If
-
-Q = FmtQQ("Select * from Spec with SpecNm = '?'", A)
-Dim Rs As DAO.Recordset
-Set Rs = A.OpenRecordset(Q)
-With Rs
-    If .EOF Then
-        .AddNew
-        !SpecNm = A
-        .Update
-        .Requery
-    End If
-End With
-
-Dim CurOld As Boolean, CurNew As Boolean, SamTim As Boolean 'compare the Rs's tim
-    Dim CurT As Date, LasT As Date 'CurTim and LasTim
-    CurT = FfnTim(Ft)
-    LasT = Rs!FtTim
-    SamTim = CurT = LasT
-    CurOld = CurT < LasT
-    CurNew = CurT > LasT
-Dim SamSz As Boolean, DifSz As Boolean
-    Dim CurS&, LasS&
-    CurS = FfnSz(Ft)
-    LasS = Rs!FtSz
-    SamSz = CurS = LasS
-    DifSz = Not SamSz
-    
-Select Case True
-Case SamTim And SamSz
-    FunMsgDmp CSub, "[Ft] of [SpecNm] with [Tim] & [Sz] is same as [last-time] import.  No import.", _
-        Ft, A, DteDTim(CurT), CurS, SpnmLdDTim(A)
-Case SamTim And DifSz
-    FunMsgDmp CSub, "[Ft] of [SpecNm] with same [Tim] & [Sz] is same as [last-time] import.  No import.  They have [Sz1] and [Sz2]", _
-        Ft, LgSchm_Tim, LasS, CurS
-Case CurOld
-'    FunMsgDmp CSub, "[Ft] of [SpecNm] with same [Tim] & [Sz] is same as [last-time] import.  No import.  They have [Sz1] and [Sz2]", _
-'        Ft, LgSchmFtTim, LasS, CurS
-Case CurNew
-    With Rs
-        .Edit
-        !Ft = FtLines(Ft)
-        !Sz = CurS
-        !Tim = CurT
-        !LdDte = Now
-        .Update
-    End With
-'    FunMsgDmp CSub, "**** IMPORTED ****|[SpecNm] [file] with [time] & [size] is newer than [last-time] with [last-time-Ft-time] and [last-time-Ft-size].", _
-'        Ft, LgSchmFtTim, LasS, CurS
-Case Else: Stop
-End Select
-End Sub
-Function SpnmLdDTim$(Spnm)
-End Function
 
 Function FtLines$(A)
 FtLines = Fso.GetFile(A).OpenAsTextStream.ReadAll
-End Function
-Function SpnmFt_IsNew(A, Ft) As Boolean
-SpnmFt_IsNew = FfnTim(A) > SpnmTim(A)
 End Function
 Property Get LgSchm_Tim() As Date
 LgSchm_Tim = SpnmTim(LgSNm)
@@ -6388,13 +6357,6 @@ Property Get LgSchm_DTim$()
 LgSchm_DTim = SpnmDTim(LgSNm)
 End Property
 
-Function SpnmTim(A) As Date
-SpnmTim = Nz(TfkV("Spec", "Tim", A), 0)
-End Function
-Function SpnmDTim$(A)
-SpnmDTim = DteDTim(SpnmTim(A))
-End Function
-
 Property Get LgSchm_Sz&()
 LgSchm_Sz = Nz(TfkV("Spec", "Sz", "LgSchm"), 0)
 End Property
@@ -6402,15 +6364,6 @@ End Property
 Sub LgSchm_Exp(Optional OvrWrt As Boolean)
 SpnmExp LgSNm
 End Sub
-
-Function SpnmLines$(A)
-SpnmLines = TfkV("Spec", "Lines", A)
-End Function
-
-Sub SpnmExp(A, Optional OvrWrt As Boolean)
-StrWrt SpnmLines(A), SpnmFt(A), Not OvrWrt
-End Sub
-
 Property Get LgSchm_Ft$()
 LgSchm_Ft = SpnmFt(LgSNm)
 End Property
@@ -6423,26 +6376,9 @@ Sub LgSchm_Brw()
 SpnmBrw LgSNm
 End Sub
 
-Sub SpnmBrw(A)
-FtBrw SpnmFt(A)
-End Sub
-Sub SpnmIni(A)
-Dim Ft$: Ft = SpnmFt(A)
-If FfnIsExist(Ft) Then Debug.Print "SpecNm-[" & A & "] of Ft-[" & Ft & "] existed.": Exit Sub
-StrWrt "", Ft
-Debug.Print "SpecNm-[" & A & "] of Ft-[" & Ft & "] is created."
-End Sub
 Sub LgSchm_Ini()
 SpnmIni LgSNm
 End Sub
-
-Property Get SpnmFn$(A)
-SpnmFn = A & ".txt"
-End Property
-
-Property Get SpnmFny() As String()
-SpnmFny = DbtFny(CurrentDb, "Spec")
-End Property
 
 Sub DbRun(A As Database, Sql)
 A.Execute Sql
@@ -6451,3 +6387,15 @@ End Sub
 Sub DbAppTd(A As Database, Td As DAO.TableDef)
 A.TableDefs.Append Td
 End Sub
+
+Function RsLin$(A As DAO.Recordset, Optional Sep$ = " ")
+RsLin = Join(RsDr(A), Sep)
+End Function
+
+Function AppDtaPth$()
+AppDtaPth = PthEns(AppDtaHom & Apn & "\")
+End Function
+
+Function AppDtaHom$()
+AppDtaHom = PthUp(TmpHom)
+End Function

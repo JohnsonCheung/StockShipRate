@@ -8,15 +8,33 @@ Private X_Lg&
 Private Function L() As Database
 On Error GoTo X
 If IsNothing(X_L) Then
-    Set X_L = FbDb(LgFb)
+    LgOpn
 End If
 Set L = X_L
 Exit Function
 X:
+Dim Er$, ErNo%
+ErNo = Err.Number
+Er = Err.Description
+If ErNo = 3024 Then
+    LgCrt_v1
+    LgOpn
+    Set L = X_L
+    Exit Function
+End If
+Ny0LyDmp "Err Er#", Er, ErNo
+Stop
 End Function
+Sub LgBeg()
+Lg ".", "Beg"
+End Sub
+Sub LgEnd()
+Lg ".", "End"
+End Sub
 
-Sub LgEns()
-If Not FfnIsExist(LgFb) Then LgCrt_v1
+
+Private Sub LgOpn()
+Set X_L = FbDb(LgFb)
 End Sub
 
 Sub LgCrt_v1()
@@ -87,6 +105,10 @@ With L.TableDefs("Msg").OpenRecordset
 End With
 End Sub
 
+Property Get LgPth$()
+LgPth = AppDtaPth
+End Property
+
 Private Sub WrtLg(Fun$, MsgTxt$)
 With L.TableDefs("Lg").OpenRecordset
     .AddNew
@@ -96,7 +118,6 @@ With L.TableDefs("Lg").OpenRecordset
     .Update
 End With
 End Sub
-
 Sub Lg(Fun$, MsgTxt$, ParamArray Ap())
 EnsSess
 EnsMsg Fun, MsgTxt
@@ -121,7 +142,8 @@ End Sub
 
 Sub LgKill()
 LgCls
-FfnDltIfExist LgFb
+If FfnIsExist(LgFb) Then Kill LgFb: Exit Sub
+Debug.Print "LgFb-[" & LgFb & "] not exist"
 End Sub
 
 Sub LgCls()
@@ -132,9 +154,8 @@ Set X_L = Nothing
 End Sub
 
 Property Get LgFb$()
-LgFb = WPth & LgFn
+LgFb = LgPth & LgFn
 End Property
-
 Property Get LgFn$()
 LgFn = "Lg.accdb"
 End Property
@@ -182,13 +203,9 @@ Function CurLgRs(Optional Top% = 50) As DAO.Recordset
 Set CurLgRs = L.OpenRecordset(FmtQQ("Select Top ? x.*,Fun,MsgTxt from Lg x left join Msg a on x.Msg=a.Msg order by Sess desc,Lg", Top))
 End Function
 
-Function RsLin$(A As DAO.Recordset, Optional Sep$ = " ")
-RsLin = Join(RsDr(A), Sep)
-End Function
-
-Property Get CurLgLy(Optional Sep$ = " ", Optional Top% = 50) As String()
+Function CurLgLy(Optional Sep$ = " ", Optional Top% = 50) As String()
 CurLgLy = RsLy(CurLgRs(Top), Sep)
-End Property
+End Function
 
 Sub LgLis(Optional Sep$ = " ", Optional Top% = 50)
 CurLgLis Sep, Top
@@ -206,14 +223,26 @@ Sub CurSessLis(Optional Sep$ = " ", Optional Top% = 50)
 D CurSessLy(Sep, Top)
 End Sub
 
-Property Get CurSessLy(Optional Sep$, Optional Top% = 50) As String()
+Function CurSessLy(Optional Sep$, Optional Top% = 50) As String()
 CurSessLy = RsLy(CurSessRs(Top), Sep)
-End Property
+End Function
 
-Property Get CurSessRs(Optional Top% = 50) As DAO.Recordset
+Function CurSessRs(Optional Top% = 50) As DAO.Recordset
 Set CurSessRs = L.OpenRecordset(FmtQQ("Select Top ? * from sess order by Sess desc", Top))
-End Property
+End Function
 
 Function SessNLg%(A&)
 SessNLg = DbqV(L, "Select Count(*) from Lg where Sess=" & A)
 End Function
+Sub Z()
+Stop
+ZZZ_Lg
+Stop
+End Sub
+
+Private Sub ZZZ_Lg()
+LgKill
+Debug.Assert Dir(LgFb) = ""
+LgBeg
+Debug.Assert Dir(LgFb) = LgFn
+End Sub
