@@ -6,10 +6,13 @@ Private X_Msg&
 Private X_Lg&
 
 Private Function L() As Database
+On Error GoTo X
 If IsNothing(X_L) Then
     Set X_L = FbDb(LgFb)
 End If
 Set L = X_L
+Exit Function
+X:
 End Function
 
 Sub LgEns()
@@ -110,6 +113,7 @@ With L.TableDefs("LgV").OpenRecordset
     .Close
 End With
 End Sub
+
 Sub LgBrw()
 Acs.OpenCurrentDatabase LgFb
 AcsVis Acs
@@ -130,6 +134,7 @@ End Sub
 Property Get LgFb$()
 LgFb = WPth & LgFn
 End Property
+
 Property Get LgFn$()
 LgFn = "Lg.accdb"
 End Property
@@ -153,12 +158,14 @@ Dim LgAy&()
 LgAy = SessLgAy(A)
 SessLy = AyOfAy_Ay(AyMap(LgAy, "LgLy"))
 End Function
+
 Sub LgAsg_xSess_xDTim(A&, OSess&, ODTim$, OFun$, OMsgTxt$)
 Q = FmtQQ("select Fun,MsgTxt,Sess,x.Dte from Lg x inner join Msg a on x.Msg=a.Msg where Lg=?", A)
 Dim D As Date
 RsAsg L.OpenRecordset(Q), OFun, OMsgTxt, OSess, D
 ODTim = DteDTim(D)
 End Sub
+
 Function LgLy(A&) As String()
 Dim Fun$, MsgTxt$, LgDTim$, LgSess&, Sfx$
 LgAsg_xSess_xDTim A, LgSess, LgDTim, Fun, MsgTxt
@@ -170,28 +177,42 @@ Function LgValAy(A&) As Variant()
 Q = FmtQQ("Select Val from LgV where Lg = ? order by LgV", A)
 LgValAy = RsAy(L.OpenRecordset(Q))
 End Function
-Sub LgLis(Optional Top% = 50)
-Dim Fun$, MsgTxt$
-With L.OpenRecordset(FmtQQ("Select Top ? * from Lg order by Sess desc,Lg", Top))
-    While Not .EOF
-        Q = FmtQQ("Select Fun,MsgTxt from Msg where Msg=?", !Msg)
-        RsAsg L.OpenRecordset(Q), Fun, MsgTxt
-        D JnSpc(Array(!Sess, !Lg, DteDTim(!Dte), Fun, MsgTxt))
-        .MoveNext
-    Wend
-    .Close
-End With
+
+Function CurLgRs(Optional Top% = 50) As DAO.Recordset
+Set CurLgRs = L.OpenRecordset(FmtQQ("Select Top ? x.*,Fun,MsgTxt from Lg x left join Msg a on x.Msg=a.Msg order by Sess desc,Lg", Top))
+End Function
+
+Function RsLin$(A As DAO.Recordset, Optional Sep$ = " ")
+RsLin = Join(RsDr(A), Sep)
+End Function
+
+Property Get CurLgLy(Optional Sep$ = " ", Optional Top% = 50) As String()
+CurLgLy = RsLy(CurLgRs(Top), Sep)
+End Property
+
+Sub LgLis(Optional Sep$ = " ", Optional Top% = 50)
+CurLgLis Sep, Top
 End Sub
 
-Sub SessLis(Optional Top% = 50)
-With L.OpenRecordset(FmtQQ("Select Top ? * from sess order by Sess desc", Top))
-    While Not .EOF
-        D !Sess & " " & DteDTim(!Dte) & " NLg-" & SessNLg(CLng(!Sess))
-        .MoveNext
-    Wend
-    .Close
-End With
+Sub CurLgLis(Optional Sep$ = " ", Optional Top% = 50)
+D CurLgLy(Sep, Top)
 End Sub
+
+Sub SessLis(Optional Sep$, Optional Top% = 50)
+CurSessLis Sep, Top
+End Sub
+
+Sub CurSessLis(Optional Sep$ = " ", Optional Top% = 50)
+D CurSessLy(Sep, Top)
+End Sub
+
+Property Get CurSessLy(Optional Sep$, Optional Top% = 50) As String()
+CurSessLy = RsLy(CurSessRs(Top), Sep)
+End Property
+
+Property Get CurSessRs(Optional Top% = 50) As DAO.Recordset
+Set CurSessRs = L.OpenRecordset(FmtQQ("Select Top ? * from sess order by Sess desc", Top))
+End Property
 
 Function SessNLg%(A&)
 SessNLg = DbqV(L, "Select Count(*) from Lg where Sess=" & A)

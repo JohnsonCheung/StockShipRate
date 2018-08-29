@@ -732,11 +732,24 @@ If N <> 1 Then
         Att, A.Name, N, ToFfn
 End If
 DbAtt_Exp = AttRs_Exp(DbAtt_AttRs(A, Att), ToFfn)
-MsgDmp "@[Sub], [Att] is exported [ToFfn]", "DbAtt_Exp", Att, ToFfn
+FunMsgDmp "DbAtt_Exp", "[Att] is exported [ToFfn] from [Db]", Att, ToFfn, DbNm(A)
 End Function
+Function RsLy(A As DAO.Recordset, Optional Sep$ = " ") As String()
+Dim O$()
+With A
+    Push O, Join(RsFny(A), Sep)
+    While Not .EOF
+        Push O, RsLin(A, Sep)
+        .MoveNext
+    Wend
+End With
+RsLy = O
+End Function
+
 Sub RaiseErr()
 Err.Raise -1, , "Please check messages opened in notepad"
 End Sub
+
 Sub Er(Msg$, ParamArray Ap())
 Dim Av(): Av = Ap
 Dim O$()
@@ -744,6 +757,7 @@ O = MsgAv_Ly(Msg, Av)
 AyBrw O
 RaiseErr
 End Sub
+
 Function MsgNy(A) As String()
 Dim O$(), P%, J%
 O = Split(A, "[")
@@ -754,12 +768,15 @@ For J = 0 To UB(O)
 Next
 MsgNy = O
 End Function
+
 Function NyLy(A$(), Av(), Optional Indent% = 4) As String()
 NyLy = NyAv_Ly(A, Av, Indent)
 End Function
+
 Function NyLin$(A$(), Av())
 NyLin = NyAv_Lin(A, Av)
 End Function
+
 Sub AyabSetSamMax(A, B)
 Dim U1&, U2&
 U1 = UB(A)
@@ -769,6 +786,7 @@ Case U1 > U2: ReDim Preserve B(U1)
 Case U1 < U2: ReDim Preserve A(U2)
 End Select
 End Sub
+
 Function NyAv_Ly(A$(), Av(), Optional Indent% = 4) As String()
 Dim W%, O$(), J%, A1$(), A2$()
 W = AyWdt(A)
@@ -980,6 +998,9 @@ Dim Cmd$
     Cmd = JnSpc(AyQuoteDbl(AyAdd(Array(A), Av)))
 Shell Cmd, vbMaximizedFocus
 FcmdRunMax = A
+End Function
+Function FMsgLy(A, Msg$, Av()) As String()
+FMsgLy = FunMsgAv_Ly(A, Msg, Av)
 End Function
 Function FunMsgAv_Ly(A, Msg$, Av()) As String()
 Dim B$(), C$()
@@ -1267,6 +1288,7 @@ Function TfkV(T, F, ParamArray K())
 Dim Av(): Av = K
 TfkV = DbtfkV(CurrentDb, T, F, Av)
 End Function
+
 Sub RsSetFldVal(A As DAO.Recordset, F, V)
 With A
     .Edit
@@ -1291,6 +1313,7 @@ Case Else: Stop
 End Select
 FxDaoCnStr = O
 End Function
+
 Sub ZZ_FbWb_zExpOupTbl()
 Dim W As Workbook
 Set W = FbWb_zExpOupTbl(WFb)
@@ -1372,12 +1395,18 @@ Sub PushObj_zNonNothing(OY, Obj)
 If IsNothing(Obj) Then Exit Sub
 PushObj OY, Obj
 End Sub
-Function WbWcAy_zOle(A As Workbook) As OLEDBConnection()
-Dim O() As OLEDBConnection, Wc As WorkbookConnection
-For Each Wc In A.Connections
-    PushObj_zNonNothing O, Wc.OLEDBConnection
+Function ItrpAyInto(A, P, OInto)
+Dim X, O
+O = OInto
+Erase O
+For Each X In A
+    Push O, ObjPrp(X, P)
 Next
-WbWcAy_zOle = O
+ItrpAyInto = 0
+End Function
+Function WbWcAy_zOle(A As Workbook) As OLEDBConnection()
+Dim O() As OLEDBConnection
+WbWcAy_zOle = AyRmvEmp(ItrpAyInto(A.Connections, "OLEDBConnection", O))
 End Function
 Function WbWcSy_zOle(A As Workbook) As String()
 WbWcSy_zOle = OyPrpSy(WbWcAy_zOle(A), "Connection")
@@ -2023,7 +2052,15 @@ End Function
 Function IsObjAy(A) As Boolean
 IsObjAy = VarType(A) = vbArray + vbObject
 End Function
-
+Function AyRmvEle(A, Ele)
+Dim O: O = AyCln(A)
+Dim X
+If Sz(A) = 0 Then AyRmvEle = O: Exit Function
+For Each X In A
+    If X <> Ele Then Push O, X
+Next
+AyRmvEle = O
+End Function
 Function AyRmvEleAt(A, Optional At&)
 Dim O, J&, U&
 U = UB(A)
@@ -2167,12 +2204,12 @@ End Sub
 Function FbCrt(A) As Database
 Set FbCrt = DBEngine.CreateDatabase(A, dbLangGeneral)
 End Function
-Sub FxRfhWbWcStr(A, Fb$)
-WbRfhCnStr(FxWb(A), Fb).Close True
+Sub FxRfhFbCnStr(A, Fb$)
+WbRfhFbCnStr(FxWb(A), Fb).Close True
 End Sub
-Function WbRfhCnStr(A As Workbook, Fb$) As Workbook
+Function WbRfhFbCnStr(A As Workbook, Fb$) As Workbook
 ItrDoXP A.Connections, "WcRfhCnStr", FbWcStr(Fb)
-Set WbRfhCnStr = A
+Set WbRfhFbCnStr = A
 End Function
 Sub FbOpn(A)
 Acs.OpenCurrentDatabase A
@@ -3070,13 +3107,14 @@ Function DaoShtTy_Ty(A) As DAO.DataTypeEnum
 Dim O As DAO.DataTypeEnum
 Select Case A
 Case "Byt": O = DAO.DataTypeEnum.dbByte
+Case "Mem": O = DAO.DataTypeEnum.dbMemo
 Case "Lng": O = DAO.DataTypeEnum.dbLong
 Case "Int": O = DAO.DataTypeEnum.dbInteger
 Case "Dte": O = DAO.DataTypeEnum.dbDate
 Case "Txt": O = DAO.DataTypeEnum.dbText
 Case "Yes": O = DAO.DataTypeEnum.dbBoolean
 Case "Dbl": O = DAO.DataTypeEnum.dbDouble
-Case "Cur": O = DAO.DataTypeEnum.dbCurrency
+Case "Ccy": O = DAO.DataTypeEnum.dbCurrency
 Case Else: Stop
 End Select
 DaoShtTy_Ty = O
@@ -3477,7 +3515,7 @@ End Function
 Function TblRg(A$, At As Range) As Range
 Set TblRg = DbtRg(CurrentDb, A, At)
 End Function
-Function DbtRg(A As Database, T$, At As Range) As Range
+Function DbtRg(A As Database, T, At As Range) As Range
 Set DbtRg = SqRg(DbtSq(A, T), At)
 End Function
 Function AyAddAp(ParamArray Ap())
@@ -3922,8 +3960,10 @@ ItrDo A.PivotTables, "PtRfh"
 ItrDo A.ListObjects, "LoRfh"
 End Sub
 Sub LoRfh(A As Excel.ListObject)
-'A.QueryTable.Connection
-Stop '
+Dim Qt As QueryTable
+Set Qt = LoQt(A)
+If IsNothing(Qt) Then Exit Sub
+QtRfh Qt
 End Sub
 Sub QtRfh(A As Excel.QueryTable)
 A.BackgroundQuery = False
@@ -4718,12 +4758,22 @@ End If
 TmpFfn = TmpPth(Fdr) & Fnn & Ext
 End Function
 
+Sub FbBrw(A)
+Acs.OpenCurrentDatabase A
+Acs.Visible = True
+End Sub
+Function TmpFb$(Optional Fdr$, Optional Fnn$)
+TmpFb = TmpFfn(".accdb", Fdr, Fnn)
+End Function
+
 Function TmpFt$(Optional Fdr$, Optional Fnn$)
 TmpFt = TmpFfn(".txt", Fdr, Fnn)
 End Function
+
 Function TmpCmd$(Optional Fdr$, Optional Fnn$)
 TmpCmd = TmpFfn(".cmd", Fdr, Fnn)
 End Function
+
 Function TmpFx$(Optional Fdr$, Optional Fnn$)
 TmpFx = TmpFfn(".xlsx", Fdr, Fnn)
 End Function
@@ -6360,6 +6410,7 @@ End Function
 Sub SpnmExp(A, Optional OvrWrt As Boolean)
 StrWrt SpnmLines(A), SpnmFt(A), Not OvrWrt
 End Sub
+
 Property Get LgSchm_Ft$()
 LgSchm_Ft = SpnmFt(LgSNm)
 End Property

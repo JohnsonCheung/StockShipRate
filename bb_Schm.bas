@@ -1,5 +1,6 @@
 Option Compare Database
 Option Explicit
+Dim Act$, Exp$
 Private Type SchmLinesBrk
     Ty_TF() As String
     Ty_Fld() As String
@@ -13,8 +14,8 @@ End Type
 Private X As SchmLinesBrk
 Private T, F
 Private Const ZZSchmLines$ = _
-"Ty_TFf  Txt T F              " & vbCrLf & _
 "Ty_Fld Mem Lines ..          " & vbCrLf & _
+"Ty_Fld Txt Fun ..          " & vbCrLf & _
 "Ty_Sfx Dte Dte ..            " & vbCrLf & _
 "Ty_Sfx Txt Txt ..            " & vbCrLf & _
 "Dft Now | CrtDte ..          " & vbCrLf & _
@@ -31,36 +32,67 @@ Private Const ZZSchmLines$ = _
 Private Property Get ZZX() As SchmLinesBrk
 ZZX = SchmLinesBrk(ZZSchmLines)
 End Property
-Sub ZZ_Req()
+Sub ZZZ_TySz()
+X = ZZX
+T = "Sess"
+F = "CrtDte"
+Exp = "Dte"
+GoSub Tst
+Exit Sub
+Tst:
+    Act = TySz
+    Debug.Assert Act = Exp
+    Return
+End Sub
+
+Sub ZZZ_Req()
 X = ZZX
 F = "Lines":  Debug.Assert Req = True
 F = "Fun":    Debug.Assert Req = True
 F = "MsgTxt": Debug.Assert Req = True
 F = "XX":     Debug.Assert Req = False
 End Sub
+
+Sub ZZ_Dft()
+X = ZZX
+F = "CrtDte":  Debug.Assert Dft = "Now"
+F = "Fun":    Debug.Assert Dft = ""
+End Sub
+
 Sub AAA()
 ZZ_SchmLines_BrkAsg
 End Sub
 
 Sub ZZ_Tny()
 X = ZZX
+GoSub Sep
+D "Tny"
+D "---"
 D Tny
-D "----------"
-T = "Lg": D Fny: D "------"
-T = "LgV": D Fny: D "-------"
-T = "Sess": D Fny: D "--------"
-Stop
+GoSub Sep
+For Each T In Tny
+    GoSub Prt
+Next
 D SkSql
 D PkSql
-Stop
+Exit Sub
+Prt:
+    D T
+    D UnderLin(T)
+    D Fny
+    GoSub Sep
+    Return
+Sep:
+    D "--------------------"
+    Return
 End Sub
 
-Sub ZZ_SchmLines_BrkAsg()
+Private Sub ZZ_SchmLines_BrkAsg()
 Dim Td() As DAO.TableDef, Pk$(), Sk$()
 SchmLines_BrkAsg ZZSchmLines, Td, Pk, Sk
 Stop
 End Sub
-Function SchmLinesBrk(SchmLines) As SchmLinesBrk
+Private Function SchmLinesBrk(SchmLines) As SchmLinesBrk
 With SchmLinesBrk
     LinesBrkAsg SchmLines, _
         "FDes   Dft   Req   Ty_Fld   Ty_Sfx   Ty_TF   TDes   TFld", _
@@ -68,7 +100,7 @@ With SchmLinesBrk
     .Req = SslAy_Sy(.Req)
 End With
 End Function
-Sub SchmLines_BrkAsg(A, OTdAy() As DAO.TableDef, OPkSqlAy$(), OSkSqlAy$())
+Private Sub SchmLines_BrkAsg(A, OTdAy() As DAO.TableDef, OPkSqlAy$(), OSkSqlAy$())
 X = SchmLinesBrk(A)
 OPkSqlAy = PkSql
 OSkSqlAy = SkSql
@@ -131,10 +163,13 @@ For Each L In X.Ty_Sfx
     If StrInSfxAy(F, SslSy(L)) Then TySz_Sfx = O: Exit Function
 Next
 End Function
-
+Private Function TySz_Id$()
+If AyHas(Tny, F) Then TySz_Id = "Lng"
+End Function
 Private Function TySz$()
-TySz = TySz_TF: If TySz <> "" Then Exit Function
-TySz = TySz_F: If TySz <> "" Then Exit Function
+TySz = TySz_Id:  If TySz <> "" Then Exit Function
+TySz = TySz_TF:  If TySz <> "" Then Exit Function
+TySz = TySz_F:   If TySz <> "" Then Exit Function
 TySz = TySz_Sfx: If TySz <> "" Then Exit Function
 Stop
 End Function
@@ -195,6 +230,14 @@ X:
     Return
 End Function
 
+Sub ZZ_DbCrtSchm()
+Dim Fb$
+Fb = TmpFb
+FbCrt Fb
+DbCrtSchm FbDb(Fb), ZZSchmLines
+FbBrw Fb
+End Sub
+
 Sub DbCrtSchm(A As Database, SchmLines$)
 Dim Td() As DAO.TableDef, Pk$(), Sk$()
 SchmLines_BrkAsg SchmLines, Td, Pk, Sk
@@ -211,7 +254,7 @@ B = A(0)
 Tbl = LinShiftT1(B)
 If T <> Tbl Then Stop
 C = Replace(B, "*", Tbl)
-Fny = SslSy(C)
+Fny = AyRmvEle(SslSy(C), "|")
 End Function
 
 Private Function FdAy() As DAO.Field()
