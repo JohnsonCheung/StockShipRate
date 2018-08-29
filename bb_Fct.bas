@@ -3,15 +3,6 @@ Option Explicit
 Const LgSNm$ = "LgSchm" ' The LgSchm-Spnm
 Public Fso As New Scripting.FileSystemObject
 Public Fcmd As New Fcmd
-Type SchmLinesBrk
-    FldSfx() As String
-    Fld() As String
-    TFld() As String
-    FldDft() As String
-    FldReq() As String
-    FldDes() As String
-    TblDes() As String
-End Type
 Type AttRs
     TblRs As DAO.Recordset
     AttRs As DAO.Recordset
@@ -34,60 +25,11 @@ Public W As Database
 Const PSep$ = " "
 Const PSep1$ = " "
 
-Sub AAA()
-ZZ_SchmLines_BrkAsg
-End Sub
-
-Sub ZZ_SchmLines_BrkAsg()
-Dim SchmLines$
-SchmLines = _
-"FldSfx Txt   Txt" & vbCrLf & _
-"FldSfx Lines Mem" & vbCrLf & _
-"FldSfx Dte   Dte" & vbCrLf & _
-"Fld    Fun   Txt" & vbCrLf & _
-"FldDft CrtDte Now" & vbCrLf & _
-"TFld Sess * CrtDte" & vbCrLf & _
-"TFld Msg  * Fun *Txt | CrtDte" & vbCrLf & _
-"TFld Lg   * Sess Msg CrtDte" & vbCrLf & _
-"TFld LgV  * Lg Lines" & vbCrLf & _
-"FldDes Fun Function name that call the log" & vbCrLf & _
-"FldReq Lines Fun MsgTxt" & vbCrLf & _
-"TblDes Msg it will a new record when Lg-function is first time using the Fun+MsgTxt"
-Dim Td() As DAO.TableDef, Pk$(), Sk$()
-SchmLines_BrkAsg SchmLines, Td, Pk, Sk
-Stop
-End Sub
-Function SchmLinesBrk_TdAy(A As SchmLinesBrk) As DAO.TableDef()
-Dim O() As DAO.TableDef, U%, Tny$(), J%
-With A
-    Tny = AyMapSy(.TFld, "LinT1")
-    U = UB(Tny)
-    ReDim O(U)
-    For J = 0 To U
-        Set O(J) = SchmLinesBrk_TdAy__1(Tny(J), A)
-    Next
-End With
-SchmLinesBrk_TdAy = O
-End Function
-Sub TdAddFd(A As DAO.TableDef, F As DAO.Field)
-A.Fields.Append F
-End Sub
 Function LyWhT1EqV(A$(), V) As String()
 LyWhT1EqV = AyWhPredXP(A, "LinHasT1", V)
 End Function
 Function LinHasT1(A, T1$) As Boolean
 LinHasT1 = LinT1(A) = T1
-End Function
-Function SchmLinesBrk_FdAy(A As SchmLinesBrk, T) As DAO.Field()
-Dim TFld$(), Fny$(), O() As DAO.Field, J%
-TFld = LyWhT1EqV(A.TFld, T)
-If Sz(TFld) <> 1 Then Stop
-Fny = SslSy(Replace(TFld(0), "*", T))
-ReDim O(UB(Fny))
-For J = 0 To UB(Fny)
-    Set O(J) = SchmLinesBrk_Fd(A, T, Fny(J))
-Next
-SchmLinesBrk_FdAy = O
 End Function
 Sub ZZ_TFldDes()
 TFldDes("Att", "AttNm") = "AttNm"
@@ -127,65 +69,14 @@ End Property
 Function DbtfHasPrp(A As Database, T, F, P) As Boolean
 DbtfHasPrp = ItrHasNm(A.TableDefs(T).Fields(F).Properties, P)
 End Function
-Function SchmLinesBrk_Fd(A As SchmLinesBrk, T, F) As DAO.Field
-Dim O As DAO.Field, Ty As DAO.DataTypeEnum, TxtSz%, IsId As Boolean, Dft$, Des$, Req As Boolean
-Req = AyHas(A.FldReq, F)
-Stop
-'A.FldReq
-Set O = DaoFld(F, Ty, TxtSz, , IsId, Dft, Req)
-Set SchmLinesBrk_Fd = O
-End Function
-Function SchmLinesBrk_TdAy__1(T, A As SchmLinesBrk) As DAO.TableDef
-Dim O As New DAO.TableDef, FdAy() As DAO.Field
-O.Name = T
-FdAy = SchmLinesBrk_FdAy(A, T)
-AyDoPX FdAy, "TdAddFd", T
-Set SchmLinesBrk_TdAy__1 = O
-End Function
 Function SslAy_Sy(A$()) As String()
-Dim O$()
+Dim O$(), L
 If Sz(A) = 0 Then Exit Function
 For Each L In A
     PushAy O, SslSy(L)
 Next
 SslAy_Sy = O
 End Function
-Sub SchmLines_BrkAsg(A, OTdAy() As DAO.TableDef, OPkSqlAy$(), OSkSqlAy$())
-Dim X As SchmLinesBrk
-With X
-    LinesBrkAsg A, _
-        "Fld   FldDes   FldDft   FldReq   FldSfx   TblDes   TFld", _
-        .Fld, .FldDes, .FldDft, .FldReq, .FldSfx, .TblDes, .TFld
-    .FldReq = SslAy_Sy(.FldReq)
-End With
-Dim PkTny$()
-    Dim B$()
-    B = AyWhPred(X.TFld, "TFLinHasPk")
-    PkTny = AyMapSy(B, "LinT1")
-Dim SkTny$(), SkSslAy$()
-    Dim J%, U%
-    B = AyWhPred(X.TFld, "TFLinHasSk")
-    B = AyMapXPSy(B, "TakBef", "|")
-    SchmLines_BrkAsg__1 B, SkTny, SkSslAy
-OTdAy = SchmLinesBrk_TdAy(X)
-OPkSqlAy = AyMapSy(PkTny, "TnPkSql")
-OSkSqlAy = AyabMapSy(SkTny, SkSslAy, "TnSkSql")
-End Sub
-Private Sub SchmLines_BrkAsg__1(Sk$(), OT$(), OSsl$())
-Dim J%, U%
-U = UB(Sk)
-If U = -1 Then Exit Sub
-ReDim OT(U)
-ReDim OSsl(U)
-For J = 0 To U
-    SchmLines_BrkAsg__2 Sk(J), OT(J), OSsl(J)
-Next
-End Sub
-Private Sub SchmLines_BrkAsg__2(ByVal Sk$, OT$, OSsl$)
-Dim A$
-BrkAsg Sk, " ", OT, A
-OSsl = Replace(RmvPfx(A, "*"), "*", OT)
-End Sub
 
 Function HasSubStr(A, SubStr) As Boolean
 HasSubStr = InStr(A, SubStr) > 0
@@ -245,9 +136,6 @@ For J = 0 To UB(A)
     O.Add A(J), J
 Next
 Set AyIxDic = O
-End Function
-Function TdHasPkFld(A As DAO.TableDef) As Boolean
-TdHasPkFld = ItrHasNm(A.Fields, A.Name)
 End Function
 Sub NDriveMap()
 NDriveRmv
@@ -531,6 +419,16 @@ End Function
 Sub DbtfAddExpr(A As Database, T, F, Expr$, Optional Ty As DAO.DataTypeEnum = dbText, Optional TxtSz% = 255)
 A.TableDefs(T).Fields.Append DaoFld(F, Ty, TxtSz, Expr)
 End Sub
+Function DicKey_Asg(A As Dictionary, K, O) As Boolean
+If A.Exists(K) Then
+    O = A(K)
+    DicKey_Asg = True
+End If
+End Function
+Sub TdAddFd(A As DAO.TableDef, F As DAO.Field)
+A.Fields.Append F
+End Sub
+
 Function DaoFld(F, Optional Ty As DAO.DataTypeEnum = dbText, Optional TxtSz% = 255, Optional Expr$, Optional IsId As Boolean, Optional Dft$, Optional Req As Boolean) As DAO.Field2
 Dim O As New DAO.Field
 With O
@@ -694,10 +592,29 @@ For Each C In A.ListColumns
     Next
 Next
 End Sub
-Sub LinAsgT1T2(A, OT1$, OT2$)
+Function StrInSfxAy(A, SfxAy$()) As Boolean
+Dim Sfx
+For Each Sfx In SfxAy
+    If HasSfx(A, Sfx) Then StrInSfxAy = True: Exit Function
+Next
+End Function
+Sub ZZ_LinShiftT1()
+Dim L$, A$
+L = " S   DFKDF SLDF  "
+A = LinShiftT1(L)
+Debug.Assert A = "S"
+Debug.Assert L = "DFKDF SLDF"
+End Sub
+Function LinShiftT1$(OLin)
+Dim T$, R$
+BrkS1Asg LTrim(OLin), " ", T, R
+LinShiftT1 = T
+OLin = R
+End Function
+Sub LinAsgT1T2(A, OT1, OT2)
 BrkAsg A, " ", OT1, OT2
 End Sub
-Sub BrkS1Asg(A, Sep$, Optional O1$, Optional O2$, Optional NoTrim As Boolean)
+Sub BrkS1Asg(A, Sep$, Optional O1, Optional O2, Optional NoTrim As Boolean)
 BrkS1AtAsg A, InStr(A, Sep), Sep, O1, O2, NoTrim
 End Sub
 Sub BrkAsg(A, Sep$, Optional O1, Optional O2, Optional NoTrim As Boolean)
@@ -5408,7 +5325,12 @@ For Each Dr In Dry
 Next
 SqlQQStr_Sy = O
 End Function
-
+Function NewTd(T, FdAy() As DAO.Field) As DAO.TableDef
+Dim O As New DAO.TableDef
+O.Name = T
+AyDoPX FdAy, "TdAddFd", O
+Set NewTd = O
+End Function
 
 Function FldsCsv$(A As DAO.Fields)
 FldsCsv = AyCsv(ItrVy(A))
@@ -6471,27 +6393,8 @@ Property Get SpnmFny() As String()
 SpnmFny = DbtFny(CurrentDb, "Spec")
 End Property
 
-Function NewFld(F, SfxFsn As Dictionary, NmFsn As Dictionary) As DAO.Field2
-
-End Function
-
-Function SchmTd(A, SfxFsn As Dictionary, NmFsn As Dictionary) As DAO.TableDef
-'Dim Td As DAO.TableDef, Fny$(), F
-'TsnAsg A, Td, Fny
-'For Each F In Fny
-'    Td.Fields.Append NewFld(F, SfxFsn, NmFsn)
-'Next
-'Set TsnTd = Td
-End Function
 Sub DbRun(A As Database, Sql)
 A.Execute Sql
-End Sub
-Sub DbCrtSchm(A As Database, SchmLines$)
-Dim Td() As DAO.TableDef, Pk$(), Sk$()
-SchmLines_BrkAsg SchmLines, Td, Pk, Sk
-AyDoPX Td, "DbAppTd", A
-AyDoPX Pk, "DbRun", A
-AyDoPX Sk, "DbRun", A
 End Sub
 
 Sub DbAppTd(A As Database, Td As DAO.TableDef)
