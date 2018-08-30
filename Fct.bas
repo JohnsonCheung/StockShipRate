@@ -1,11 +1,18 @@
 Option Compare Database
 Option Explicit
-Const LgSNm$ = "LgSchm" ' The LgSchm-Spnm
 Public Fso As New Scripting.FileSystemObject
 Public Fcmd As New Fcmd
+Public Const Z_ReSeqSpec$ = _
+"Flg RecTy Amt Key Uom MovTy Qty BchRateUX RateTy Bch Las GL |" & _
+" Flg IsAlert IsWithSku |" & _
+" Key Sku PstMth PstDte |" & _
+" Bch BchNo BchPermitDate BchPermit |" & _
+" Las LasBchNo LasPermitDate LasPermit |" & _
+" GL GLDocNo GLDocDte GLAsg GLDocTy GLLin GLPstKy GLPc GLAc GLBusA GLRef |" & _
+" Uom Des StkUom Ac_U"
 Type AttRs
-    TblRs As DAO.Recordset
-    AttRs As DAO.Recordset
+    TblRs As dao.Recordset
+    AttRs As dao.Recordset
 End Type
 Type XlsLnkInf
     IsXlsLnk As Boolean
@@ -306,28 +313,60 @@ End Function
 Function DbtSrc$(A As Database, T)
 DbtSrc = A.TableDefs(T).SourceTableName
 End Function
-Function RsTSz$(A As DAO.Recordset)
-If A.Fields(0).Type <> DAO.dbDate Then Stop
-If A.Fields(1).Type <> DAO.dbLong Then Stop
+Function RsTSz$(A As dao.Recordset)
+If A.Fields(0).Type <> dao.dbDate Then Stop
+If A.Fields(1).Type <> dao.dbLong Then Stop
 RsTSz = DteDTim(A.Fields(0).Value) & "." & A.Fields(1).Value
 End Function
 Function JnVBar$(A)
 JnVBar = Join(A, "|")
 End Function
-Function LoNm_FmlVbl$(A)
-LoNm_FmlVbl = LoNm_XXXVbl(A, "Fml")
-End Function
-Function LoNm_XXXVbl$(A, XXX$)
-If Not HasPfx(A, "T_") And A <> "*" Then Stop
-Dim Rs As DAO.Recordset
-Set Rs = QQRs("Select FldNm & ' ' & ? from [Lo?] where LoNm='?' order by Seq,FldNm", XXX, XXX, A)
-LoNm_XXXVbl = JnVBar(RsSy(Rs)) 'Note: it is OK to have @XX having no Formula, ie return "" as LoFmlVbl
-End Function
-Function LoNm_FmtVbl$(A)
-LoNm_FmtVbl = JnVBar(ApSy(LoNm_XXXVbl("*", "Fmt"), LoNm_XXXVbl(A, "Fmt")))
+
+Function LonmXWdt(A) As String()
+'From Table LoColWdt with fields LoNm Wdt FldLikSsl Seq
+'Return {Wdt} {FldLikSsl...}
+'       ..
+Q = FmtQQ("Select Wdt & ' ' & FldLikSsl from [LoWdt] where LoNm='?' or LoNm='*' order by LoNm,Seq", A)
+LonmXWdt = RsSy(CurrentDb.OpenRecordset(Q))
 End Function
 
-Function QQRs(QQSql, ParamArray Ap()) As DAO.Recordset
+Function LonmXAlignC$(A)
+'From Table LoAlignC with fields FldLikSsl
+'Return {FldLikSsl..}
+Q = FmtQQ("Select FldLikSsl from [LoAlignC] where LoNm in ('?','*')", A)
+LonmXAlignC = JnSpc(RsSy(CurrentDb.OpenRecordset(Q)))
+End Function
+
+Function LonmXTSum$(A)
+'From Table LoAlignC with fields FldLikSsl
+'Return {FldLikSsl..}
+Q = FmtQQ("Select FldLikSsl from [LoTSum] where LoNm in ('?','*')", A)
+LonmXTSum = JnSpc(RsSy(CurrentDb.OpenRecordset(Q)))
+End Function
+
+Function LonmXTCnt$(A)
+'From Table LoAlignC with fields FldLikSsl
+'Return {FldLikSsl..}
+Q = FmtQQ("Select FldLikSsl from [LoTCnt] where LoNm in ('?','*')", A)
+LonmXTCnt = JnSpc(RsSy(CurrentDb.OpenRecordset(Q)))
+End Function
+
+Function LonmXTAvg$(A)
+'From Table LoAlignC with fields FldLikSsl
+'Return {FldLikSsl..}
+Q = FmtQQ("Select FldLikSsl from [LoTAvg] where LoNm in ('?','*')", A)
+LonmXTAvg = JnSpc(RsSy(CurrentDb.OpenRecordset(Q)))
+End Function
+
+Function LonmXFmt(A) As String()
+'From Table LoFmt with fields LoNm Fmt FldLikSsl Seq
+'Return {Fmt} {FldLikSsl..}
+'       ..
+Q = FmtQQ("Select Fmt & ' ' & FldLikSsl from [LoFmt] where LoNm='?' or LoNm='*' order by LoNm,Seq", A)
+LonmXFmt = RsSy(CurrentDb.OpenRecordset(Q))
+End Function
+
+Function QQRs(QQSql, ParamArray Ap()) As dao.Recordset
 Dim Av(): Av = Ap
 Set QQRs = DbqRs(CurrentDb, FmtQQAv(QQSql, Av))
 End Function
@@ -337,26 +376,91 @@ Dim Av(): Av = Ap
 QQV = DbqV(CurrentDb, FmtQQAv(QQSql, Av))
 End Function
 
-Function LoNm_TblNm$(A)
+Function LonmTblNm$(A)
 If Not HasPfx(A, "T_") Then Stop
-LoNm_TblNm = "@" & Mid(A, 3)
+LonmTblNm = "@" & Mid(A, 3)
 End Function
-Sub LoRfhFml(A As ListObject)
-LoSetFmlVbl A, LoNm_FmlVbl(A.Name)
+Sub LoRfhAllFmt(A As ListObject)
+LoRfhFml A
+LoRfhFmt A
+LoRfhAlignC A
+LoRfhWdt A
+LoRfhTot A
 End Sub
-Sub LoRfhFmt(A As ListObject)
-LoSetFmtVbl A, LoNm_FmtVbl(A.Name)
-End Sub
+
 Sub LoRfhAlignC(A As ListObject)
-LoSetAlignC A, LoNm_AlignCLikSsl(A.Name)
+LoSetAlignC_zX A, LonmXAlignC(A.Name)
 End Sub
-Function LoNm_AlignCLikSsl$(A$)
-If Not HasPfx(A, "T_") And A <> "*" Then Stop
-Dim LikSsl1$
-Dim LikSsl2$
-    LikSsl1 = SqlV(FmtQQ("Select FldLikSsl from [LoAlignC] where LoNm='?'", A))
-    If A <> "*" Then LikSsl2 = SqlV("Select FldLikSsl from [WsAlignC] where LoNm='*'")
-LoNm_AlignCLikSsl = LikSsl1 & " " & LikSsl2
+
+Sub LoRfhWdt(A As ListObject)
+LoSetWdt_zX A, LonmXWdt(A.Name)
+End Sub
+
+Sub LoRfhTot(A As ListObject)
+LoSetTot_zX A, LonmXTSum(A.Name), xlTotalsCalculationSum
+LoSetTot_zX A, LonmXTAvg(A.Name), xlTotalsCalculationAverage
+LoSetTot_zX A, LonmXTCnt(A.Name), xlTotalsCalculationCount
+End Sub
+
+Sub LoRfhFmt(A As ListObject)
+LoSetFmt_zX A, LonmXFmt(A.Name)
+End Sub
+
+Sub LoRfhFml(A As ListObject)
+LoSetFml_zX A, LonmXFml(A.Name)
+End Sub
+Function LcnmFmt$(A, XFmt$())
+If Sz(XFmt) = 0 Then Exit Function
+Dim F, Fmt$, FldNmLikSsl$, LikAy$()
+For Each F In XFmt
+    LinAsgT1Rest F, Fmt, FldNmLikSsl
+    LikAy = SslSy(FldNmLikSsl)
+    If StrInLikAy(A, LikAy) Then
+        LcnmFmt = Fmt
+        Exit Function
+    End If
+Next
+End Function
+Function LcnmWdt%(A, XWdt$())
+If Sz(XWdt) = 0 Then Exit Function
+Dim W, Wdt%, FldNmLikSsl$, LikAy$()
+For Each W In XWdt
+    LinAsgT1Rest W, Wdt, FldNmLikSsl
+    LikAy = SslSy(FldNmLikSsl)
+    If StrInLikAy(A, LikAy) Then
+        LcnmWdt = Wdt
+        Exit Function
+    End If
+Next
+End Function
+
+Function StrInLikAy(A, LikAy$()) As Boolean
+StrInLikAy = LikAy_HasNm(LikAy, A)
+End Function
+Sub LcSetFmt(A As ListColumn, F$)
+If F = "" Then Exit Sub
+A.DataBodyRange.NumberFormat = F
+End Sub
+Sub LcSetWdt(A As ListColumn, W%)
+If W <= 0 Then Exit Sub
+A.DataBodyRange.ColumnWidth = W
+End Sub
+Sub LoSetFmt_zX(A As ListObject, XFmt$())
+'XFmt is {Fmt} {FldLikSsl..}
+'        ..
+If Sz(XFmt) = 0 Then Exit Sub
+Dim C As ListColumn
+For Each C In A.ListColumns
+    LcSetFmt C, LcnmFmt(C.Name, XFmt)
+Next
+End Sub
+
+Function LonmXFml(A) As String()
+'From Table LoFml with fields LoNm FldNm Fml
+'Return {FldNm} {Fml}
+'       ..
+Q = FmtQQ("Select FldNm & ' ' & Fml from [LoFml] where LoNm='?'", A)
+LonmXFml = RsSy(CurrentDb.OpenRecordset(Q))
 End Function
 
 Sub ZZ_DbtPrp()
@@ -381,8 +485,8 @@ Property Get DbtPrp(A As Database, T, P)
 If Not DbtHasPrp(A, T, P) Then Exit Property
 DbtPrp = A.TableDefs(T).Properties(P).Value
 End Property
-Function VarDaoTy(A) As DAO.DataTypeEnum
-Dim O As DAO.DataTypeEnum
+Function VarDaoTy(A) As dao.DataTypeEnum
+Dim O As dao.DataTypeEnum
 Select Case VarType(A)
 Case VbVarType.vbInteger: O = dbInteger
 Case VbVarType.vbLong: O = dbLong
@@ -393,14 +497,14 @@ End Select
 VarDaoTy = O
 
 End Function
-Function CvFld2(A As DAO.Field) As DAO.Field2
+Function CvFld2(A As dao.Field) As dao.Field2
 Set CvFld2 = A
 End Function
 Function DbtfVal(A As Database, T, F)
 DbtfVal = A.TableDefs(T).OpenRecordset.Fields(F).Value
 End Function
 Function DbtfkV(A As Database, T, F, K())
-Dim W$, Sk$(), Rs As DAO.Recordset
+Dim W$, Sk$(), Rs As dao.Recordset
 Sk = DbtSk(A, T)
 W = KyVy_BExpr(Sk, K)
 Q = FmtQQ("Select ? from [?] where ?", F, T, W)
@@ -436,14 +540,14 @@ End Function
 Function TfidV(T, F, Id&)
 TfidV = DbtfidV(CurrentDb, T, F, Id)
 End Function
-Function DbtidRs(A As Database, T, Id&) As DAO.Recordset
+Function DbtidRs(A As Database, T, Id&) As dao.Recordset
 Q = FmtQQ("Select * From ? where ?=?", T, T, Id)
 Set DbtidRs = A.OpenRecordset(Q)
 End Function
 Function DbtfidV(A As Database, T, F, Id&)
 DbtfidV = DbtidRs(A, T, Id).Fields(F).Value
 End Function
-Sub DbtfAddExpr(A As Database, T, F, Expr$, Optional Ty As DAO.DataTypeEnum = dbText, Optional TxtSz% = 255)
+Sub DbtfAddExpr(A As Database, T, F, Expr$, Optional Ty As dao.DataTypeEnum = dbText, Optional TxtSz% = 255)
 A.TableDefs(T).Fields.Append DaoFld(F, Ty, TxtSz, Expr)
 End Sub
 Function DicKey_Asg(A As Dictionary, K, O) As Boolean
@@ -452,17 +556,17 @@ If A.Exists(K) Then
     DicKey_Asg = True
 End If
 End Function
-Sub TdAddFd(A As DAO.TableDef, F As DAO.Field)
+Sub TdAddFd(A As dao.TableDef, F As dao.Field)
 A.Fields.Append F
 End Sub
 
-Function DaoFld(F, Optional Ty As DAO.DataTypeEnum = dbText, Optional TxtSz% = 255, Optional Expr$, Optional IsId As Boolean, Optional Dft$, Optional Req As Boolean) As DAO.Field2
-Dim O As New DAO.Field
+Function DaoFld(F, Optional Ty As dao.DataTypeEnum = dbText, Optional TxtSz% = 255, Optional Expr$, Optional IsId As Boolean, Optional Dft$, Optional Req As Boolean) As dao.Field2
+Dim O As New dao.Field
 With O
     .Name = F
     If IsId Then
         .Type = dbLong
-        .Attributes = DAO.FieldAttributeEnum.dbAutoIncrField
+        .Attributes = dao.FieldAttributeEnum.dbAutoIncrField
         .Required = True
     Else
         .Required = Req
@@ -480,8 +584,8 @@ With O
 End With
 Set DaoFld = O
 End Function
-Function DaoTbl(T) As DAO.TableDef
-Dim O As New DAO.TableDef
+Function DaoTbl(T) As dao.TableDef
+Dim O As New dao.TableDef
 With O
     .Name = T
     .Fields.Append DaoFld("F1")
@@ -490,30 +594,30 @@ Set DaoTbl = O
 End Function
 Sub ZZ_DbtfAddExpr()
 TblDrp "Tmp"
-Dim A As DAO.TableDef
+Dim A As dao.TableDef
 Set A = DbAddTbl(CurrentDb, "Tmp")
 DbtfAddExpr CurrentDb, "Tmp", "F2", "[F1]+"" hello!"""
 TblDrp "Tmp"
 End Sub
 Sub ZZ_DbAddTbl()
-Dim A As DAO.TableDef
+Dim A As dao.TableDef
 TblDrp "Tmp"
 Set A = DbAddTbl(CurrentDb, "Tmp")
 TblDrp "Tmp"
 End Sub
-Function DbAddTbl(A As Database, T) As DAO.TableDef
-Dim O As DAO.TableDef
+Function DbAddTbl(A As Database, T) As dao.TableDef
+Dim O As dao.TableDef
 Set O = DaoTbl(T)
 A.TableDefs.Append O
 Set DbAddTbl = O
 End Function
-Function DbtAddFld(A As Database, T, F, Optional Ty As DAO.DataTypeEnum = dbText, Optional TxtSz% = 255) As DAO.Field2
-Dim O As DAO.Field2
+Function DbtAddFld(A As Database, T, F, Optional Ty As dao.DataTypeEnum = dbText, Optional TxtSz% = 255) As dao.Field2
+Dim O As dao.Field2
 Set O = DaoFld(F, Ty, TxtSz)
 A.TableDefs(T).Fields.Append O
 Set DbtAddFld = O
 End Function
-Function FldPrpNy(A As DAO.Field) As String()
+Function FldPrpNy(A As dao.Field) As String()
 FldPrpNy = ItrNy(A.Properties)
 End Function
 Sub AyPushMsgAv(A, Msg$, Av())
@@ -590,33 +694,15 @@ End Function
 Sub ZZ_WtLnkFx()
 WtLnkFx ">UOM", IFxUom
 End Sub
-Sub LoSetFml(A As ListObject, ColNm$, Fml$)
-A.ListColumns(ColNm).DataBodyRange.Formula = Fml
+Sub LcSetFml(A As ListColumn, Fml$)
+A.DataBodyRange.Formula = Fml
 End Sub
-Sub LoSetFmlVbl(A As ListObject, FmlVbl$)
-If FmlVbl = "" Then Exit Sub
+Sub LoSetFml_zX(A As ListObject, XFml$())
+If Sz(XFml) = 0 Then Exit Sub
 Dim ColNm$, Fml$, I
-For Each I In SplitVBar(FmlVbl)
-    LinAsgT1T2 I, ColNm, Fml
-    LoSetFml A, ColNm, "=" & Fml
-Next
-End Sub
-Sub LoSetFmtVbl(A As ListObject, FmtVbl$)
-If FmtVbl = "" Then Exit Sub
-Dim ColNy$(), Fmt$(), C As ListColumn, J%, Ay$()
-Ay = SplitVBar(FmtVbl)
-ReDim ColNy(UB(Ay))
-ReDim Fmt(UB(Ay))
-For J = 0 To UB(Ay)
-    LinAsgT1T2 Ay(J), ColNy(J), Fmt(J)
-Next
-For Each C In A.ListColumns
-    For J = 0 To UB(Ay)
-        If C.Name Like ColNy(J) Then
-            C.DataBodyRange.NumberFormat = Fmt(J)
-            Exit For
-        End If
-    Next
+For Each I In XFml
+    LinAsgT1Rest I, ColNm, Fml
+    LcSetFml A.ListColumns(ColNm), "=" & Fml
 Next
 End Sub
 Function StrInSfxAy(A, SfxAy$()) As Boolean
@@ -638,8 +724,8 @@ BrkS1Asg LTrim(OLin), " ", T, R
 LinShiftT1 = T
 OLin = R
 End Function
-Sub LinAsgT1T2(A, OT1, OT2)
-BrkAsg A, " ", OT1, OT2
+Sub LinAsgT1Rest(A, OT1, ORest)
+BrkAsg Trim(A), " ", OT1, ORest
 End Sub
 Sub BrkS1Asg(A, Sep$, Optional O1, Optional O2, Optional NoTrim As Boolean)
 BrkS1AtAsg A, InStr(A, Sep), Sep, O1, O2, NoTrim
@@ -734,13 +820,13 @@ End Function
 Function AttFny() As String()
 AttFny = ItrNy(DbFstAttRs(CurrentDb).AttRs.Fields)
 End Function
-Function RsV(A As DAO.Recordset, Optional F = 0)
+Function RsV(A As dao.Recordset, Optional F = 0)
 If A.EOF Then Exit Function
 RsV = A.Fields(F).Value
 End Function
 Function AttRs_Exp$(A As AttRs, ToFfn)
 'Export the only File in {AttRs} {ToFfn}
-Dim Fn$, Ext$, T$, F2 As DAO.Field2
+Dim Fn$, Ext$, T$, F2 As dao.Field2
 With A.AttRs
     If FfnExt(CStr(!FileName)) <> FfnExt(ToFfn) Then Stop
     Set F2 = .Fields("FileData")
@@ -761,7 +847,7 @@ End If
 DbAtt_Exp = AttRs_Exp(DbAtt_AttRs(A, Att), ToFfn)
 FunMsgDmp "DbAtt_Exp", "[Att] is exported [ToFfn] from [Db]", Att, ToFfn, DbNm(A)
 End Function
-Function RsLy(A As DAO.Recordset, Optional Sep$ = " ") As String()
+Function RsLy(A As dao.Recordset, Optional Sep$ = " ") As String()
 Dim O$()
 With A
     Push O, Join(RsFny(A), Sep)
@@ -1029,8 +1115,8 @@ Dim Cmd$
 Shell Cmd, vbMaximizedFocus
 FcmdRunMax = A
 End Function
-Function FMsgLy(A, Msg$, Av()) As String()
-FMsgLy = FunMsgAv_Ly(A, Msg, Av)
+Function FunMsgLy(A, Msg$, Av()) As String()
+FunMsgLy = FunMsgAv_Ly(A, Msg, Av)
 End Function
 Function FunMsgAv_Ly(A, Msg$, Av()) As String()
 Dim B$(), C$()
@@ -1038,7 +1124,7 @@ B = SplitVBar(Msg)
 C = NyAv_Ly(CvSy(AyAdd(ApSy("Fun"), MsgNy(Msg))), CvAv(AyAdd(Array(A), Av)))
 FunMsgAv_Ly = AyAdd(B, C)
 End Function
-Function FldVal(A As DAO.Field)
+Function FldVal(A As dao.Field)
 Asg A.Value, FldVal
 End Function
 Function DbAtt_AttRs(A As Database, Att) As AttRs
@@ -1121,7 +1207,7 @@ End Sub
 Sub DbAtt_Clr(A As Database, Att)
 RsClr DbAtt_AttRs(A, Att).AttRs
 End Sub
-Sub RsClr(A As DAO.Recordset)
+Sub RsClr(A As dao.Recordset)
 With A
     While Not .EOF
         .Delete
@@ -1133,13 +1219,13 @@ Function AttExpFfn$(A$, AttFn$, ToFfn$)
 AttExpFfn = DbAttExpFfn(CurrentDb, A, AttFn, ToFfn)
 End Function
 
-Function DbAttTblRs(A As Database, AttNm$) As DAO.Recordset
+Function DbAttTblRs(A As Database, AttNm$) As dao.Recordset
 Set DbAttTblRs = A.OpenRecordset(FmtQQ("Select * from Att where AttNm='?'", AttNm))
 End Function
 
 Function DbAttFnAy(A As Database, Att$) As String()
-Dim T As DAO.Recordset ' AttTblRs
-Dim F As DAO.Recordset ' AttFldRs
+Dim T As dao.Recordset ' AttTblRs
+Dim F As dao.Recordset ' AttFldRs
 Set T = DbAttTblRs(A, Att)
 Set F = T.Fields("Att").Value
 DbAttFnAy = RsSy(F, "FileName")
@@ -1163,7 +1249,7 @@ Kill T
 'FtBrw T
 End Sub
 
-Function RsMovFst(A As DAO.Recordset) As DAO.Recordset
+Function RsMovFst(A As dao.Recordset) As dao.Recordset
 A.MoveFirst
 Set RsMovFst = A
 End Function
@@ -1171,7 +1257,7 @@ Function AttFfn$(A)
 'Return Fst-Ffn-of-Att-A
 AttFfn = RsMovFst(AttRs(A).AttRs)!FileName
 End Function
-Function RsNRec&(A As DAO.Recordset)
+Function RsNRec&(A As dao.Recordset)
 Dim O&
 With A
     .MoveFirst
@@ -1225,7 +1311,7 @@ Function DbAtt_FstFn(A As Database, Att)
 DbAtt_FstFn = AttRs_FstFn(DbAtt_AttRs(A, Att))
 End Function
 
-Function RsHasFldV(A As DAO.Recordset, F$, V) As Boolean
+Function RsHasFldV(A As dao.Recordset, F$, V) As Boolean
 With A
     If .BOF Then
         If .EOF Then Exit Function
@@ -1284,7 +1370,7 @@ DbAtt_Lines = AttRs_Lines(DbAtt_AttRs(A, Att))
 End Function
 
 Function AttRs_Lines$(A As AttRs)
-Dim F As DAO.Field2, N%, Fn$
+Dim F As dao.Field2, N%, Fn$
 N = AttRs_FilCnt(A)
 If N <> 1 Then
     FunMsgDmp "AttRs_Lines", "The [AttNm] should have one 1 attachment, but now [n-attachments]", AttRs_AttNm(A), N
@@ -1298,7 +1384,7 @@ End If
 AttRs_Lines = Fld2Lines(A.AttRs!FileData)
 End Function
 
-Function Fld2Lines$(A As DAO.Field2)
+Function Fld2Lines$(A As dao.Field2)
 Dim O$, M$, Off&
 X:
 M = A.GetChunk(Off, 1024)
@@ -1310,23 +1396,19 @@ End If
 Fld2Lines = O
 End Function
 
-Property Get LgSchm_Lines$()
-LgSchm_Lines = SpnmLines(LgSNm)
-End Property
-
 Function TfkV(T, F, ParamArray K())
 Dim Av(): Av = K
 TfkV = DbtfkV(CurrentDb, T, F, Av)
 End Function
 
-Property Let RsF(A As DAO.Recordset, Optional F = 0, V)
+Property Let RsF(A As dao.Recordset, Optional F = 0, V)
 With A
     .Edit
     .Fields(F).Value = V
     .Update
 End With
 End Property
-Property Get RsF(A As DAO.Recordset, Optional F = 0)
+Property Get RsF(A As dao.Recordset, Optional F = 0)
 RsF = A.Fields(F).Value
 End Property
 
@@ -1484,7 +1566,7 @@ Dim Ay$()
 Ay = SplitCrLf(A)
 LinesKeepLasN = JnCrLf(AyKeepLasN(Ay, N))
 End Function
-Function FbDaoCn(A) As DAO.Connection
+Function FbDaoCn(A) As dao.Connection
 Set FbDaoCn = DBEngine.OpenConnection(A)
 End Function
 Function CvCtl(A) As Access.Control
@@ -1671,7 +1753,7 @@ Function AscIsDig(A%) As Boolean
 AscIsDig = &H30 <= A And A <= &H39
 End Function
 
-Property Get LnkCol(Nm$, Ty As DAO.DataTypeEnum, Extnm$) As LnkCol
+Property Get LnkCol(Nm$, Ty As dao.DataTypeEnum, Extnm$) As LnkCol
 Dim O As New LnkCol
 Set LnkCol = O.Init(Nm, Ty, Extnm)
 End Property
@@ -1706,7 +1788,7 @@ End With
 LnkColIsEq = True
 End Function
 Function LinLnkCol(A) As LnkCol
-Dim Nm$, ShtTy$, Extnm$, Ty As DAO.DataTypeEnum
+Dim Nm$, ShtTy$, Extnm$, Ty As dao.DataTypeEnum
 LinTTRstAsg A, Nm, ShtTy, Extnm
 Extnm = RmvOptSqBkt(Extnm)
 Ty = DaoShtTy_Ty(ShtTy)
@@ -1818,10 +1900,11 @@ For Each BItm In B
 Next
 AyHasAyInSeq = True
 End Function
-Sub LoSetOutLin(A As ListObject, L1Ny0)
+Sub LoSetOutLin_zX(A As ListObject, ReSeqSpec)
+'XReSeq
 Dim L1Ny$(), LFny$()
 LFny = LoFny(A)
-L1Ny = CvNy(L1Ny0)
+L1Ny = CvNy(ReSeqSpec)
 If AyHasAyInSeq(LFny, L1Ny) Then Stop
 Dim C As ListColumn
 For Each C In A.ListColumns
@@ -1830,33 +1913,55 @@ For Each C In A.ListColumns
     End If
 Next
 End Sub
-Sub LoSetWdt_zC(A As ListObject, W%, C$)
-A.ListColumns(C).DataBodyRange.EntireColumn.ColumnWidth = W
-End Sub
-Function LikAy_HasNm(A$(), Nm$) As Boolean
+
+Function LikAy_HasNm(A$(), Nm) As Boolean
 If Sz(A) = 0 Then Exit Function
 Dim Lik
 For Each Lik In A
     If Nm Like Lik Then LikAy_HasNm = True: Exit Function
 Next
 End Function
-Sub LoCol_AlignC(A As ListColumn, LikColNy$())
-If LikAy_HasNm(LikColNy, A.Name) Then
-    A.DataBodyRange.HorizontalAlignment = XlHAlign.xlHAlignCenter
+Sub LcSetAlignC(A As ListColumn)
+A.DataBodyRange.HorizontalAlignment = XlHAlign.xlHAlignCenter
+End Sub
+Sub LoSetAlignC_zX(A As ListObject, XAlignC$)
+Dim LikAy$(), C As ListColumn
+LikAy = SslSy(XAlignC)
+For Each C In A.ListColumns
+    If StrInLikAy(C.Name, LikAy) Then
+        LcSetAlignC C
+    End If
+Next
+End Sub
+
+Sub LoSetWdt_zX(A As ListObject, XWdt$())
+'XWdt is {Wdt} {FldLikSsl..}
+'        ..
+If Sz(XWdt) = 0 Then Exit Sub
+Dim C As ListColumn
+For Each C In A.ListColumns
+    LcSetWdt C, LcnmWdt(C.Name, XWdt)
+Next
+End Sub
+
+Sub LoSetTot_zX(A As ListObject, XTot$, TotCalc As XlTotalsCalculation)
+'XTot is {FldLikSsl..}
+'        ..
+Dim IsSet As Boolean
+If Trim(XTot) = "" Then Exit Sub
+Dim LikAy$(), C As ListColumn
+LikAy = SslSy(XTot)
+For Each C In A.ListColumns
+    If StrInLikAy(C.Name, LikAy) Then
+        C.TotalsCalculation = TotCalc
+        IsSet = True
+    End If
+Next
+If IsSet Then
+    A.ShowTotals = True
 End If
 End Sub
-Sub LoSetAlignC(A As ListObject, LikSsl$)
-ItrDoXP A.ListColumns, "LoCol_AlignC", SslSy(LikSsl)
-End Sub
-Sub LoSetFmt_zC(A As ListObject, Fmt$, C$)
-A.ListColumns(C).DataBodyRange.Formula = Fmt
-End Sub
-Sub LoSetFmt(A As ListObject, Fmt$, Cc0)
-AyDoABX CvNy(Cc0), "LoSetFmt_zC", A, Fmt
-End Sub
-Sub LoSetWdt(A As ListObject, W%, Cc0)
-AyDoABX CvNy(Cc0), "LoSetWdt_zC", A, W
-End Sub
+
 Sub AyDoABX(Ay, ABX$, A, B)
 If Sz(Ay) = 0 Then Exit Sub
 Dim X
@@ -1974,7 +2079,7 @@ End Sub
 Function DbqSy(A As Database, Sql) As String()
 DbqSy = RsSy(A.OpenRecordset(Sql))
 End Function
-Function DbqRs(A As Database, Sql) As DAO.Recordset
+Function DbqRs(A As Database, Sql) As dao.Recordset
 Set DbqRs = A.OpenRecordset(Sql)
 End Function
 
@@ -2475,7 +2580,7 @@ End Function
 Private Function ErzFws__2(Fx$, WsNm$, ColNy$()) As String()
 
 End Function
-Private Function ErzFws__3(Fx$, WsNm$, ColNy$(), DtaTyAy() As DAO.DataTypeEnum) As String()
+Private Function ErzFws__3(Fx$, WsNm$, ColNy$(), DtaTyAy() As dao.DataTypeEnum) As String()
 
 End Function
 Sub ZZ_ErAyzFxWsMissingCol()
@@ -2486,10 +2591,10 @@ Sub ZZ_ErAyzFxWsMissingCol()
 '" [Unrestricted]         As OH " & _
 
 End Sub
-Function TblF_Ty(T, F) As DAO.DataTypeEnum
+Function TblF_Ty(T, F) As dao.DataTypeEnum
 
 End Function
-Function TblErAyzCol(T$, ColNy$(), DtaTyAy() As DAO.DataTypeEnum, Optional AddTblLinMsg As Boolean) As String()
+Function TblErAyzCol(T$, ColNy$(), DtaTyAy() As dao.DataTypeEnum, Optional AddTblLinMsg As Boolean) As String()
 Dim Fny$(), F, Fny1$(), Fny2$()
 Fny = TblFny(T)
 For Each F In ColNy
@@ -2575,7 +2680,7 @@ For Each I In A
 Next
 AyMax = O
 End Function
-Function FldsFny(A As DAO.Fields) As String()
+Function FldsFny(A As dao.Fields) As String()
 FldsFny = ItrNy(A)
 End Function
 Sub PthBrw(A)
@@ -2627,10 +2732,10 @@ End Function
 Private Sub ZZ_TblFny()
 AyDmp TblFny(">KE24")
 End Sub
-Function RsAy(A As DAO.Recordset, Optional FldNm$) As Variant()
+Function RsAy(A As dao.Recordset, Optional FldNm$) As Variant()
 RsAy = RsAyInto(A, FldNm, EmpAy)
 End Function
-Function RsAyInto(A As DAO.Recordset, FldNm$, OInto)
+Function RsAyInto(A As dao.Recordset, FldNm$, OInto)
 Dim O: O = OInto: Erase O
 Dim Ix
 Ix = IIf(FldNm = "", 0, FldNm)
@@ -2645,10 +2750,10 @@ With A
 End With
 RsAyInto = O
 End Function
-Function RsSy(A As DAO.Recordset, Optional FldNm$) As String()
+Function RsSy(A As dao.Recordset, Optional FldNm$) As String()
 RsSy = RsAyInto(A, FldNm, EmpSy)
 End Function
-Function RsLngAy(A As DAO.Recordset, Optional FldNm$) As Long()
+Function RsLngAy(A As dao.Recordset, Optional FldNm$) As Long()
 RsLngAy = RsAyInto(A, FldNm, EmpLngAy)
 End Function
 Sub ZZ_SqlFny()
@@ -2665,7 +2770,7 @@ Const S$ = "SELECT qSku.*" & _
 AyBrw RsCsvLy(SqlRs(S))
 End Sub
 
-Function SqlRs(A) As DAO.Recordset
+Function SqlRs(A) As dao.Recordset
 Set SqlRs = CurrentDb.OpenRecordset(A)
 End Function
 Private Sub ZZ_SqlSy()
@@ -2786,7 +2891,7 @@ End Function
 Function SqlAny(A) As Boolean
 SqlAny = DbqAny(CurrentDb, A)
 End Function
-Function RsAny(A As DAO.Recordset) As Boolean
+Function RsAny(A As dao.Recordset) As Boolean
 RsAny = Not A.EOF
 End Function
 Function TblIsExist(T$) As Boolean
@@ -2922,7 +3027,7 @@ A.TableDefs(Fm).Name = ToTbl
 End Sub
 
 Function DbtChkCol(A As Database, T$, LnkColStr$) As String()
-Dim Ay() As LnkCol, O$(), Fny$(), J%, Ty As DAO.DataTypeEnum, F$
+Dim Ay() As LnkCol, O$(), Fny$(), J%, Ty As dao.DataTypeEnum, F$
 Ay = LnkColStr_LnkColAy(LnkColStr)
 Fny = LnkColAy_ExtNy(Ay)
 O = DbtChkFny(A, T, Fny)
@@ -3124,33 +3229,33 @@ Function PushMsgUnderLinDbl(O$(), M$)
 Push O, M
 Push O, UnderLinDbl(M)
 End Function
-Function DaoTy_ShtTy$(A As DAO.DataTypeEnum)
+Function DaoTy_ShtTy$(A As dao.DataTypeEnum)
 Dim O$
 Select Case A
-Case DAO.DataTypeEnum.dbByte: O = "Byt"
-Case DAO.DataTypeEnum.dbLong: O = "Lng"
-Case DAO.DataTypeEnum.dbInteger: O = "Int"
-Case DAO.DataTypeEnum.dbDate: O = "Dte"
-Case DAO.DataTypeEnum.dbText: O = "Txt"
-Case DAO.DataTypeEnum.dbBoolean: O = "Yes"
-Case DAO.DataTypeEnum.dbDouble: O = "Dbl"
-Case DAO.DataTypeEnum.dbCurrency: O = "Cur"
+Case dao.DataTypeEnum.dbByte: O = "Byt"
+Case dao.DataTypeEnum.dbLong: O = "Lng"
+Case dao.DataTypeEnum.dbInteger: O = "Int"
+Case dao.DataTypeEnum.dbDate: O = "Dte"
+Case dao.DataTypeEnum.dbText: O = "Txt"
+Case dao.DataTypeEnum.dbBoolean: O = "Yes"
+Case dao.DataTypeEnum.dbDouble: O = "Dbl"
+Case dao.DataTypeEnum.dbCurrency: O = "Cur"
 Case Else: Stop
 End Select
 DaoTy_ShtTy = O
 End Function
-Function DaoShtTy_Ty(A) As DAO.DataTypeEnum
-Dim O As DAO.DataTypeEnum
+Function DaoShtTy_Ty(A) As dao.DataTypeEnum
+Dim O As dao.DataTypeEnum
 Select Case A
-Case "Byt": O = DAO.DataTypeEnum.dbByte
-Case "Mem": O = DAO.DataTypeEnum.dbMemo
-Case "Lng": O = DAO.DataTypeEnum.dbLong
-Case "Int": O = DAO.DataTypeEnum.dbInteger
-Case "Dte": O = DAO.DataTypeEnum.dbDate
-Case "Txt": O = DAO.DataTypeEnum.dbText
-Case "Yes": O = DAO.DataTypeEnum.dbBoolean
-Case "Dbl": O = DAO.DataTypeEnum.dbDouble
-Case "Ccy": O = DAO.DataTypeEnum.dbCurrency
+Case "Byt": O = dao.DataTypeEnum.dbByte
+Case "Mem": O = dao.DataTypeEnum.dbMemo
+Case "Lng": O = dao.DataTypeEnum.dbLong
+Case "Int": O = dao.DataTypeEnum.dbInteger
+Case "Dte": O = dao.DataTypeEnum.dbDate
+Case "Txt": O = dao.DataTypeEnum.dbText
+Case "Yes": O = dao.DataTypeEnum.dbBoolean
+Case "Dbl": O = dao.DataTypeEnum.dbDouble
+Case "Cur": O = dao.DataTypeEnum.dbCurrency
 Case Else: Stop
 End Select
 DaoShtTy_Ty = O
@@ -3237,8 +3342,8 @@ For J = 0 To U
 Next
 AyTrim = O
 End Function
-Function DbtChkFldType$(A As Database, T$, F, Ty As DAO.DataTypeEnum)
-Dim ActTy As DAO.DataTypeEnum
+Function DbtChkFldType$(A As Database, T$, F, Ty As dao.DataTypeEnum)
+Dim ActTy As dao.DataTypeEnum
 ActTy = A.TableDefs(T).Fields(F).Type
 If ActTy <> Ty Then
     DbtChkFldType = FmtQQ("Table[?] field[?] should have type[?], but now it has type[?]", T, F, DaoTy_ShtTy(Ty), DaoTy_ShtTy(ActTy))
@@ -3277,16 +3382,16 @@ Debug.Print UnderLin(N)
 AyDmp B
 Return
 End Sub
-Function RsDrs(A As DAO.Recordset) As Drs
+Function RsDrs(A As dao.Recordset) As Drs
 Dim Fny$(), Dry()
 Fny = RsFny(A)
 Dry = RsDry(A)
 Set RsDrs = Drs(Fny, Dry)
 End Function
-Function RsDr(A As DAO.Recordset) As Variant()
+Function RsDr(A As dao.Recordset) As Variant()
 RsDr = FldsDr(A.Fields)
 End Function
-Function RsDry(A As DAO.Recordset) As Variant()
+Function RsDry(A As dao.Recordset) As Variant()
 Dim O()
 Push O, RsFny(A)
 With A
@@ -3329,19 +3434,19 @@ For R = 1 To UBound(A, 1)
 Next
 SqAddSngQuote = O
 End Function
-Sub FldsPutSq(A As DAO.Fields, Sq, R&)
-Dim C%, F As DAO.Field
+Sub FldsPutSq(A As dao.Fields, Sq, R&)
+Dim C%, F As dao.Field
 C = 1
 For Each F In A
     Sq(R, C) = F.Value
     C = C + 1
 Next
 End Sub
-Function RsSq(A As DAO.Recordset) As Variant()
+Function RsSq(A As dao.Recordset) As Variant()
 RsSq = DrySq(RsDry(A))
 End Function
 Sub DbtPutLo(A As Database, T$, Lo As ListObject)
-Dim Sq(), Drs As Drs, Rs As DAO.Recordset
+Dim Sq(), Drs As Drs, Rs As dao.Recordset
 Set Rs = DbtRs(A, T)
 If Not AyIsEq(RsFny(Rs), LoFny(Lo)) Then
     Debug.Print "--"
@@ -3435,19 +3540,19 @@ For Each Dr In Dry
 Next
 DrsColInto = O
 End Function
-Sub RsBrw(A As DAO.Recordset)
+Sub RsBrw(A As dao.Recordset)
 RsBrw_zSingleRec A
 End Sub
 Sub PrmBrw()
 RsBrw TblRs("Prm")
 End Sub
-Sub RsBrw_zSingleRec(A As DAO.Recordset)
+Sub RsBrw_zSingleRec(A As dao.Recordset)
 AyBrw RsLy_zSingleRec(A)
 End Sub
-Function RsNy(A As DAO.Recordset) As String()
+Function RsNy(A As dao.Recordset) As String()
 RsNy = ItrNy(A.Fields)
 End Function
-Function RsLy_zSingleRec(A As DAO.Recordset)
+Function RsLy_zSingleRec(A As dao.Recordset)
 RsLy_zSingleRec = NyAv_Ly(RsNy(A), RsVy(A), 0)
 End Function
 Function DrsColSy(A As Drs, F) As String()
@@ -3466,7 +3571,7 @@ DbNm = ObjNm(A)
 End Function
 
 Function DbtHasLnk(A As Database, T, S$, Cn$)
-Dim I As DAO.TableDef
+Dim I As dao.TableDef
 For Each I In A.TableDefs
     If I.Name = T Then
         If I.SourceTableName <> S Then Exit Function
@@ -3494,7 +3599,7 @@ MsgLin = MsgAv_Lin(A, Av)
 End Function
 Sub DbtLnk(A As Database, T, S$, Cn$)
 On Error GoTo X
-Dim TT As New DAO.TableDef
+Dim TT As New dao.TableDef
 If DbtHasLnk(A, T, S, Cn) Then
     'Debug.Print MsgLin("DbtLnk: [Tbl] has same [Src] & [Cn] in [Db]", T, S, Cn, DbNm(A))
     Exit Sub
@@ -3677,10 +3782,10 @@ End Function
 Sub TpRfh()
 WbVis WbRfh(TpWb)
 End Sub
-Sub OupFx_Gen(OupFx$, Fb$, ParamArray WbFmtrAp())
+Sub OupFx_Gen(A$, Fb$, ParamArray WbFmtrAp())
 Dim Av(): Av = WbFmtrAp
-TpWrtFfn OupFx
-WbFmt FxRfh(OupFx, Fb), Av
+TpWrtFfn A
+WbFmt FxRfh(A, Fb), Av
 End Sub
 Function FxRfh(A, Fb$) As Workbook
 Set FxRfh = WbRfh(FxWb(A), Fb)
@@ -3752,6 +3857,7 @@ Function WbRfh(A As Workbook, Optional Fb$) As Workbook
 ItrDoXP A.Connections, "WcRfh", Fb
 ItrDo A.PivotCaches, "PcRfh"
 ItrDo A.Sheets, "WsRfh"
+ItrDo WbLoAy(A), "LoRfhAllFmt"
 Set WbRfh = A
 End Function
 Sub WbDltWc(A As Workbook)
@@ -3867,6 +3973,7 @@ Set Wb = WbVis(TpWb)
 WbRfhLoAlignC Wb
 Stop
 End Sub
+
 Sub ZZ_WbRfhLoFmt()
 Dim Wb As Workbook
 Set Wb = WbVis(TpWb)
@@ -3874,12 +3981,15 @@ WbRfhLoFml Wb
 WbRfhLoFmt Wb
 Stop
 End Sub
+
 Sub WbRfhLoFmt(A As Workbook)
 AyDo WbLoAy(A), "LoRfhFmt"
 End Sub
+
 Sub WbRfhLoAlignC(A As Workbook)
 AyDo WbLoAy(A), "LoRfhAlignC"
 End Sub
+
 Sub WbRfhLoFml(A As Workbook)
 AyDo WbTLoAy(A), "LoRfhFml"
 End Sub
@@ -4244,8 +4354,8 @@ Dim Y As Byte, M As Byte
 RsAsg TblRs("YM"), Y, M
 Stop
 End Sub
-Sub RsAsg(A As DAO.Recordset, ParamArray OAp())
-Dim F As DAO.Field, J%, U%
+Sub RsAsg(A As dao.Recordset, ParamArray OAp())
+Dim F As dao.Field, J%, U%
 Dim Av(): Av = OAp
 U = UB(Av)
 For Each F In A.Fields
@@ -4360,10 +4470,10 @@ End Function
 Function JnSC$(A)
 JnSC = Join(A, ";")
 End Function
-Function DbtRs(A As Database, T) As DAO.Recordset
+Function DbtRs(A As Database, T) As dao.Recordset
 Set DbtRs = A.OpenRecordset(T)
 End Function
-Function TblRs(T) As DAO.Recordset
+Function TblRs(T) As dao.Recordset
 Set TblRs = DbtRs(CurrentDb, T)
 End Function
 Sub TimFn(FnNm$)
@@ -4373,7 +4483,7 @@ Run FnNm
 B = Timer
 Debug.Print FnNm, B - A
 End Sub
-Function RsCsvLyByFny0(A As DAO.Recordset, Fny0) As String()
+Function RsCsvLyByFny0(A As dao.Recordset, Fny0) As String()
 Dim Fny$(), Flds As Fields, F
 Dim O$(), J&, I%, UFld%, Dr()
 Fny = CvNy(Fny0)
@@ -4394,8 +4504,8 @@ While Not A.EOF
 Wend
 RsCsvLyByFny0 = O
 End Function
-Function RsCsvLy(A As DAO.Recordset) As String()
-Dim O$(), J&, I%, UFld%, Dr(), F As DAO.Field
+Function RsCsvLy(A As dao.Recordset) As String()
+Dim O$(), J&, I%, UFld%, Dr(), F As dao.Field
 UFld = A.Fields.Count - 1
 While Not A.EOF
     J = J + 1
@@ -4472,7 +4582,7 @@ End Function
 Function FxWs(A, Optional WsNm$ = "Data") As Worksheet
 Set FxWs = WbWs(FxWb(A), WsNm)
 End Function
-Sub FldsPutSq1(A As DAO.Fields, Sq, Optional R& = 1, Optional NoTxtSngQ As Boolean)
+Sub FldsPutSq1(A As dao.Fields, Sq, Optional R& = 1, Optional NoTxtSngQ As Boolean)
 DrPutSq FldsDr(A), Sq, R, NoTxtSngQ
 End Sub
 Sub DrPutSq(A, Sq, Optional R& = 1, Optional NoTxtSngQ As Boolean)
@@ -4493,7 +4603,7 @@ For Each I In A
     End If
 Next
 End Sub
-Sub RsPutSq(A As DAO.Recordset, Sq, R&, Optional NoTxtSngQ As Boolean)
+Sub RsPutSq(A As dao.Recordset, Sq, R&, Optional NoTxtSngQ As Boolean)
 FldsPutSq1 A.Fields, Sq, R, NoTxtSngQ
 End Sub
 Function WsRCC(A As Worksheet, R, C1, C2) As Range
@@ -4651,12 +4761,12 @@ ItrWhPrpIsTrue = ItrWhPrpIsTrueInto(A, P, EmpAy)
 End Function
 
 Function DbtPk(A As Database, T) As String()
-Dim I As DAO.Index
+Dim I As dao.Index
 Set I = DbtPIdx(A, T): If IsNothing(I) Then Exit Function
 DbtPk = ItrNy(I.Fields)
 End Function
-Function DbtPIdx(A As Database, T) As DAO.Index
-Dim O As DAO.Index
+Function DbtPIdx(A As Database, T) As dao.Index
+Dim O As dao.Index
 For Each O In A.TableDefs(T).Indexes
     If O.Primary Then Set DbtPIdx = O: Exit Function
 Next
@@ -4711,26 +4821,26 @@ Sub PushNonEmpty(O, A)
 If A = "" Then Exit Sub
 Push O, A
 End Sub
-Function DaoTy_Str$(T As DAO.DataTypeEnum)
+Function DaoTy_Str$(T As dao.DataTypeEnum)
 Dim O$
 Select Case T
-Case DAO.DataTypeEnum.dbBoolean: O = "Boolean"
-Case DAO.DataTypeEnum.dbDouble: O = "Double"
-Case DAO.DataTypeEnum.dbText: O = "Text"
-Case DAO.DataTypeEnum.dbDate: O = "Date"
-Case DAO.DataTypeEnum.dbByte: O = "Byte"
-Case DAO.DataTypeEnum.dbInteger: O = "Int"
-Case DAO.DataTypeEnum.dbLong: O = "Long"
-Case DAO.DataTypeEnum.dbDouble: O = "Doubld"
-Case DAO.DataTypeEnum.dbDate: O = "Date"
-Case DAO.DataTypeEnum.dbDecimal: O = "Decimal"
-Case DAO.DataTypeEnum.dbCurrency: O = "Currency"
-Case DAO.DataTypeEnum.dbSingle: O = "Single"
+Case dao.DataTypeEnum.dbBoolean: O = "Boolean"
+Case dao.DataTypeEnum.dbDouble: O = "Double"
+Case dao.DataTypeEnum.dbText: O = "Text"
+Case dao.DataTypeEnum.dbDate: O = "Date"
+Case dao.DataTypeEnum.dbByte: O = "Byte"
+Case dao.DataTypeEnum.dbInteger: O = "Int"
+Case dao.DataTypeEnum.dbLong: O = "Long"
+Case dao.DataTypeEnum.dbDouble: O = "Doubld"
+Case dao.DataTypeEnum.dbDate: O = "Date"
+Case dao.DataTypeEnum.dbDecimal: O = "Decimal"
+Case dao.DataTypeEnum.dbCurrency: O = "Currency"
+Case dao.DataTypeEnum.dbSingle: O = "Single"
 Case Else: Stop
 End Select
 DaoTy_Str = O
 End Function
-Function DbqryRs(A As Database, Q) As DAO.Recordset
+Function DbqryRs(A As Database, Q) As dao.Recordset
 Set DbqryRs = A.QueryDefs(Q).OpenRecordset
 End Function
 Function RplVBar$(A)
@@ -4749,10 +4859,10 @@ Sub AyBrw(A)
 If Sz(A) = 0 Then Exit Sub
 StrBrw Join(A, vbCrLf)
 End Sub
-Function TfTy(T$, F$) As DAO.DataTypeEnum
+Function TfTy(T$, F$) As dao.DataTypeEnum
 TfTy = DbtfTy(CurrentDb, T, F)
 End Function
-Function DbtfTy(A As Database, T$, F$) As DAO.DataTypeEnum
+Function DbtfTy(A As Database, T$, F$) As dao.DataTypeEnum
 DbtfTy = A.TableDefs(T).Fields(F).Type
 End Function
 Function DbtfTyStr$(A As Database, T$, F$)
@@ -5002,7 +5112,7 @@ For Each I In SqlAy
 Next
 End Sub
 
-Function RsStrCol(A As DAO.Recordset) As String()
+Function RsStrCol(A As dao.Recordset) As String()
 Dim O$()
 With A
     While Not .EOF
@@ -5095,7 +5205,7 @@ For Each I In A
 Next
 AyQuote = O
 End Function
-Function FldsDr(A As DAO.Fields) As Variant()
+Function FldsDr(A As dao.Fields) As Variant()
 FldsDr = ItrVy(A)
 End Function
 Function SubStrCnt%(A, SubStr$)
@@ -5329,13 +5439,13 @@ For J = 0 To U
 Next
 AyIsEq = True
 End Function
-Function RsIsBrk(A As DAO.Recordset, GpKy$(), LasVy()) As Boolean
+Function RsIsBrk(A As dao.Recordset, GpKy$(), LasVy()) As Boolean
 RsIsBrk = Not AyIsEq(RsVy(A, GpKy), LasVy)
 End Function
-Function RsVy(A As DAO.Recordset, Optional Ky0) As Variant()
+Function RsVy(A As dao.Recordset, Optional Ky0) As Variant()
 RsVy = FldsVy(A.Fields, Ky0)
 End Function
-Function FldsVyByKy(A As DAO.Fields, Ky$()) As Variant()
+Function FldsVyByKy(A As dao.Fields, Ky$()) As Variant()
 Dim O(), J%, K
 If Sz(Ky) = 0 Then
     FldsVyByKy = ItrVy(A)
@@ -5349,7 +5459,7 @@ Next
 FldsVyByKy = O
 End Function
 Sub ZZ_FldsVy()
-Dim Rs As DAO.Recordset, Vy()
+Dim Rs As dao.Recordset, Vy()
 Set Rs = CurrentDb.OpenRecordset("Select * from SkuB")
 With Rs
     While Not .EOF
@@ -5400,7 +5510,7 @@ Case IsArray(A): CvSy = AySy(A)
 Case Else: CvSy = ApSy(CStr(A))
 End Select
 End Function
-Function FldsVy(A As DAO.Fields, Optional Ky0) As Variant()
+Function FldsVy(A As dao.Fields, Optional Ky0) As Variant()
 Select Case True
 Case IsMissing(Ky0)
     FldsVy = ItrVy(A)
@@ -5427,7 +5537,7 @@ B = CvNy(A)
 C = AyQuoteSqBkt(B)
 Ny0SqBktCsv = JnComma(C)
 End Function
-Function RsFny(A As DAO.Recordset) As String()
+Function RsFny(A As dao.Recordset) As String()
 RsFny = FldsFny(A.Fields)
 End Function
 
@@ -5449,14 +5559,14 @@ For Each Dr In Dry
 Next
 SqlQQStr_Sy = O
 End Function
-Function NewTd(T, FdAy() As DAO.Field) As DAO.TableDef
-Dim O As New DAO.TableDef
+Function NewTd(T, FdAy() As dao.Field) As dao.TableDef
+Dim O As New dao.TableDef
 O.Name = T
 AyDoPX FdAy, "TdAddFd", O
 Set NewTd = O
 End Function
 
-Function FldsCsv$(A As DAO.Fields)
+Function FldsCsv$(A As dao.Fields)
 FldsCsv = AyCsv(ItrVy(A))
 End Function
 Function VarCsv$(A)
@@ -5517,7 +5627,7 @@ Sub DbtUpdSeq(A As Database, T$, SeqFldNm$, Optional RestFny0, Optional IncFny0)
 'Update A->T->SeqFldNm using RestFny0,IncFny0, assume the table has been sorted
 'Update A->T->SeqFldNm using OrdFny0, RestFny0,IncFny0
 Dim RestFny$(), IncFny$(), Sql$
-Dim LasRestVy(), LasIncVy(), Seq&, OrdS$, Rs As DAO.Recordset
+Dim LasRestVy(), LasIncVy(), Seq&, OrdS$, Rs As dao.Recordset
 'OrdFny RestAy IncAy Sql
 RestFny = CvNy(RestFny0)
 IncFny = CvNy(IncFny0)
@@ -5565,7 +5675,7 @@ Function PnmFn$(A)
 PnmFn = PnmVal(A & "Fn")
 End Function
 
-Function RsCsv$(A As DAO.Recordset)
+Function RsCsv$(A As dao.Recordset)
 RsCsv = FldsCsv(A.Fields)
 End Function
 
@@ -5657,14 +5767,32 @@ End If
 Set DiczTRLy = O
 End Function
 
+Sub Z_ReSeqSpec_OutLinL1Ay()
+D ReSeqSpec_OutLinL1Ay(Z_ReSeqSpec)
+End Sub
+Function AyT1Ay(A) As String()
+Dim O$(), J&, U&, Rest$
+U = UB(A)
+If U = -1 Then Exit Function
+ReDim O(U)
+For J = 0 To U
+    LinAsgT1Rest A(J), O(J), Rest
+Next
+AyT1Ay = O
+End Function
+Sub ZZ_ReSeqSpec_OutLinL1Ay()
+AyBrw ReSeqSpec_OutLinL1Ay(Z_ReSeqSpec)
+End Sub
+
+Function ReSeqSpec_OutLinL1Ay(A) As String()
+Dim B$()
+B = SplitVBar(A)
+AyShift B
+ReSeqSpec_OutLinL1Ay = AyT1Ay(B)
+End Function
+
 Sub ZZ_ReSeqSpec_Fny()
-AyBrw ReSeqSpec_Fny("Flg RecTy Amt Key Uom MovTy Qty BchRateUX RateTy Bch Las GL |" & _
-" Flg IsAlert IsWithSku |" & _
-" Key Sku PstMth PstDte |" & _
-" Bch BchNo BchPermitDate BchPermit |" & _
-" Las LasBchNo LasPermitDate LasPermit |" & _
-" GL GLDocNo GLDocDte GLAsg GLDocTy GLLin GLPstKy GLPc GLAc GLBusA GLRef |" & _
-" Uom Des StkUom Ac_U")
+AyBrw ReSeqSpec_Fny(Z_ReSeqSpec)
 End Sub
 
 Function ReSeqSpec_Fny(A) As String()
@@ -5686,7 +5814,7 @@ Sub DbReOpn(A As Database)
 Dim Nm$
 Nm = A.Name
 A.Close
-Set A = DAO.DBEngine.OpenDatabase(Nm)
+Set A = dao.DBEngine.OpenDatabase(Nm)
 End Sub
 Sub DbtReSeqFldByFny(A As Database, T$, Fny$())
 Dim TFny$(), F$(), J%, FF
@@ -5802,27 +5930,20 @@ Msg = FmtQQ("[Att] is ? in comparing with [file] using [Att-Tim] & [file-Tim].  
 FunMsgDmp "AttIsOld", Msg, A, Ffn, T1, T2, T1 < T2
 AttIsOld = T1 < T2
 End Function
-Function TblkfV(T, K, F)
-TblkfV = DbtkfV(CurrentDb, T, K, F)
-End Function
-Function DbtPkNm$(A As Database, T)
-Dim I As DAO.Index
+
+Function DbtPkIxNm$(A As Database, T)
+Dim I As dao.Index
 For Each I In A.TableDefs(T).Indexes
-    If I.Primary Then DbtPkNm = I.Name
+    If I.Primary Then DbtPkIxNm = I.Name
 Next
 End Function
-Function DbtkfV(A As Database, T, K, F)
-With A.TableDefs(T).OpenRecordset
-    .Index = DbtPkNm(A, T)
-    .Seek "=", K
-    If Not .EOF Then DbtkfV = .Fields(F)
-End With
-End Function
+
 Function AttTim(A) As Date
-AttTim = TblkfV("Att", A, "FilTim")
+AttTim = TfkV("Att", "FilTim", A)
 End Function
+
 Function AttSz(A) As Date
-AttSz = TblkfV("Att", A, "FilSz")
+AttSz = TfkV("Att", "FilSz", A)
 End Function
 Function DrsSq(A As Drs) As Variant()
 Dim O(), C%, R&, Dr(), Dry()
@@ -5932,12 +6053,12 @@ On Error Resume Next
 DbCrtQry W, "Query1", A
 Stop
 End Sub
-Function FfnAlreadyLoadedMsgLy(A, FilKind$, LoadTim$) As String()
+Function FfnAlreadyLdMsgLy(A, FilKind$, LdTim$) As String()
 Dim Sz&, Tim$, Ld$, Msg$
 Sz = FfnSz(A)
 Tim = FfnDTim(A)
 Msg = FmtQQ("[?] file of [time] and [size] is already loaded [at].", FilKind)
-FfnAlreadyLoadedMsgLy = MsgAp_Ly(Msg, A, Tim, Sz, LoadTim)
+FfnAlreadyLdMsgLy = MsgLy(Msg, A, Tim, Sz, LdTim)
 End Function
 Function QQDTim$(QQSql$, ParamArray Ap())
 Dim Av(): Av = Ap
@@ -5983,10 +6104,10 @@ End Function
 Sub AA()
 Debug.Print TblCnStr("Att")
 End Sub
-Sub BB(A As DAO.TableDef, Optional B, Optional C)
+Sub BB(A As dao.TableDef, Optional B, Optional C)
 Debug.Print A.Name, A.Connect
 End Sub
-Function TdHasCnStr(A As DAO.TableDef) As Boolean
+Function TdHasCnStr(A As dao.TableDef) As Boolean
 TdHasCnStr = A.Connect <> ""
 End Function
 Property Get CDbLnkTny() As String()
@@ -6024,7 +6145,7 @@ End Sub
 Sub DbDrpLnkTbl(A As Database)
 DbDrpTT A, DbLnkTny(A)
 End Sub
-Sub RsUpd(A As DAO.Recordset, ParamArray Ap())
+Sub RsUpd(A As dao.Recordset, ParamArray Ap())
 Dim Av(): Av = Ap
 RsUpdDr A, Av
 End Sub
@@ -6032,7 +6153,7 @@ Function FfnStamp(A) As Variant()
 FfnStamp = Array(A, FfnSz(A), FfnTim(A), Now)
 End Function
 
-Sub RsUpdDr(A As DAO.Recordset, Dr)
+Sub RsUpdDr(A As dao.Recordset, Dr)
 Dim J%, V
 With A
     .Edit
@@ -6077,7 +6198,7 @@ Function YM_YofNxtM(Y As Byte, M As Byte) As Byte
 YM_YofNxtM = IIf(M = 12, Y + 1, Y)
 End Function
 
-Sub AySplit_xInto_T1Ay_RestAy_Asg(A, OT1Ay$(), ORestAy$())
+Sub AyAsgT1AyRestAy(A, OT1Ay$(), ORestAy$())
 Dim U&, J&
 U = UB(A)
 If U = -1 Then
@@ -6090,6 +6211,7 @@ For J = 0 To U
     BrkAsg A(J), " ", OT1Ay(J), ORestAy(J)
 Next
 End Sub
+
 Function AyabAdd(A, B, Optional Sep$) As String()
 Dim O$(), J&, U&
 U = UB(A): If U <> UB(B) Then Stop
@@ -6100,22 +6222,30 @@ For J = 0 To U
 Next
 AyabAdd = O
 End Function
+
 Function AyabAddWSpc(A, B) As String()
 AyabAddWSpc = AyabAdd(A, B, " ")
 End Function
+
 Function AyAlignT1(A) As String()
 Dim T1$(), Rest$()
-    AySplit_xInto_T1Ay_RestAy_Asg A, T1, Rest
+    AyAsgT1AyRestAy A, T1, Rest
 T1 = AyAlignL(T1)
 AyAlignT1 = AyabAddWSpc(T1, Rest)
 End Function
+
 Sub MsgDmp(A$, ParamArray Ap())
 Dim Av(): Av = Ap
 AyDmp MsgAv_Ly(A, Av)
 End Sub
+
+Sub FunMsgDmpAv(A, Msg$, Av())
+AyDmp FunMsgLy(A, Msg, Av)
+End Sub
+
 Sub FunMsgDmp(A, Msg$, ParamArray Ap())
 Dim Av(): Av = Ap
-AyDmp FunMsgAv_Ly(A, Msg, Av)
+FunMsgDmpAv A, Msg, Av
 End Sub
 Function TblTblDes$(T)
 TblTblDes = T & " " & TblDes(T)
@@ -6213,7 +6343,7 @@ Else
     A.TableDefs(T).Properties.Append DbtCrtPrp(A, T, P, V)
 End If
 End Property
-Function DbtCrtPrp(A As Database, T, P, V) As DAO.Property
+Function DbtCrtPrp(A As Database, T, P, V) As dao.Property
 Set DbtCrtPrp = A.TableDefs(T).CreateProperty(P, VarDaoTy(V), V)
 End Function
 Property Get DbtDes$(A As Database, T)
@@ -6268,31 +6398,31 @@ Dim Av(): Av = Ap
 AyBrw FunMsgAv_Ly(Fun, Msg, Av)
 End Sub
 
-Sub TdAddId(A As DAO.TableDef)
+Sub TdAddId(A As dao.TableDef)
 A.Fields.Append DaoFld(A.Name, IsId:=True)
 End Sub
 
-Sub TdAddStamp(A As DAO.TableDef, F)
-A.Fields.Append DaoFld(F, DAO.dbDate, Dft:="Now")
+Sub TdAddStamp(A As dao.TableDef, F)
+A.Fields.Append DaoFld(F, dao.dbDate, Dft:="Now")
 End Sub
 
 Function CvFF(FF) As String()
 CvFF = CvNy(FF)
 End Function
 
-Sub TdAddLngFld(A As DAO.TableDef, FF)
+Sub TdAddLngFld(A As dao.TableDef, FF)
 Dim F
 For Each F In CvFF(FF)
     A.Fields.Append DaoFld(F, dbLong)
 Next
 End Sub
-Sub TdAddTxtFld(A As DAO.TableDef, FF, Optional Sz% = 255)
+Sub TdAddTxtFld(A As dao.TableDef, FF, Optional Sz% = 255)
 Dim F
 For Each F In CvFF(FF)
     A.Fields.Append DaoFld(F, dbText, Sz)
 Next
 End Sub
-Sub TdAddLngTxt(A As DAO.TableDef, FF)
+Sub TdAddLngTxt(A As dao.TableDef, FF)
 Dim F
 For Each F In CvFF(FF)
     A.Fields.Append DaoFld(F, dbMemo)
@@ -6309,7 +6439,7 @@ End Sub
 
 Function DbtSk(A As Database, T) As String()
 'Sk is Fny of a table with same name as Table name and with Unique
-Dim I As DAO.Index:
+Dim I As dao.Index:
 Set I = DbtSkIdx(A, T): If IsNothing(I) Then Exit Function
 DbtSk = ItrNy(I.Fields)
 End Function
@@ -6321,74 +6451,44 @@ For Each X In A
 Next
 End Function
 
-Function IdxIsSk(A As DAO.Index, T) As Boolean
+Function IdxIsSk(A As dao.Index, T) As Boolean
 If A.Name <> T Then Exit Function
 IdxIsSk = A.Unique
 End Function
 
-Function DbtSkIdx(A As Database, T) As DAO.Index
-Set DbtSkIdx = ItrXPPredFst(A.TableDefs(T).Indexes, "IdxIsSk", T)
+Function DbtSkIdx(A As Database, T) As dao.Index
+Dim O
+Asg ItrXPPredFst(A.TableDefs(T).Indexes, "IdxIsSk", T), O
+If Not IsEmpty(O) Then
+    Set DbtSkIdx = O
+End If
 End Function
 
 Sub DbtCrtSk(A As Database, T, SKey, FF)
 Q = FmtQQ("Create Unique Index ? on ? (?)", SKey, T, JnComma(CvFF(FF))): A.Execute Q
 End Sub
 
-Function NewNmFsn(NmFsnVbl$) As Dictionary
-
-End Function
-
-Function NewSfxFsn(SfxFsnVbl$) As Dictionary
-
-End Function
-
-Sub LgSchm_Imp()
-SpnmImp "LgSchm"
-End Sub
-
 Function FtLines$(A)
 FtLines = Fso.GetFile(A).OpenAsTextStream.ReadAll
 End Function
-Property Get LgSchm_Tim() As Date
-LgSchm_Tim = SpnmTim(LgSNm)
-End Property
-
-Property Get LgSchm_DTim$()
-LgSchm_DTim = SpnmDTim(LgSNm)
-End Property
-
-Property Get LgSchm_Sz&()
-LgSchm_Sz = Nz(TfkV("Spec", "Sz", "LgSchm"), 0)
-End Property
-
-Sub LgSchm_Exp(Optional OvrWrt As Boolean)
-SpnmExp LgSNm
-End Sub
-Property Get LgSchm_Ft$()
-LgSchm_Ft = SpnmFt(LgSNm)
-End Property
 
 Function FfnPing(A) As Boolean
 If Not FfnIsExist(A) Then Debug.Print "[" & A & "] not found": FfnPing = True
 End Function
 
-Sub LgSchm_Brw()
-SpnmBrw LgSNm
-End Sub
-
-Sub LgSchm_Ini()
-SpnmIni LgSNm
-End Sub
-
 Sub DbRun(A As Database, Sql)
 A.Execute Sql
 End Sub
+Sub DaoShtTySz_BrkAsg(A, OTy As dao.DatabaseTypeEnum, OSz%)
+OSz = Val(Mid(A, 4))
+OTy = DaoShtTy_Ty(Left(A, 3))
+End Sub
 
-Sub DbAppTd(A As Database, Td As DAO.TableDef)
+Sub DbAppTd(A As Database, Td As dao.TableDef)
 A.TableDefs.Append Td
 End Sub
 
-Function RsLin$(A As DAO.Recordset, Optional Sep$ = " ")
+Function RsLin$(A As dao.Recordset, Optional Sep$ = " ")
 RsLin = Join(RsDr(A), Sep)
 End Function
 

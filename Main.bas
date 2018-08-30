@@ -103,7 +103,7 @@ End If
 End Function
 
 Property Get OupFx$()
-OupFx = OupPth & FmtQQ("? ?.xlsx", Apn, YYYYxMM)
+OupFx = FfnNxt(OupPth & FmtQQ("? ?.xlsx", Apn, YYYYxMM))
 End Property
 
 Private Sub MsgSet(A$)
@@ -152,7 +152,7 @@ Next
 End Sub
 
 Property Get InvLdDte()
-Q = FmtQQ("Select IR_LoadDte from YM where Y=? and M=?", Y, M)
+Q = FmtQQ("Select IR_LdDte from YM where Y=? and M=?", Y, M)
 InvLdDte = RsV(CurrentDb.OpenRecordset(Q))
 End Property
 
@@ -180,7 +180,7 @@ Sub InvPthBrw()
 PthBrw InvPth
 End Sub
 
-Sub LoadInv(Optional IsForceLoad As Boolean)
+Sub LdInv(Optional IsForceLd As Boolean)
 If IsFstYM Then Stop
 
 '#IInvH & #IInvD are imported
@@ -190,7 +190,7 @@ If IsFstYM Then Stop
 '#IInvH: VndShtNm InvNo Dte Whs Sc Amt
 'InvD: VndShtNm InvNo Sku Sc Amt
 'InvH: VndShtNm InvNo Whs Dte Sc Amt DteCrt
-If Not IsForceLoad Then
+If Not IsForceLd Then
     If InvIsLd Then Exit Sub
 End If
 Dim A$, Q$
@@ -203,7 +203,7 @@ W.Execute "Alter Table [#IInvD] add column InvH Long"
 W.Execute "Update [#IInvD] x inner join [InvH] a on x.VndShtNm=a.VndShtNm and x.InvNo=a.InvNo set x.InvH=a.InvH"
 W.Execute "insert into [InvD] (InvH,Sku,Sc,Amt)" & _
                       " select InvH,Sku,Sc,Amt from [#IInvD]'"
-Q = FmtQQ("Select IR_Fx, IR_FxSz, IR_FxTim, IR_LoadDte from YM where Y=? and M=?", Y, M)
+Q = FmtQQ("Select IR_Fx, IR_FxSz, IR_FxTim, IR_LdDte from YM where Y=? and M=?", Y, M)
 
 RsUpdDr W.OpenRecordset(Q), FfnStamp(A)
 End Sub
@@ -234,9 +234,16 @@ Property Get IniMB52FnSpec$()
 IniMB52FnSpec = "MB52 " & YYYYxMM & "-??.xls"
 End Property
 
-Sub LoadMB52(Optional IsForceLoad As Boolean)
-If Not IsForceLoad Then
-    If MB52IsLd Then Exit Sub
+Property Get MB52IsLd() As Boolean
+MB52IsLd = FfnTSz(IFxMB52) = MB52LdTSz
+End Property
+
+Sub LdMB52(Optional IsForceLd As Boolean)
+If Not IsForceLd Then
+    Lg "LdMB52", "[MB52IsLd] with [IFxMB52] [TSz] <> [MB52LdTSz]", MB52IsLd, IFxMB52, FfnTSz(IFxMB52), MB52LdTSz
+    If MB52IsLd Then
+        Exit Sub
+    End If
 End If
 '#IMB52 is imported into YMTbl and OHTbl
 'Import into YMOH & Update YM
@@ -245,8 +252,8 @@ Q = "Select Distinct Sku,Whs,Sum(x.QUnRes+x.QInsp+x.QBlk) as EndOH into [#OH] fr
 Q = FmtQQ("Delete from [YMOH] where Y=? and M=?", Y, M): W.Execute Q
 Q = FmtQQ("Insert into [YMOH] (Y,M,Sku,Whs,EndOH) select ?,?,Sku,Whs,EndOH from [#OH]", Y, M): W.Execute Q
 
-'Update YM: Y M *Fx *FxTim *FxSz *NRec *NSku *Sc *DteLoad
-Q = FmtQQ("Select EndOH_Fx, EndOH_FxSz, EndOH_FxTim, EndOH_LoadDte from YM where Y=? and M=?", Y, M)
+'Update YM: Y M *Fx *FxTim *FxSz *NRec *NSku *Sc *DteLd
+Q = FmtQQ("Select EndOH_Fx, EndOH_FxSz, EndOH_FxTim, EndOH_LdDte from YM where Y=? and M=?", Y, M)
 RsUpdDr W.OpenRecordset(Q), FfnStamp(IFxMB52)
 WDrp "#OH"
 End Sub
@@ -263,12 +270,12 @@ End Property
 
 Sub Rpt()
 'The @Main is the detail of showing how NxtMth YMRate is calculate
-Const IsForceLoad As Boolean = True
+Const IsForceLd As Boolean = True
 If Not Cfm Then Exit Sub
 WIni
 If AyBrwEr(Lnk) Then Exit Sub
 Import
-LoadData True
+LdDta True
 If Not IsFstYM Then
     Oup
     Upd
@@ -277,13 +284,15 @@ End If
 WCls
 End Sub
 
-Sub LoadData(Optional IsForceLoad As Boolean)
-LoadMB52 IsForceLoad
+Sub LdDta(Optional IsForceLd As Boolean)
+Lg "LdDta", "Start with [IsForceLd]", IsForceLd
+LdMB52 IsForceLd
 If IsFstYM Then
-    LoadRate IsForceLoad
+    LdRate IsForceLd
 Else
-    LoadInv IsForceLoad
+    LdInv IsForceLd
 End If
+Lg "LdDta", "End"
 End Sub
 
 Function Cfm() As Boolean
@@ -305,7 +314,6 @@ Sub Upd()
 'By @Main
 Q = FmtQQ("Delete * from [YMRate] where Y=? and M=?", Y, M): W.Execute Q
 Q = FmtQQ("Insert into YMRate (Y,M,Sku,Whs,RateSc) Select ?,?,Sku,Whs,EndRateSc from [@Main]", Y, M): W.Execute Q
-Stop
 End Sub
 
 Sub OMain()
@@ -424,11 +432,11 @@ W.Execute "Update [@Main] set EndRateSc = IIf(Nz(EndOHSc,0)=0,Nz(BegRateSc,0),Nz
 'WDrp "#SkuWhs #SkuWhs1 #BegOH #EndOH #IR #Rate"
 End Sub
 
-Sub LoadRate(Optional IsForceLoad As Boolean)
-If Not IsForceLoad Then
+Sub LdRate(Optional IsForceLd As Boolean)
+If Not IsForceLd Then
     If RateIsLd Then
         Dim Kind$
-        AyDmp FfnAlreadyLoadedMsgLy(IFxRate, Kind, RateLdDTim)
+        AyDmp FfnAlreadyLdMsgLy(IFxRate, Kind, RateLdDTim)
         Exit Sub
     End If
 End If
@@ -449,7 +457,7 @@ Q = FmtQQ("Delete * from [#Cpy]" & _
 
 Q = "Delete * from [IniRate]": W.Execute Q
 Q = "Insert into [IniRate] (ZHT1,Whs,RateSc,FmDte,ToDte) select ZHT1,Whs,RateSc,FmDte,ToDte from [#Cpy]": W.Execute Q
-Q = "Select Fx, FxSz, FxTim, LoadDte from [IniRateH]"
+Q = "Select Fx, FxSz, FxTim, LdDte from [IniRateH]"
 If DbtNRec(W, "IniRateH") = 0 Then
     W.Execute "Insert into [IniRateH] (Fx) values ('x')"
 End If
@@ -464,13 +472,13 @@ Sub IFxRateOpn()
 FxOpn IFxRate
 End Sub
 Property Get InvLdDTim$()
-InvLdDTim = QQDTim("Select IR_LoadDte from YM where Y=? and M=? and IR_Fx='?'", Y, M, IFxInv)
+InvLdDTim = QQDTim("Select IR_LdDte from YM where Y=? and M=? and IR_Fx='?'", Y, M, IFxInv)
 End Property
 Property Get RateLdDTim$()
-RateLdDTim = QQDTim("Select LoadDte from IniRate")
+RateLdDTim = QQDTim("Select LdDte from IniRate")
 End Property
 Property Get MB52LdDTim$()
-MB52LdDTim = QQDTim("Select EndOH_LoadDte from YM where Y=? and M=? and EndOH_Fx='?'", Y, M, IFxMB52)
+MB52LdDTim = QQDTim("Select EndOH_LdDte from YM where Y=? and M=? and EndOH_Fx='?'", Y, M, IFxMB52)
 End Property
 Function FxLdTSz$(A, Optional ByVal FldPfx$)
 Dim P$
@@ -491,9 +499,6 @@ End Property
 
 Property Get MB52TSz$()
 MB52TSz = FxLdTSz(IFxMB52, "EndOH")
-End Property
-Property Get MB52IsLd() As Boolean
-MB52IsLd = FfnTSz(IFxMB52) = MB52LdTSz
 End Property
 Property Get RateIsLd() As Boolean
 RateIsLd = FfnTSz(IFxRate) = RateLdTSz

@@ -25,10 +25,10 @@ Property Get M() As Byte
 M = SqlV("Select M from CurYM")
 End Property
 Property Let M(V As Byte)
-RsSetFldVal TblRs("CurYM"), "M", V
+RsF(TblRs("CurYM"), "M") = V
 End Property
 Property Let Y(V As Byte)
-RsSetFldVal TblRs("CurYM"), "Y", V
+RsF(TblRs("CurYM"), "Y") = V
 End Property
 
 Function FmDte() As Date

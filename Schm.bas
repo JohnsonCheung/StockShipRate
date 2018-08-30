@@ -14,7 +14,7 @@ Private Type SchmLinesBrk
 End Type
 Private X As SchmLinesBrk
 Private T, F
-Private Const YSchmLines$ = _
+Public Const SampleSchmLines$ = _
 "Ty_Fld Mem Lines ..          " & vbCrLf & _
 "Ty_Fld Txt Fun ..            " & vbCrLf & _
 "Ty_Sfx Dte Dte ..            " & vbCrLf & _
@@ -32,8 +32,8 @@ Private Const YSchmLines$ = _
 Sub AA()
 Stop
 End Sub
-Private Property Get YX() As SchmLinesBrk
-YX = SchmLinesBrk(YSchmLines)
+Private Property Get ZZX() As SchmLinesBrk
+ZZX = SchmLines_Brk(SampleSchmLines)
 End Property
 Sub ZZZ_TySz()
 X = ZZX
@@ -63,7 +63,6 @@ F = "Fun":    Debug.Assert Dft = ""
 End Sub
 
 Sub AAA()
-ZZZ_Lg
 End Sub
 Private Sub ZZZ_Tny()
 X = ZZX
@@ -97,32 +96,27 @@ Sep:
 End Sub
 
 Private Sub ZZ_SchmLines_BrkAsg()
-Dim Td() As DAO.TableDef, Pk$(), Sk$()
-SchmLines_BrkAsg ZZSchmLines, Td, Pk, Sk
+Dim Td() As dao.TableDef, Pk$(), Sk$()
+SchmLines_BrkAsg SampleSchmLines, Td, Pk, Sk
 Stop
 End Sub
-Private Function SchmLinesBrk(SchmLines) As SchmLinesBrk
-With SchmLinesBrk
+Private Function SchmLines_Brk(SchmLines) As SchmLinesBrk
+With SchmLines_Brk
     LinesBrkAsg1 SchmLines, .XErLy, .XRmkDic, _
         "FDes   Dft   Req   Ty_Fld   Ty_Sfx   Ty_TF   TDes   TFld", _
         .FDes, .Dft, .Req, .Ty_Fld, .Ty_Sfx, .Ty_TF, .TDes, .TFld
     .Req = SslAy_Sy(.Req)
 End With
 End Function
-Private Sub SchmLines_BrkAsg(A, OTdAy() As DAO.TableDef, OPkSqlAy$(), OSkSqlAy$())
-X = SchmLinesBrk(A)
+Private Sub SchmLines_BrkAsg(A, OTdAy() As dao.TableDef, OPkSqlAy$(), OSkSqlAy$())
+X = SchmLines_Brk(A)
 OPkSqlAy = PkSql
 OSkSqlAy = SkSql
 OTdAy = TdAy
 End Sub
 
-Private Sub DaoShtTySz_BrkAsg(A, OTy As DAO.DatabaseTypeEnum, OSz%)
-OSz = Val(Mid(A, 4))
-OTy = DaoShtTy_Ty(Left(A, 3))
-End Sub
-
-Private Function Fd() As DAO.Field
-Dim O As DAO.Field, IsId As Boolean, Sz%, Ty As DAO.DataTypeEnum
+Private Function Fd() As dao.Field
+Dim O As dao.Field, IsId As Boolean, Sz%, Ty As dao.DataTypeEnum
 IsId = T = F
 If IsId Then
     Set Fd = DaoFld(F, IsId:=IsId)
@@ -195,7 +189,7 @@ For Each L In X.Dft
 Next
 End Function
 
-Private Function Td() As DAO.TableDef
+Private Function Td() As dao.TableDef
 Set Td = NewTd(T, FdAy)
 End Function
 
@@ -203,8 +197,8 @@ Private Function Tny() As String()
 Tny = AyMapSy(X.TFld, "LinT1")
 End Function
 
-Private Function TdAy() As DAO.TableDef()
-Dim O() As DAO.TableDef
+Private Function TdAy() As dao.TableDef()
+Dim O() As dao.TableDef
 For Each T In Tny
     PushObj O, Td
 Next
@@ -243,12 +237,12 @@ Sub ZZ_DbCrtSchm()
 Dim Fb$
 Fb = TmpFb
 FbCrt Fb
-DbCrtSchm FbDb(Fb), ZZSchmLines
+DbCrtSchm FbDb(Fb), SampleSchmLines
 FbBrw Fb
 End Sub
 
 Sub DbCrtSchm(A As Database, SchmLines$)
-Dim Td() As DAO.TableDef, Pk$(), Sk$()
+Dim Td() As dao.TableDef, Pk$(), Sk$()
 SchmLines_BrkAsg SchmLines, Td, Pk, Sk
 AyDoPX Td, "DbAppTd", A
 AyDoPX Pk, "DbRun", A
@@ -266,8 +260,8 @@ C = Replace(B, "*", Tbl)
 Fny = AyRmvEle(SslSy(C), "|")
 End Function
 
-Private Function FdAy() As DAO.Field()
-Dim O() As DAO.Field
+Private Function FdAy() As dao.Field()
+Dim O() As dao.Field
 For Each F In Fny
     PushObj O, Fd
 Next

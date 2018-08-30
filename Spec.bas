@@ -1,5 +1,6 @@
 Option Compare Database
 Option Explicit
+Private X_Spnm$
 Sub SpnmImp(A)
 DbImpSpec CurrentDb, A
 End Sub
@@ -9,118 +10,74 @@ SpnmFt = PgmObjPth & SpnmFn(A)
 End Function
 
 Sub DbImpSpec(A As Database, Spnm)
+X_Spnm = Spnm
 Const CSub$ = "DbImpSpec"
-Dim T As Date, FtSz&
-Dim K$, Ft$, Sk$()
-If False Then
-    'Assume Db has T = Spec * SpecNm Lines Ft FtTim FtSz. It has Sk of field = SpecNm
-    'Also, assume T has Ft, XXX_Tim, XXX_Sz, XXX_LdDte field, where XXX is
-    Sk = DbtSk(A, "Spec")
-    If Sz(Sk) <> 1 Then Stop
-    With A.TableDefs("Spec").OpenRecordset
-        .Index = "Spec"
-        .Seek "=", K
-        If .NoMatch Then
-            .AddNew
-            .Fields(Sk(0)).Value = K
-            .Update
-            .Seek "=", K
-        End If
-        .Edit
-        !Lines = FtLines(Ft)
-        !Ft = Ft
-        !FtTim = FfnTim(Ft)
-        !FtSz = FfnSz(Ft)
-        !LdDte = Now
-        .Update
-    End With
-End If
-
-If False Then
-    Ft = SpnmFt(A)
-    If Not FfnIsExist(A) Then
-        FunMsgDmp "LgSchm_Imp", "[LgSchmFt] not exist, no LgSchm_Imp.", A
-        Exit Sub
-    End If
-    FfnAsgTSz A, T, FtSz
-    If SpnmFt_IsNew(A, Ft) Then
-        'SpnmImpFt "LgSchmp", A
-        FunMsgDmp CSub, "[LgSchmFt] of [time] and [size] is imported", A, T, FtSz
-    Else
-        FunMsgDmp "LgSchm_Imp", "[LgSchmFt-Tim] is same or older than [Imported-Schm-Tim], no import.  They have [Sz1] and [Sz2]", _
-            T, LgSchm_Tim, FtSz, LgSchm_Sz
-    End If
-End If
-
-Q = FmtQQ("Select * from Spec where SpecNm = '?'", Spnm)
-Dim Rs As DAO.Recordset
-Set Rs = A.OpenRecordset(Q)
-With Rs
-    If .EOF Then
-        .AddNew
-        !SpecNm = A
-        .Update
-        .Requery
-    End If
-End With
-
-Dim CurOld As Boolean, CurNew As Boolean, SamTim As Boolean 'compare the Rs's tim
+Dim Ft$
+    Ft = SpnmFt(Spnm)
+    
+Dim CurOld As Boolean
+Dim CurNew As Boolean
+Dim SamTim As Boolean
+Dim DifSz As Boolean
+Dim SamSz As Boolean
+Dim DifFt As Boolean
+Dim Rs As dao.Recordset
+    Q = FmtQQ("Select Ft,Lines,Tim,Sz,LdTim from Spec where SpecNm = '?'", Spnm)
+    Set Rs = CurrentDb.OpenRecordset(Q)
+    
     Dim CurT As Date, LasT As Date 'CurTim and LasTim
+    Dim CurS&, LasS&
+    Dim LasFt$, LdDTim$
+    CurS = FfnSz(Ft)
     CurT = FfnTim(Ft)
-    LasT = Rs!Tim
+    With Rs
+        LasS = Nz(Rs!Sz, -1)
+        LasT = Nz(!Tim, 0)
+        LasFt = Nz(!Ft, "")
+        LdDTim = DteDTim(!LdTim)
+    End With
     SamTim = CurT = LasT
     CurOld = CurT < LasT
     CurNew = CurT > LasT
-Dim SamSz As Boolean, DifSz As Boolean
-    Dim CurS&, LasS&
-    CurS = FfnSz(Ft)
-    LasS = Rs!Sz
     SamSz = CurS = LasS
     DifSz = Not SamSz
+    DifFt = Ft <> LasFt
     
+
+Const Imported$ = "***** IMPORTED *****"
+Const NoImport$ = "----- no import -----"
+Const FtDif______$ = "Ft is dif."
+Const SamTimSz___$ = "Sam tim & sz."
+Const SamTimDifSz$ = "Sam tim & sz. (Odd!)"
+Const CurIsOld___$ = "Cur is old."
+Const CurIsNew___$ = "Cur is new."
+Const C$ = "|[SpecNm] [Db] [Cur-Ft] [Las-Ft] [Cur-Tim] [Las-Tim] [Cur-Sz] [Las-Sz] [Imported-Time]."
+
 Select Case True
-Case SamTim And SamSz
-    FunMsgDmp CSub, "[Ft] of [SpecNm] with [Tim] & [Sz] is same as [last-time] import.  No import.", _
-        Ft, A, DteDTim(CurT), CurS, SpnmLdDTim(A)
-Case SamTim And DifSz
-    FunMsgDmp CSub, "[Ft] of [SpecNm] with same [Tim] & [Sz] is same as [last-time] import.  No import.  They have [Sz1] and [Sz2]", _
-        Ft, LgSchm_Tim, LasS, CurS
-Case CurOld
-'    FunMsgDmp CSub, "[Ft] of [SpecNm] with same [Tim] & [Sz] is same as [last-time] import.  No import.  They have [Sz1] and [Sz2]", _
-'        Ft, LgSchmFtTim, LasS, CurS
-Case CurNew
-    With Rs
-        .Edit
-        !Ft = FtLines(Ft)
-        !Sz = CurS
-        !Tim = CurT
-        !LdDte = Now
-        .Update
-    End With
-'    FunMsgDmp CSub, "**** IMPORTED ****|[SpecNm] [file] with [time] & [size] is newer than [last-time] with [last-time-Ft-time] and [last-time-Ft-size].", _
-'        Ft, LgSchmFtTim, LasS, CurS
+Case DifFt:  RsUpd Rs, Ft, FtLines(Ft), CurT, CurS, Now
+Case CurNew: RsUpd Rs, Ft, FtLines(Ft), CurT, CurS, Now
+End Select
+
+Dim Av(): Av = Array(Spnm, DbNm(A), Ft, LasFt, CurT, LasT, CurS, LasS, LdDTim)
+Select Case True
+Case DifFt:            FunMsgDmpAv CSub, Imported & FtDif______ & C, Av
+Case SamTim And SamSz: FunMsgDmpAv CSub, NoImport & SamTimSz___ & C, Av
+Case SamTim And DifSz: FunMsgDmpAv CSub, NoImport & SamTimDifSz & C, Av
+Case CurOld:           FunMsgDmpAv CSub, NoImport & CurIsOld___ & C, Av
+Case CurNew:           FunMsgDmpAv CSub, Imported & CurIsNew___ & C, Av
 Case Else: Stop
 End Select
 End Sub
 
-Function SpnmLdDTim$(Spnm)
-End Function
-
-Function SpnmLines$(A)
-SpnmLines = TfkV("Spec", "Lines", A)
-End Function
-
-Function SpnmDTim$(A)
-SpnmDTim = DteDTim(SpnmTim(A))
-End Function
-
-Function SpnmFt_IsNew(A, Ft) As Boolean
-SpnmFt_IsNew = FfnTim(A) > SpnmTim(A)
-End Function
-
 Sub SpnmExp(A, Optional OvrWrt As Boolean)
 StrWrt SpnmLines(A), SpnmFt(A), Not OvrWrt
 End Sub
+Function SpnmLines$(A)
+SpnmLines = SpnmV(A, "Lines")
+End Function
+Function SpnmV(A, ValNm$)
+SpnmV = TfkV("Spec", ValNm, A)
+End Function
 
 Sub SpnmBrw(A)
 FtBrw SpnmFt(A)
@@ -133,7 +90,7 @@ StrWrt "", Ft
 Debug.Print "SpecNm-[" & A & "] of Ft-[" & Ft & "] is created."
 End Sub
 Property Get SpnmFn$(A)
-SpnmFn = A & ".txt"
+SpnmFn = A & "(Spec).txt"
 End Property
 
 Property Get SpnmFny() As String()

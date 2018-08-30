@@ -32,7 +32,6 @@ Sub LgEnd()
 Lg ".", "End"
 End Sub
 
-
 Private Sub LgOpn()
 Set X_L = FbDb(LgFb)
 End Sub
@@ -43,16 +42,16 @@ End Sub
 
 Sub LgCrt()
 FbCrt LgFb
-Dim Db As Database, T As DAO.TableDef
+Dim Db As Database, T As dao.TableDef
 Set Db = FbDb(LgFb)
 '
-Set T = New DAO.TableDef
+Set T = New dao.TableDef
 T.Name = "Sess"
 TdAddId T
 TdAddStamp T, "Dte"
 Db.TableDefs.Append T
 '
-Set T = New DAO.TableDef
+Set T = New dao.TableDef
 T.Name = "Msg"
 TdAddId T
 TdAddTxtFld T, "Fun"
@@ -60,7 +59,7 @@ TdAddTxtFld T, "MsgTxt"
 TdAddStamp T, "Dte"
 Db.TableDefs.Append T
 '
-Set T = New DAO.TableDef
+Set T = New dao.TableDef
 T.Name = "Lg"
 TdAddId T
 TdAddLngFld T, "Sess"
@@ -68,7 +67,7 @@ TdAddLngFld T, "Msg"
 TdAddStamp T, "Dte"
 Db.TableDefs.Append T
 '
-Set T = New DAO.TableDef
+Set T = New dao.TableDef
 T.Name = "LgV"
 TdAddId T
 TdAddLngFld T, "Lg"
@@ -93,7 +92,7 @@ Private Sub EnsMsg(Fun$, MsgTxt$)
 With L.TableDefs("Msg").OpenRecordset
     .Index = "Msg"
     .Seek "=", Fun, MsgTxt
-    If .EOF Then
+    If .NoMatch Then
         .AddNew
         !Fun = Fun
         !MsgTxt = MsgTxt
@@ -104,6 +103,10 @@ With L.TableDefs("Msg").OpenRecordset
     End If
 End With
 End Sub
+
+Property Get LgDb() As Database
+Set LgDb = L
+End Property
 
 Property Get LgPth$()
 LgPth = AppDtaPth
@@ -118,6 +121,7 @@ With L.TableDefs("Lg").OpenRecordset
     .Update
 End With
 End Sub
+
 Sub Lg(Fun$, MsgTxt$, ParamArray Ap())
 EnsSess
 EnsMsg Fun, MsgTxt
@@ -128,14 +132,14 @@ Dim J%, V
 With L.TableDefs("LgV").OpenRecordset
     For Each V In Av
         .AddNew
-        !Val = VarLines(V)
+        !Lines = VarLines(V)
         .Update
     Next
     .Close
 End With
 End Sub
 
-Sub LgBrw()
+Sub LgDbBrw()
 Acs.OpenCurrentDatabase LgFb
 AcsVis Acs
 End Sub
@@ -180,26 +184,26 @@ LgAy = SessLgAy(A)
 SessLy = AyOfAy_Ay(AyMap(LgAy, "LgLy"))
 End Function
 
-Sub LgAsg_xSess_xDTim(A&, OSess&, ODTim$, OFun$, OMsgTxt$)
-Q = FmtQQ("select Fun,MsgTxt,Sess,x.Dte from Lg x inner join Msg a on x.Msg=a.Msg where Lg=?", A)
+Sub LgAsg(A&, OSess&, ODTim$, OFun$, OMsgTxt$)
+Q = FmtQQ("select Fun,MsgTxt,Sess,x.CrtTim from Lg x inner join Msg a on x.Msg=a.Msg where Lg=?", A)
 Dim D As Date
 RsAsg L.OpenRecordset(Q), OFun, OMsgTxt, OSess, D
 ODTim = DteDTim(D)
 End Sub
 
 Function LgLy(A&) As String()
-Dim Fun$, MsgTxt$, LgDTim$, LgSess&, Sfx$
-LgAsg_xSess_xDTim A, LgSess, LgDTim, Fun, MsgTxt
-Sfx = FmtQQ(" @? Sess(?) Lg(?)", LgDTim, LgSess, A)
-LgLy = FunMsgAv_Ly(Fun & Sfx, MsgTxt, LgValAy(A))
+Dim Fun$, MsgTxt$, DTim$, Sess&, Sfx$
+LgAsg A, Sess, DTim, Fun, MsgTxt
+Sfx = FmtQQ(" @? Sess(?) Lg(?)", DTim, Sess, A)
+LgLy = FunMsgLy(Fun & Sfx, MsgTxt, LgLinesAy(A))
 End Function
 
-Function LgValAy(A&) As Variant()
-Q = FmtQQ("Select Val from LgV where Lg = ? order by LgV", A)
-LgValAy = RsAy(L.OpenRecordset(Q))
+Function LgLinesAy(A&) As Variant()
+Q = FmtQQ("Select Lines from LgV where Lg = ? order by LgV", A)
+LgLinesAy = RsAy(L.OpenRecordset(Q))
 End Function
 
-Function CurLgRs(Optional Top% = 50) As DAO.Recordset
+Function CurLgRs(Optional Top% = 50) As dao.Recordset
 Set CurLgRs = L.OpenRecordset(FmtQQ("Select Top ? x.*,Fun,MsgTxt from Lg x left join Msg a on x.Msg=a.Msg order by Sess desc,Lg", Top))
 End Function
 
@@ -215,7 +219,7 @@ Sub CurLgLis(Optional Sep$ = " ", Optional Top% = 50)
 D CurLgLy(Sep, Top)
 End Sub
 
-Sub SessLis(Optional Sep$, Optional Top% = 50)
+Sub SessLis(Optional Sep$ = " ", Optional Top% = 50)
 CurSessLis Sep, Top
 End Sub
 
@@ -227,7 +231,7 @@ Function CurSessLy(Optional Sep$, Optional Top% = 50) As String()
 CurSessLy = RsLy(CurSessRs(Top), Sep)
 End Function
 
-Function CurSessRs(Optional Top% = 50) As DAO.Recordset
+Function CurSessRs(Optional Top% = 50) As dao.Recordset
 Set CurSessRs = L.OpenRecordset(FmtQQ("Select Top ? * from sess order by Sess desc", Top))
 End Function
 
