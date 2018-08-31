@@ -1,7 +1,13 @@
 Option Compare Database
 Option Explicit
 Public LnkColStr As New LnkColStr
-Function OSubSsl_Run(A)
+Property Get XX()
+
+End Property
+Sub AA()
+Stop
+End Sub
+Function OupFunSsl_Run(A)
 Dim IQ, Q$
 For Each IQ In CvNy(A)
     Q = IQ
@@ -272,7 +278,6 @@ Sub Rpt()
 'The @Main is the detail of showing how NxtMth YMRate is calculate
 Const IsForceLd As Boolean = True
 If Not Cfm Then Exit Sub
-WIni
 If AyBrwEr(Lnk) Then Exit Sub
 Import
 LdDta True

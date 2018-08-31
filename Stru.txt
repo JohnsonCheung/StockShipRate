@@ -16,6 +16,7 @@ InvH: InvH | VndShtNm InvNo Whs Dte Sc Amt CrtDte
 LoAlignC: LoNm FldLikSsl
 LoFml: LoNm FldNm Fml
 LoFmt: LoNm Seq Fmt FldLikSsl
+LoReSeq: LoNm ReSeq
 LoTAvg: LoNm FldLikSsl
 LoTCnt: LoNm FldLikSsl
 LoTSum: LoNm FldLikSsl
