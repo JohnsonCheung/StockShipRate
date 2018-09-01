@@ -1,7 +1,3 @@
-Attribute VB_GlobalNameSpace = False
-Attribute VB_Creatable = False
-Attribute VB_PredeclaredId = False
-Attribute VB_Exposed = True
 Option Compare Database
 Option Explicit
 Const C_FEle$ = "FEle"
@@ -10,35 +6,34 @@ Const C_TFld$ = "TFld"
 Const C_TDes$ = "TDes"
 Const C_FDes$ = "FDes"
 Private X_Ly$()
-Public T, F, L
-Property Get E$()
+Function E$(T, F)
 Select Case True
-Case IsId: E = "*Id"
-Case IsFk: E = "*Fk"
-Case Else: E = LinT1(LinFEle)
+Case IsId(T, F): E = "*Id"
+Case IsFk(F): E = "*Fk"
+Case Else: E = LinT1(LinFEle(F))
 End Select
-End Property
+End Function
 
-Property Get LinFEle$()
-Dim A$()
+Function LinFEle$(F)
+Dim A$(), L
 A = LyFEle
 If Sz(A) = 0 Then Exit Function
 For Each L In A
     If StrInLikSsl(F, LinRmvT1(L)) Then
         LinFEle = L
-        Exit Property
+        Exit Function
     End If
 Next
-End Property
+End Function
 
-Property Get Ly()
+Function Ly()
 Ly = X_Ly
-End Property
+End Function
 Sub LySet(Ly$())
 X_Ly = Ly
 End Sub
 
-Public Property Get Z_Ly() As String()
+Public Function Z_Ly() As String()
 Dim O$()
 Push O, "dfd"
 Push O, "Ele Mem   Mem"
@@ -63,50 +58,50 @@ Push O, "FDes Fun Function name that call the log"
 Push O, "TDes Msg it will a new record when Lg-function is first time using the Fun+MsgTxt"
 Push O, "TDes Msg ..."
 Z_Ly = O
-End Property
+End Function
 
-Property Get TFELy() As String()
-Dim O$()
+Function TFELy() As String()
+Dim O$(), T, F
 For Each T In Tny
-    For Each F In Fny
-        Push O, ApLin(T, F, E)
+    For Each F In Fny(T)
+        Push O, ApLin(T, F, E(T, F))
     Next
 Next
 TFELy = O
-End Property
+End Function
 
-Property Get TFEFdLy() As String()
-Dim O$()
+Function TFEFdLy() As String()
+Dim O$(), T, F, E1
 For Each T In Tny
-    Debug.Print T
-    For Each F In Fny
-        Push O, ApLin(T, F, E, FdStr)
+    For Each F In Fny(T)
+        E1 = E(T, F)
+        Push O, ApLin(T, F, E1, FdStr(T, F, E1))
     Next
 Next
 TFEFdLy = O
-End Property
+End Function
 
 Function ItmLy(A) As String()
 ItmLy = AyRmvT1(AyWhT1EqV(Ly, A))
 End Function
 
-Property Get Ly_Er() As String()
+Function Ly_Er() As String()
 Ly_Er = AyWhPredXPNot(Ly, "LinInT1Ay", Sy(C_Ele, C_FDes, C_TDes, C_TFld))
-End Property
+End Function
 
-Property Get EleLy() As String():  EleLy = ItmLy(C_Ele):    End Property
-Property Get LyFEle() As String(): LyFEle = ItmLy(C_FEle):  End Property
-Property Get LyTFld() As String(): LyTFld = ItmLy(C_TFld):  End Property
-Property Get LyFDes() As String(): LyFDes = ItmLy(C_FDes):  End Property
-Property Get LyTDes() As String(): LyTDes = ItmLy(C_TDes):  End Property
-Property Get PkTny() As String(): PkTny = AyT1Ay(PkTFLy): End Property
+Function EleLy() As String():  EleLy = ItmLy(C_Ele):    End Function
+Function LyFEle() As String(): LyFEle = ItmLy(C_FEle):  End Function
+Function LyTFld() As String(): LyTFld = ItmLy(C_TFld):  End Function
+Function LyFDes() As String(): LyFDes = ItmLy(C_FDes):  End Function
+Function LyTDes() As String(): LyTDes = ItmLy(C_TDes):  End Function
+Function PkTny() As String(): PkTny = AyT1Ay(PkTFLy):   End Function
 
 Sub Z()
 Z_Ini
 Z_Tny
 Z_DbCrtSchm
 End Sub
-Sub Z_Ini()
+Private Sub Z_Ini()
 If Sz(X_Ly) = 0 Then X_Ly = Z_Ly
 End Sub
 
@@ -118,6 +113,7 @@ C
 End Sub
 
 Sub ZZ_Tny()
+Dim T
 Z_Ini
 GoSub Sep
 D "Tny"
@@ -133,7 +129,7 @@ Exit Sub
 Prt:
     D T
     D UnderLin(T)
-    D Fny
+    D Fny(T)
     GoSub Sep
     Return
 Sep:
@@ -141,82 +137,82 @@ Sep:
     Return
 End Sub
 
-Property Get EleLin$()
+Function EleLin$(E)
 EleLin = AyFstT1(EleLy, E)
-End Property
+End Function
 
-Property Get EleSpecStr$()
-EleSpecStr = LinRmvT1(EleLin)
-End Property
+Function EleSpecStr$(E)
+EleSpecStr = LinRmvT1(EleLin(E))
+End Function
 
-Property Get FdDr() As Variant()
-With FdSpec
+Function FdDr(F, E) As Variant()
+With FdSpec(F, E)
 FdDr = Array(.F, .Ty, .Sz, .Req, .AlwZLen, .Dft, .VRul, .VTxt)
 End With
-End Property
+End Function
 
-Property Get FdStr$()
-FdStr = FdM.FdStr(Fd)
-End Property
+Function FdStr$(T, F, E)
+FdStr = FdM.FdStr(Fd(T, F, E))
+End Function
 
-Property Get Fd() As dao.Field
+Function Fd(T, F, E) As dao.Field
 Select Case True
-Case IsId: Set Fd = NewFd_zId(F)
-Case IsFk: Set Fd = NewFd_zFk(F)
-Case Else: Set Fd = NewFd_zSpec(FdSpec)
+Case IsId(T, F): Set Fd = NewFd_zId(F)
+Case IsFk(F): Set Fd = NewFd_zFk(F)
+Case Else: Set Fd = NewFd_zSpec(FdSpec(F, E))
 End Select
-End Property
+End Function
 
-Property Get FdSpec() As FdSpec
-FdSpec = EleSpecStr_FdSpec(EleSpecStr, F)
-End Property
+Function FdSpec(F, E) As FdSpec
+FdSpec = EleSpecStr_FdSpec(EleSpecStr(E), F)
+End Function
 
-Property Get Td() As dao.TableDef
-Set Td = NewTd(T, FdAy)
-End Property
+Function Td(T) As dao.TableDef
+Set Td = NewTd(T, FdAy(T))
+End Function
 
-Property Get Tny() As String()
+Function Tny() As String()
 Tny = AyMapSy(LyTFld, "LinT1")
-End Property
+End Function
 
-Property Get TdAy() As dao.TableDef()
-Dim O() As dao.TableDef
+Function TdAy() As dao.TableDef()
+Dim O() As dao.TableDef, T
 For Each T In Tny
-    PushObj O, Td
+    PushObj O, Td(T)
 Next
 TdAy = O
-End Property
+End Function
 
-Property Get PkSqy() As String()
+Function PkSqy() As String()
 PkSqy = AyMapSy(PkTny, "TnPkSql")
-End Property
+End Function
 
-Property Get SkSslAy() As String()
-Dim A$(), O$()
+Function SkSslAy() As String()
+Dim A$(), O$(), L
 A = LyTFld
-If Sz(A) = 0 Then Exit Property
+If Sz(A) = 0 Then Exit Function
 For Each L In A
-    PushNonEmpty O, SkSsl
+    PushNonEmpty O, SkSsl(L)
 Next
 SkSslAy = O
-End Property
+End Function
 
-Property Get SkSsl$()
+Function SkSsl$(L)
 Dim A$, B$
-A = SkP1: If A = "" Then Exit Property
+A = SkP1(L): If A = "" Then Exit Function
 B = Replace(A, " * ", "")
 SkSsl = Replace(B, "*", LinT1(B))
-End Property
+End Function
 
-Property Get SkP1$()
+Function SkP1$(L)
 SkP1 = Trim(TakBef(L, "|"))
-End Property
-Property Get PkTFLy() As String()
+End Function
+Function PkTFLy() As String()
 PkTFLy = AyWhPred(LyTFld, "TFLinHasPk")
-End Property
+End Function
 
-Property Get SkSqy() As String()
-Dim O$(), A$(), B$(), J%, U%
+Function SkSqy() As String()
+Dim O$(), A$(), B$(), J%, U%, T
 A = SkSslAy
 U = UB(A)
 If UB(A) = -1 Then Exit Function
@@ -226,47 +222,47 @@ For J = 0 To U
     O(J) = TnSkSql(T, A(J))
 Next
 SkSqy = O
-End Property
+End Function
 
 Sub Z_DbCrtSchm()
 Dim Fb$
 Fb = TmpFb
 FbCrt Fb
-DbCrtSchm FbDb(Fb), Z_Ly
+DbCrtSchm1 FbDb(Fb), Z_Ly
 FbBrw Fb
 End Sub
 
-Sub DbCrtSchm(A As Database, SchmLy$())
+Sub DbCrtSchm1(A As Database, SchmLy$())
 LySet SchmLy
 AyDoPX TdAy, "DbAppTd", A
 AyDoPX PkSqy, "DbRun", A
 AyDoPX SkSqy, "DbRun", A
 End Sub
 
-Property Get TFLin$()
+Function TFLin$(T)
 TFLin = AySng(AyWhT1EqV(LyTFld, T), "Schm.TFLin.PrpEr")
-End Property
+End Function
 
-Property Get Fny() As String()
+Function Fny(T) As String()
 Dim A$, B$
-A = TFLin
-If LinShiftT1(A) <> T Then Debug.Print "Schm.Fny PrpEr": Exit Property
+A = TFLin(T)
+If LinShiftT1(A) <> T Then Debug.Print "Schm.Fny PrpEr": Exit Function
 B = Replace(A, "*", T)
 Fny = AyRmvEle(SslSy(B), "|")
-End Property
+End Function
 
-Property Get FdAy() As dao.Field()
-Dim O() As dao.Field
-For Each F In Fny
-    PushObj O, Fd
+Function FdAy(T) As dao.Field()
+Dim O() As dao.Field, F
+For Each F In Fny(T)
+    PushObj O, Fd(T, F, E(T, F))
 Next
 FdAy = O
-End Property
+End Function
 
-Property Get IsFk() As Boolean
+Function IsFk(F) As Boolean
 IsFk = AyHas(Tny, F)
-End Property
+End Function
 
-Property Get IsId() As Boolean
+Function IsId(T, F) As Boolean
 IsId = T = F
-End Property
+End Function
