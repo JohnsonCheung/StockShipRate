@@ -1,6 +1,7 @@
 Option Compare Database
 Option Explicit
 Private X_Spnm$
+
 Sub SpnmImp(A)
 DbImpSpec CurrentDb, A
 End Sub
@@ -21,7 +22,7 @@ Dim SamTim As Boolean
 Dim DifSz As Boolean
 Dim SamSz As Boolean
 Dim DifFt As Boolean
-Dim Rs As DAO.Recordset
+Dim Rs As dao.Recordset
     Q = FmtQQ("Select Ft,Lines,Tim,Sz,LdTim from Spec where SpecNm = '?'", Spnm)
     Set Rs = CurrentDb.OpenRecordset(Q)
     
@@ -75,6 +76,10 @@ End Sub
 Function SpnmLines$(A)
 SpnmLines = SpnmV(A, "Lines")
 End Function
+Function SpnmLy(A) As String()
+SpnmLy = SplitCrLf(SpnmLines(A))
+End Function
+
 Function SpnmV(A, ValNm$)
 SpnmV = TfkV("Spec", ValNm, A)
 End Function

@@ -6,6 +6,9 @@ Const LgSNm$ = "LgSchm" ' The LgSchm-Spnm
 Property Get LgSchm_Lines$()
 LgSchm_Lines = SpnmLines(LgSNm)
 End Property
+Property Get LgSchm_Ly() As String()
+LgSchm_Ly = SpnmLy(LgSNm)
+End Property
 
 Sub LgSchm_Imp()
 SpnmImp "LgSchm"

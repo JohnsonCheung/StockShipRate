@@ -1,12 +1,6 @@
 Option Compare Database
 Option Explicit
 Public LnkColStr As New LnkColStr
-Property Get XX()
-
-End Property
-Sub AA()
-Stop
-End Sub
 Function OupFunSsl_Run(A)
 Dim IQ, Q$
 For Each IQ In CvNy(A)
