@@ -1,6 +1,8 @@
 Option Compare Database
 Option Explicit
+Const C_Des$ = "Description"
 Public Fso As New Scripting.FileSystemObject
+Public AAA$()
 Public Fcmd As New Fcmd
 Public Const Z_ReSeqSpec$ = _
 "Flg RecTy Amt Key Uom MovTy Qty BchRateUX RateTy Bch Las GL |" & _
@@ -34,10 +36,107 @@ Public Actual, Expect
 Public Schm As New Schm
 Public EnsPrpOnEr As New EnsPrpOnEr
 Private X_W As Database
+Function FdScl_Fd(A$) As DAO.Field2
+Dim J%, F$, L$, T$, Ay$(), Sz%, Des$, Rq As Boolean, Ty As DAO.DataTypeEnum, AlwZLen As Boolean, Dft$, VRul$, VTxt$
+If A = "" Then Exit Function
+Ay = AyRmvEmp(AyTrim(SplitSC(A)))
+F = Ay(0)
+T = Ay(1)
+Ty = DaoShtTy_Ty(T)
+For J = 2 To UB(Ay)
+    L = Ay(J)
+    Select Case True
+    Case L = "Req": Rq = True
+    Case L = "AlwZLen": AlwZLen = True
+    Case HasPfx(L, "Sz="): Sz = RmvPfx(L, "Sz=")
+    Case HasPfx(L, "Dft="): Dft = RmvPfx(L, "Dft=")
+    Case HasPfx(L, "VRul="): VRul = RmvPfx(L, "VRul=")
+    Case HasPfx(L, "VTxt="): VTxt = RmvPfx(L, "VTxt=")
+    Case HasPfx(L, "Des="): Des = RmvPfx(L, "Des=")
+    Case Else: Debug.Print "FdScl_Fd: there is itm[" & L & "] in FdScl[" & A & "] unexpected."
+    End Select
+Next
+Dim O As New DAO.Field
+With O
+    .Name = F
+    .DefaultValue = Dft
+    .Required = Rq
+    .Size = Sz
+    .Type = Ty
+    If Ty = DAO.DataTypeEnum.dbText Then
+        .AllowZeroLength = AlwZLen
+    End If
+    .ValidationRule = VRul
+    .ValidationText = VTxt
+End With
+Set O = FdScl_Fd
+End Function
+Function TdScly_AddPfx(A) As String()
+Dim O$(), U&, J&, X
+U = UB(A)
+If U = -1 Then Exit Function
+ReDim O(U)
+For Each X In A
+    O(J) = IIf(J = 0, "Td;", "Fd;") & X
+    J = J + 1
+Next
+TdScly_AddPfx = O
+End Function
+Function DbScly(A As Database) As String()
+DbScly = AySy(AyOfAy_Ay(AyMap(ItrMap(A.TableDefs, "TdScly"), "TdScly_AddPfx")))
+End Function
+Function TdScly(A As DAO.TableDef) As String()
+TdScly = AyAdd(Sy(TdScl(A)), TdFdScly(A))
+End Function
+Function TdScl$(A As DAO.TableDef)
+TdScl = A.Name
+End Function
+Function TdFdScly(A As DAO.TableDef) As String()
+TdFdScly = ItrMapSy(A.Fields, "FdScl1")
+End Function
+Function ItrMapInto(A, Map$, OInto)
+Dim O: O = OInto
+Erase O
+Dim X
+For Each X In A
+    Push O, Run(Map, X)
+Next
+ItrMapInto = O
+End Function
+Function ItrMapSy(A, Map$) As String()
+ItrMapSy = ItrMapInto(A, Map, EmpSy)
+End Function
+Function NewFd_zFdScl(FdScl$) As DAO.Field2
+Set NewFd_zFdScl = FdScl_Fd(FdScl)
+End Function
+
+Function BoolTxt$(A As Boolean, T$)
+If A Then BoolTxt = T
+End Function
+
+Function AddLbl$(A, Lbl$)
+If A <> "" Then AddLbl = Lbl & "=" & Replace(A, ";", "%3B")
+End Function
+
+Function FdScl1$(A As DAO.Field2)
+Dim Rq$, Ty$, Sz$, ZLen$, Rul$, Dft$, VTxt$, Expr$, Des$
+Des = AddLbl(FdDes(A), "Des")
+Rq = BoolTxt(A.Required, "Req")
+ZLen = BoolTxt(A.AllowZeroLength, "AlwZLen")
+Ty = DaoTy_ShtTy(A.Type)
+Sz = BoolTxt(A.Type = dbText, "Sz=" & A.Size)
+Rul = AddLbl(A.ValidationText, "VTxt")
+VTxt = AddLbl(A.ValidationRule, "VRul")
+Expr = AddLbl(A.Expression, "Expr")
+Dft = AddLbl(A.DefaultValue, "Dft")
+FdScl1 = ApScl(A.Name, Ty, Sz, Rq, ZLen, Rul, VTxt, Dft, Expr)
+End Function
+
 Function MdNm$(A As CodeModule)
 If IsNothing(A) Then Exit Function
 MdNm = A.Parent.Name
 End Function
+
 Function MdLno_zExitPrp%(A As CodeModule, PrpLno)
 If HasSfx(A.Lines(PrpLno, 1), "End Property") Then Exit Function
 Dim J%, L$
@@ -48,6 +147,7 @@ For J = PrpLno + 1 To A.CountOfLines
 Next
 Stop
 End Function
+
 Function MdLno_zEndPrp%(A As CodeModule, PrpLno)
 If HasSfx(A.Lines(PrpLno, 1), "End Property") Then MdLno_zEndPrp = PrpLno: Exit Function
 Dim J%
@@ -76,6 +176,10 @@ End Property
 Function ApLin$(ParamArray Ap())
 Dim Av(): Av = Ap
 ApLin = JnSpc(AyRmvEmp(Av))
+End Function
+Function ApScl$(ParamArray Ap())
+Dim Av(): Av = Ap
+ApScl = JnSC(AyRmvEmp(Av))
 End Function
 
 Function AyHasPredXPTrue(A, XP$, P) As Boolean
@@ -151,19 +255,25 @@ Sub WtReSeq(T, ReSeqSpec$)
 DbtReSeq W, T, ReSeqSpec
 End Sub
 
-Sub ZZ_TFldDes()
-TFldDes("Att", "AttNm") = "AttNm"
+Sub ZZ_TFDes()
+TFDes("Att", "AttNm") = "AttNm"
 End Sub
 Property Get DbtfDes$(A As Database, T, F)
-DbtfDes = DbtfPrp(A, T, F, "Description")
+DbtfDes = DbtfPrp(A, T, F, C_Des)
 End Property
 Property Let DbtfDes(A As Database, T, F, Des$)
-DbtfPrp(A, T, F, "Description") = Des
+DbtfPrp(A, T, F, C_Des) = Des
 End Property
 Property Get DbtfPrp(A As Database, T, F, P)
 If Not DbtfHasPrp(A, T, F, P) Then Exit Property
-DbtfPrp = A.TableDefs(T).Properties(P).Value
+DbtfPrp = A.TableDefs(T).Fields(F).Properties(P).Value
 End Property
+Function PrpHas(A As DAO.Properties, P) As Boolean
+PrpHas = ItrHasNm(A, P)
+End Function
+Function FdDes$(A As DAO.Field)
+If PrpHas(A.Properties, C_Des) Then FdDes = A.Properties(C_Des)
+End Function
 Property Let DbtfPrp(A As Database, T, F, P, V)
 If DbtfHasPrp(A, T, F, P) Then
     A.TableDefs(T).Fields(F).Properties(P).Value = V
@@ -174,11 +284,11 @@ Else
 End If
 End Property
 
-Property Get TFldDes$(T, F)
-TFldDes = TFldPrp(T, F, "Description")
+Property Get TFDes$(T, F)
+TFDes = TFldPrp(T, F, C_Des)
 End Property
-Property Let TFldDes(T, F, Des$)
-TFldPrp(T, F, "Description") = Des
+Property Let TFDes(T, F, Des$)
+TFldPrp(T, F, C_Des) = Des
 End Property
 Property Get TFldPrp(T, F, P)
 TFldPrp = DbtfPrp(CurrentDb, T, F, P)
@@ -3365,12 +3475,9 @@ Case DAO.DataTypeEnum.dbBoolean: O = "Yes"
 Case DAO.DataTypeEnum.dbDouble: O = "Dbl"
 Case DAO.DataTypeEnum.dbCurrency: O = "Cur"
 Case DAO.DataTypeEnum.dbMemo: O = "Mem"
-Case Else: O = "???"
+Case Else: O = "?" & A & "?"
 End Select
 DaoTy_ShtTy = O
-End Function
-Function DaoShtTy_Sz%(A)
-DaoShtTy_Sz = Val(Mid(A, 2, 2))
 End Function
 
 Function DaoShtTy_Ty(A) As DAO.DataTypeEnum
@@ -5057,6 +5164,11 @@ Case DAO.DataTypeEnum.dbDate: O = "Date"
 Case DAO.DataTypeEnum.dbDecimal: O = "Decimal"
 Case DAO.DataTypeEnum.dbCurrency: O = "Currency"
 Case DAO.DataTypeEnum.dbSingle: O = "Single"
+Case DAO.DataTypeEnum.dbAttachment: O = "Attachment"
+Case DAO.DataTypeEnum.dbMemo: O = "Memo"
+Case DAO.DataTypeEnum.dbLongBinary: O = "LongBinary"
+Case DAO.DataTypeEnum.dbBinary: O = "Binary"
+Case DAO.DataTypeEnum.dbGUID: O = "GUID"
 Case Else: Stop
 End Select
 DaoTy_Str = O
@@ -5820,13 +5932,8 @@ Else
     OTo = Nz(Fm, "")
 End If
 End Sub
-
-Function ItrMap(A, Map$) As Collection
-Dim O As New Collection, X
-For Each X In A
-    O.Add Run(Map, X)
-Next
-Set ItrMap = O
+Function ItrMap(A, Map$) As Variant()
+ItrMap = ItrMapInto(A, Map, EmpAy)
 End Function
 Function AyMapSy(A, MapFunNm$) As String()
 AyMapSy = AyMapInto(A, MapFunNm, EmpSy)
@@ -6553,7 +6660,7 @@ Property Let TblDes(T, Des$)
 DbtDes(CurrentDb, T) = Des
 End Property
 Property Let DbtDes(A As Database, T, Des$)
-DbtPrp(A, T, "Description") = Des
+DbtPrp(A, T, C_Des) = Des
 End Property
 Property Let TblPrp(T, P, V)
 DbtPrp(CurrentDb, T, P) = V
@@ -6573,7 +6680,7 @@ Function DbtCrtPrp(A As Database, T, P, V) As DAO.Property
 Set DbtCrtPrp = A.TableDefs(T).CreateProperty(P, VarDaoTy(V), V)
 End Function
 Property Get DbtDes$(A As Database, T)
-DbtDes = DbtPrp(A, T, "Description")
+DbtDes = DbtPrp(A, T, C_Des)
 End Property
 Function CcmTbl_IsVdt(A$) As Boolean
 Dim D$, App As EApp, DtaFb$
@@ -6612,7 +6719,10 @@ MsgDmp "These [tables] are linked to data fb", AyMap(Vdt, "TblTblDes")
 End Sub
 
 Function AyMap(A, Map$)
-AyMap = AyMapInto(A, Map, EmpAy)
+Dim O
+O = A
+Erase O
+AyMap = AyMapInto(A, Map, O)
 End Function
 
 Sub MsgAp_Brw(Msg$, ParamArray Ap())
@@ -6873,7 +6983,6 @@ Dim W() As VBIDE.Window
 W = ApInto(A, WinLcl, CurWin, WinImm)
 WinClsAllExcept W
 WinAlignV
-WinImmClr
 End Sub
 Property Get OCBmain() As Office.CommandBar
 Set OCBmain = CurVbe.CommandBars("Menu Bar")
@@ -6904,6 +7013,10 @@ End Sub
 Sub WinAlignV()
 OCCwinVert.Execute
 End Sub
+Function FdLin$(A As DAO.Field)
+
+End Function
+
 Sub AA()
 Dim A As New Schm
 A.Z

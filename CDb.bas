@@ -22,7 +22,9 @@ End Property
 Sub CDbDrpLnkTbl()
 DbDrpLnkTbl CurrentDb
 End Sub
-
+Function CDbScly() As String()
+CDbScly = DbScly(CurrentDb)
+End Function
 Function CDbPth$()
 CDbPth = FfnPth(CurrentDb.Name)
 End Function

@@ -6,11 +6,11 @@ Const C_TFld$ = "TFld"
 Const C_TDes$ = "TDes"
 Const C_FDes$ = "FDes"
 Private X_Ly$()
-Function E$(T, F)
+Function Ele$(F, T)
 Select Case True
-Case IsId(T, F): E = "*Id"
-Case IsFk(F): E = "*Fk"
-Case Else: E = LinT1(LinFEle(F))
+Case IsId(T, F): Ele = "*Id"
+Case IsFk(F):    Ele = "*Fk"
+Case Else:       Ele = LinT1(LinFEle(F))
 End Select
 End Function
 
@@ -64,7 +64,7 @@ Function TFELy() As String()
 Dim O$(), T, F
 For Each T In Tny
     For Each F In Fny(T)
-        Push O, ApLin(T, F, E(T, F))
+        Push O, ApLin(T, F, Ele(F, T))
     Next
 Next
 TFELy = O
@@ -74,8 +74,8 @@ Function TFEFdLy() As String()
 Dim O$(), T, F, E1
 For Each T In Tny
     For Each F In Fny(T)
-        E1 = E(T, F)
-        Push O, ApLin(T, F, E1, FdStr(E1))
+        E1 = Ele(F, T)
+        Push O, ApLin(T, F, E1, FdScl(E1))
     Next
 Next
 TFEFdLy = O
@@ -141,18 +141,18 @@ Function EleLin$(E)
 EleLin = AyFstT1(EleLy, E)
 End Function
 
-Function EleSpecStr$(E)
-EleSpecStr = LinRmvT1(EleLin(E))
+Function EleSpec$(E)
+EleSpec = LinRmvT1(EleLin(E))
 End Function
-Function FdStr$(E)
-FdStr = EleSpecStr(E)
+Function FdScl$(E)
+FdScl = EleSpec(E)
 End Function
 
-Function Fd(T, F, EleSpecStr$) As DAO.Field
+Function Fd(F, T) As DAO.Field
 Select Case True
 Case IsId(T, F): Set Fd = NewFd_zId(F)
-Case IsFk(F): Set Fd = NewFd_zFk(F)
-Case Else: Set Fd = NewFd_zFdStr(F, EleSpecStr)
+Case IsFk(F):    Set Fd = NewFd_zFk(F)
+Case Else:       Set Fd = NewFd_zFdScl(FdScl(Ele(F, T)))
 End Select
 End Function
 
@@ -243,7 +243,7 @@ End Function
 Function FdAy(T) As DAO.Field()
 Dim O() As DAO.Field, F
 For Each F In Fny(T)
-    PushObj O, Fd(T, F, E(T, F))
+    PushObj O, Fd(F, T)
 Next
 FdAy = O
 End Function

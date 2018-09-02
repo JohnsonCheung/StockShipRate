@@ -5,11 +5,12 @@ Const C_Ele$ = "Ele"
 Const C_TFld$ = "TFld"
 Const C_TDes$ = "TDes"
 Const C_FDes$ = "FDes"
-Function E$(F, T, Tny$(), LyFEle$())
+Private X_Schmy$()
+Function Ele$(F, T, Tny$(), LyFEle$())
 Select Case True
-Case IsId(T, F): E = "*Id"
-Case IsFk(F, Tny): E = "*Fk"
-Case Else: E = LinT1(LinFEle(LyFEle, F))
+Case IsId(T, F):   Ele = "*Id"
+Case IsFk(F, Tny): Ele = "*Fk"
+Case Else:         Ele = LinT1(LinFEle(LyFEle, F))
 End Select
 End Function
 
@@ -17,59 +18,68 @@ Function LinFEle$(LyFEle$(), F)
 LinFEle = T1LikSslAy_T1(LyFEle, F)
 End Function
 
-Public Function Z_Schmy() As String() ' Z_Ly
-Dim O$()
-Push O, "dfd"
-Push O, "Ele Mem   Mem"
-Push O, "Ele Txt   Txt;Req;AlwZLen;Dft=Johnson;VRul=VRul;VTxt=VTxt"
-Push O, "Ele Crt   Dte;Req;Dft=Now;"
-Push O, "Ele Dte   Dte"
-Push O, "FEle Amt *Amt"
-Push O, "FEle Crt CrtDte"
-Push O, "FEle Dte *Dte"
-Push O, "FEle Txt Fun *Txt"
-Push O, "FEle Mem Lines"
-Push O, "TFld Sess * CrtDte"
-Push O, "TFld Msg  * Fun *Txt | CrtDte"
-Push O, "TFld Lg   * Sess Msg CrtDte"
-Push O, "TFld LgV  * Lg Lines"
-Push O, "FDes Fun Function name that call the log"
-Push O, "FDes Fun Function name that call the log"
-Push O, "TDes Msg it will a new record when Lg-function is first time using the Fun+MsgTxt"
-Push O, "TDes Msg ..."
-Z_Schmy = O
+Function Z_EleLy() As String()
+Z_EleLy = EleLy(Z_Schmy)
 End Function
-Function TFELy_z() As String()
-TFELy_z = TFELy_by_Schmy(Z_Schmy)
+Property Get Z_Schmy() As String()
+If Sz(X_Schmy) = 0 Then
+    Dim O$()
+    Push O, "dfd"
+    Push O, "Ele Mem   Mem"
+    Push O, "Ele Txt   Txt;Req;AlwZLen;Dft=Johnson;VRul=VRul;VTxt=VTxt"
+    Push O, "Ele Crt   Dte;Req;Dft=Now;"
+    Push O, "Ele Dte   Dte"
+    Push O, "FEle Amt *Amt"
+    Push O, "FEle Crt CrtDte"
+    Push O, "FEle Dte *Dte"
+    Push O, "FEle Txt Fun *Txt"
+    Push O, "FEle Mem Lines"
+    Push O, "TFld Sess * CrtDte"
+    Push O, "TFld Msg  * Fun *Txt | CrtDte"
+    Push O, "TFld Lg   * Sess Msg CrtDte"
+    Push O, "TFld LgV  * Lg Lines"
+    Push O, "FDes Fun Function name that call the log"
+    Push O, "FDes Fun Function name that call the log"
+    Push O, "TDes Msg it will a new record when Lg-function is first time using the Fun+MsgTxt"
+    Push O, "TDes Msg ..."
+    X_Schmy = O
+End If
+Z_Schmy = X_Schmy
+End Property
+Sub SetSchmy(A$())
+X_Schmy = A
+End Sub
+Function QTFELy_z() As String()
+QTFELy_z = QTFELy_by_Schmy(Z_Schmy)
 End Function
-Function TFELy_by_Schmy(A$()) As String()
+Function QTFELy_by_Schmy(A$()) As String()
 Dim B$(), C$()
 B = LyTFld(A)
 C = LyFEle(A)
-TFELy_by_Schmy = TFELy(B, C)
+QTFELy_by_Schmy = QTFELy(B, C)
 End Function
-Function TFELy(LyTFld$(), LyFEle$()) As String()
+Function QTFELy(LyTFld$(), LyFEle$()) As String()
 Dim O$(), T, F, Tny1$(), E1$
 Tny1 = Tny(LyTFld)
 For Each T In Tny1
     For Each F In Fny(T, LyTFld)
-        E1 = E(F, T, Tny1, LyFEle)
+        E1 = Ele(F, T, Tny1, LyFEle)
         Push O, ApLin(T, F, E1)
     Next
 Next
-TFELy = O
+QTFELy = O
 End Function
 
-Function TFEFdLy(LyTFld$(), LyFEle$(), EleLy$()) As String()
+Function QTFEFdLy(LyTFld$(), LyFEle$(), EleLy$()) As String()
 Dim O$(), T, F, E1, Tny1$()
 Tny1 = Tny(LyTFld)
 For Each T In Tny1
     For Each F In Fny(T, LyTFld)
-        E1 = E(F, T, Tny1, LyFEle)
-        Push O, ApLin(T, F, E1, FdStr(E1, EleLy))
+        E1 = Ele(F, T, Tny1, LyFEle)
+        Push O, ApLin(T, F, E1, FdScl(E1, EleLy))
     Next
 Next
-TFEFdLy = O
+QTFEFdLy = O
 End Function
 
 Function Ly_Er() As String()
@@ -125,19 +135,23 @@ End Sub
 Function EleLin$(EleLy$(), E)
 EleLin = AyFstT1(EleLy, E)
 End Function
-Function EleSpecStr$(E, EleLy$())
-EleSpecStr = LinRmvT1(EleLin(EleLy, E))
+Function EleSpec$(E, EleLy$())
+EleSpec = LinRmvT1(EleLin(EleLy, E))
 End Function
 
-Function FdStr$(E, EleLy$())
-FdStr = EleSpecStr(E, EleLy)
+Function FdScl$(E, EleLy$())
+FdScl = EleSpec(E, EleLy)
 End Function
 
-Function Fd(F, T, Tny$(), EleSpecStr$) As DAO.Field
+Function Fd(F, T, Tny$(), LyFEle$(), EleLy$()) As DAO.Field
 Select Case True
 Case IsId(T, F):   Set Fd = NewFd_zId(F)
 Case IsFk(F, Tny): Set Fd = NewFd_zFk(F)
-Case Else:         Set Fd = NewFd_zFdStr(F, EleSpecStr)
+Case Else:
+    Dim E$, FdScl1$
+    E = Ele(F, T, Tny, LyFEle)
+    FdScl1 = FdScl(E, EleLy)
+    Set Fd = NewFd_zFdScl(FdScl1)
 End Select
 End Function
 
@@ -221,7 +235,7 @@ AyDoPX PkSqy(TFld), "DbRun", A
 AyDoPX SkSqy(TFld), "DbRun", A
 End Sub
 
-Function TFLin$(T, LyTFld)
+Function TFLin$(T, LyTFld$())
 TFLin = AySng(AyWhT1EqV(LyTFld, T), "Schm.TFLin.PrpEr")
 End Function
 
@@ -234,17 +248,15 @@ Fny = AyRmvEle(SslSy(B), "|")
 End Function
 
 Function FdAy(T, LyTFld$(), LyFEle$(), EleLy$()) As DAO.Field()
-Dim O() As DAO.Field, F, E1$, Tny1$(), EleSpecStr1$
+Dim O() As DAO.Field, F, E1$, Tny1$()
 Tny1 = Tny(LyTFld)
 For Each F In Fny(T, LyTFld)
-    E1 = E(F, T, Tny1, LyFEle)
-    EleSpecStr1 = EleSpecStr(E1, EleLy)
-    PushObj O, Fd(F, T, Tny1, EleSpecStr1)
+    PushObj O, Fd(F, T, Tny1, LyFEle, EleLy)
 Next
 FdAy = O
 End Function
 
-Function IsFk(F, Tny) As Boolean
+Function IsFk(F, Tny$()) As Boolean
 IsFk = AyHas(Tny, F)
 End Function
 

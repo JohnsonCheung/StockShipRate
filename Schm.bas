@@ -11,12 +11,12 @@ Const C_TDes$ = "TDes"
 Const C_FDes$ = "FDes"
 Private X_Ly$()
 Public T, F, L
-Property Get E$()
+Property Get Ele$()
 On Error GoTo X
 Select Case True
-Case IsId: E = "*Id"
-Case IsFk: E = "*Fk"
-Case Else: E = LinT1(LinFEle)
+Case IsId: Ele = "*Id"
+Case IsFk: Ele = "*Fk"
+Case Else: Ele = LinT1(LinFEle)
 End Select
 Exit Property
 X: Debug.Print "Schm.E: PrpEr.."
@@ -65,31 +65,25 @@ Exit Property
 X: Debug.Print "Schm.Z_Ly: PrpEr.."
 End Property
 
-Property Get TFELy() As String()
-On Error GoTo X
+Function TFELy() As String()
 Dim O$()
 For Each T In Tny
     For Each F In Fny
-        Push O, ApLin(T, F, E)
+        Push O, ApLin(T, F, Ele)
     Next
 Next
 TFELy = O
-Exit Property
-X: Debug.Print "Schm.TFELy: PrpEr.."
-End Property
+End Function
 
-Property Get TFEFdLy() As String()
-On Error GoTo X
+Function QTFEF1Ly() As String()
 Dim O$()
 For Each T In Tny
     For Each F In Fny
-        Push O, ApLin(T, F, E, FdStr)
+        Push O, ApLin(T, F, Ele, EleSpec)
     Next
 Next
-TFEFdLy = O
-Exit Property
-X: Debug.Print "Schm.TFEFdLy: PrpEr.."
-End Property
+QTFEF1Ly = O
+End Function
 
 Function ItmLy(A) As String()
 ItmLy = AyT1Chd(Ly, A)
@@ -151,27 +145,34 @@ End Sub
 Property Get EleLin$()
 On Error GoTo X
 Dim A$
-A = E
-If A = "*Id" Then Exit Property
-If A = "*Fk" Then Exit Property
-EleLin = AyFstT1(EleLy, E)
+A = Ele
+Select Case A
+Case "*Id", "*Fk": EleLin = A
+Case Else:         EleLin = AyFstT1(EleLy, A)
+End Select
 Exit Property
 X: Debug.Print "Schm.EleLin: PrpEr.."
 End Property
 
-Property Get EleSpecStr$()
+Property Get EleSpec$()
 On Error GoTo X
-EleSpecStr = LinRmvT1(EleLin)
+Dim A$, B$
+A = EleLin
+B = LinShiftT1(A)
+Select Case B
+Case "*Id": EleSpec = "Lng;Req"
+Case "*Fk": EleSpec = "Lng"
+Case Else:  EleSpec = A
+End Select
 Exit Property
-X: Debug.Print "Schm.EleSpecStr: PrpEr.."
+X: Debug.Print "Schm.EleSpec: PrpEr.."
 End Property
 
-
-Property Get FdStr$()
+Property Get FdScl$()
 On Error GoTo X
-FdStr = EleSpecStr
+FdScl = F & ";" & EleSpec
 Exit Property
-X: Debug.Print "Schm.FdStr: PrpEr.."
+X: Debug.Print "Schm.FdScl: PrpEr.."
 End Property
 
 Property Get No_F() As Boolean
@@ -186,19 +187,16 @@ If No_F Then Exit Property
 Select Case True
 Case IsId: Set Fd = NewFd_zId(F)
 Case IsFk: Set Fd = NewFd_zFk(F)
-Case Else: Set Fd = NewFd_zFdStr(F, FdStr)
+Case Else: Set Fd = NewFd_zFdScl(FdScl)
 End Select
 Exit Property
 X: Debug.Print "Schm.Fd1: PrpEr.."
 End Property
 
-Property Get Td() As DAO.TableDef
-On Error GoTo X
-If No_T Then Exit Property
+Function Td() As DAO.TableDef
+If No_T Then Exit Function
 Set Td = NewTd(T, FdAy)
-Exit Property
-X: Debug.Print "Schm.Td: PrpEr.."
-End Property
+End Function
 
 Property Get Tny() As String()
 On Error GoTo X
@@ -207,16 +205,13 @@ Exit Property
 X: Debug.Print "Schm.Tny: PrpEr.."
 End Property
 
-Property Get TdAy() As DAO.TableDef()
-On Error GoTo X
+Function TdAy() As DAO.TableDef()
 Dim O() As DAO.TableDef
 For Each T In Tny
     PushObj O, Td
 Next
 TdAy = O
-Exit Property
-X: Debug.Print "Schm.TdAy: PrpEr.."
-End Property
+End Function
 
 Property Get PkSqy() As String()
 On Error GoTo X
@@ -226,7 +221,7 @@ X: Debug.Print "Schm.PkSqy: PrpEr.."
 End Property
 
 Property Get SkSslAy() As String()
-On Error GoTo X
+'On Error GoTo X
 Dim A$(), O$()
 A = LyTFld
 If Sz(A) = 0 Then Exit Property
@@ -262,9 +257,9 @@ Exit Property
 X: Debug.Print "Schm.PkTFLy: PrpEr.."
 End Property
 
-Property Get SkSqy() As String()
+Function SkSqy() As String()
 On Error GoTo X
-Dim O$(), A$(), B$(), J%, U%
+Dim O$(), A$(), B$(), J%, U%, T$
 A = SkSslAy
 U = UB(A)
 If UB(A) = -1 Then Exit Function
@@ -274,9 +269,9 @@ For J = 0 To U
     O(J) = TnSkSql(T, A(J))
 Next
 SkSqy = O
-Exit Property
+Exit Function
 X: Debug.Print "Schm.SkSqy: PrpEr.."
-End Property
+End Function
 
 Sub Z_DbCrtSchm()
 Dim Fb$
@@ -312,16 +307,13 @@ Exit Property
 X: Debug.Print "Schm.Fny: PrpEr.."
 End Property
 
-Property Get FdAy() As DAO.Field()
-On Error GoTo X
+Function FdAy() As DAO.Field()
 Dim O() As DAO.Field
 For Each F In Fny
     PushObj O, Fd
 Next
 FdAy = O
-Exit Property
-X: Debug.Print "Schm.FdAy: PrpEr.."
-End Property
+End Function
 
 Property Get IsFk() As Boolean
 On Error GoTo X
@@ -342,5 +334,7 @@ Z_Ini
 T = "Sess"
 F = "Sess"
 WinSetDbg
+Stop
+T = "LgV"
 Stop
 End Sub
