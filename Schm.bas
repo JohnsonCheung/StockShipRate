@@ -88,22 +88,68 @@ End Function
 Function ItmLy(A) As String()
 ItmLy = AyT1Chd(Ly, A)
 End Function
+Property Get ErLy() As String()
+ErLy = AyWhPredXPNot(Ly, "LinInT1Ay", Sy(C_Ele, C_FDes, C_FEle, C_TDes, C_TFld))
+End Property
+Property Get ErNoTFld() As String()
+If Sz(LyTFld) = 0 Then ErNoTFld = Sy("No TFld lines")
+End Property
+
+Property Get ErDupT() As String()
+Dim Dup$()
+Dup = AyWhDup(Tny)
+ErDupT = Sy(FmtQQ("These [?] is duplicated in TFld-lines", JnSpc(Dup)))
+End Property
+Property Get EleAy() As String()
+EleAy = AyT1Ay(EleLy)
+End Property
+Function ErDupE() As String()
+Dim Dup$()
+Dup = AyWhDup(EleAy)
+If Sz(Dup) > 0 Then Push ErDupE, FmtQQ("These E[?] are duplicated in Ele-lines", JnSpc(Dup))
+End Function
+Function ErDupF() As String()
+Dim Tny1$(): Tny1 = Tny
+If Sz(Tny1) = 0 Then Exit Function
+Dim Dup$()
+For Each T In Tny1
+    Dup = AyWhDup(Fny)
+    If Sz(Dup) > 0 Then Push ErDupF, FmtQQ("These F[?] are duplicated in T[?]", JnSpc(Dup), T)
+Next
+End Function
+Function ErEleLin() As String()
+Dim Dup$()
+Dup = AyWhDup(Tny)
+If Sz(Dup) > 0 Then Push ErDupE, FmtQQ("These T[?] are duplicated in TFld-lines", JnSpc(Dup))
+End Function
+
+Function ErFldHasNoEle() As String()
+Dim Tny1$(), Fny1$()
+For Each T In Tny1
+    Fny1 = Fny
+    For Each F In Fny1
+        E = Ele
+        If E = "" Then Push Ly_Er, FmtQQ("T[?] F[?] has no TEle", T, F)
+    Next
+Next
+End Function
 
 Property Get Ly_Er() As String()
 On Error GoTo X
-Ly_Er = AyWhPredXPNot(Ly, "LinInT1Ay", Sy(C_Ele, C_FDes, C_FEle, C_TDes, C_TFld))
+Ly_Er = AyAddAp(ErLy, ErNoTFld, ErDupT, ErDupF, ErDupE, ErEle, ErFldHasNoEle)
 Exit Property
 X: Debug.Print "Schm.Ly_Er: PrpEr.."
 End Property
 
-Property Get EleLy() As String():  EleLy = ItmLy(C_Ele):    End Property
-Property Get LyFEle() As String(): LyFEle = ItmLy(C_FEle):  End Property
-Property Get LyTFld() As String(): LyTFld = ItmLy(C_TFld):  End Property
-Property Get LyFDes() As String(): LyFDes = ItmLy(C_FDes):  End Property
-Property Get LyTDes() As String(): LyTDes = ItmLy(C_TDes):  End Property
-Property Get PkTny() As String(): PkTny = AyT1Ay(PkTFLy): End Property
+Property Get EleLy() As String():  EleLy = ItmLy(C_Ele):   End Property
+Property Get LyFEle() As String(): LyFEle = ItmLy(C_FEle): End Property
+Property Get LyTFld() As String(): LyTFld = ItmLy(C_TFld): End Property
+Property Get LyFDes() As String(): LyFDes = ItmLy(C_FDes): End Property
+Property Get LyTDes() As String(): LyTDes = ItmLy(C_TDes): End Property
+Property Get PkTny() As String(): PkTny = AyT1Ay(PkTFLy):  End Property
 
 Sub Z()
+Z_Ini
 Z_Tny
 Z_DbCrtSchm
 End Sub
@@ -277,12 +323,12 @@ Sub Z_DbCrtSchm()
 Dim Fb$
 Fb = TmpFb
 FbCrt Fb
-DbCrtSchm FbDb(Fb), Z_Ly
+DbCrtSchm FbDb(Fb)
 Kill Fb
 End Sub
 
-Sub DbCrtSchm(A As Database, SchmLy$())
-SetLy SchmLy
+Sub DbCrtSchm(A As Database)
+If AyBrwEr(Ly_Er) Then Exit Sub
 AyDoPX TdAy, "DbAppTd", A
 AyDoPX PkSqy, "DbRun", A
 AyDoPX SkSqy, "DbRun", A

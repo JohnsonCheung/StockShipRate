@@ -6830,9 +6830,17 @@ Function RsLin$(A As DAO.Recordset, Optional Sep$ = " ")
 RsLin = Join(RsDr(A), Sep)
 End Function
 
-Sub DbCrtSchm(A As Database, SchmLy$())
-Dim M As New Schm
-M.DbCrtSchm A, SchmLy
+Function AyWhDup(A)
+Dim O, B, X
+O = AyCln(A)
+B = O
+For Each X In A
+    
+Next
+End Function
+Sub DbCrtSchm(A As Database, Schmy$())
+Schm.SetLy Schmy
+Schm.DbCrtSchm A
 End Sub
 
 Function AppDtaPth$()

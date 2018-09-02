@@ -221,8 +221,8 @@ DbCrtSchm1 FbDb(Fb), Z_Ly
 FbBrw Fb
 End Sub
 
-Sub DbCrtSchm1(A As Database, SchmLy$())
-SetLy SchmLy
+Sub DbCrtSchm1(A As Database, Schmy$())
+SetLy Schmy
 AyDoPX TdAy, "DbAppTd", A
 AyDoPX PkSqy, "DbRun", A
 AyDoPX SkSqy, "DbRun", A
