@@ -1,18 +1,7 @@
 Option Compare Database
 Option Explicit
-Type FdSpec
-    F As String
-    Ty As dao.DataTypeEnum
-    Sz As Integer
-    AlwZLen As Boolean
-    Dft As String
-    VRul As String
-    VTxt As String
-    Req As Boolean
-End Type
-Private A As dao.Field
-Function EleSpecStr_FdSpec(A$, F) As FdSpec
-Dim J%, L$, T$, Ay$(), Sz%, Rq As Boolean, Ty As dao.DataTypeEnum, AlwZLen As Boolean, Dft$, VRul$, VTxt$
+Function FdStr_Fd(A$, F) As DAO.Field2
+Dim J%, L$, T$, Ay$(), Sz%, Rq As Boolean, Ty As DAO.DataTypeEnum, AlwZLen As Boolean, Dft$, VRul$, VTxt$
 If A = "" Then Exit Function
 Ay = AyRmvEmp(AyTrim(SplitSC(A)))
 T = Ay(0)
@@ -29,36 +18,26 @@ For J = 1 To UB(Ay)
     Case Else: Debug.Print "FdSpec: there is itm[" & L & "] in EleLin[" & A & "] unexpected."
     End Select
 Next
-With EleSpecStr_FdSpec
-    .AlwZLen = AlwZLen
-    .F = F
-    .Dft = Dft
-    .Req = Rq
-    .Sz = Sz
-    .Ty = Ty
-    .VRul = VRul
-    .VTxt = VTxt
+Dim O As New DAO.Field
+With O
+    .AllowZeroLength = AlwZLen
+    .Name = F
+    .DefaultValue = Dft
+    .Required = Rq
+    .Size = Sz
+    .Type = Ty
+    .ValidationRule = VRul
+    .ValidationText = VTxt
 End With
+Set O = FdStr_Fd
 End Function
-Function FdStr$(Fd As dao.Field)
-Set A = Fd
-FdStr = ApLin(Nm, Ty, Rq, AlwZLen, VRul, VTxt)
+Function NewFd_zFdStr(F, FdStr$) As DAO.Field2
+Set NewFd_zFdStr = FdStr_Fd(FdStr, F)
 End Function
-Private Function Nm$()
-Nm = A.Name
-End Function
-Private Function VTxt$()
-VTxt = A.ValidationText
-End Function
-Private Function VRul$()
-VRul = A.ValidationRule
-End Function
-Private Function AlwZLen$()
+Function FdStr$(A As DAO.Field)
+Dim Ty$, Rq$, AlwZLen$
 AlwZLen = IIf(A.AllowZeroLength, "*AlwZLen", "")
-End Function
-Private Function Ty$()
 Ty = DaoTy_ShtTy(A.Type) & "." & A.Size
-End Function
-Private Function Rq$()
 Rq = IIf(A.Required, "Req", "")
+FdStr = ApLin(A.Name, Ty, Rq, AlwZLen, A.ValidationRule, A.ValidationText)
 End Function

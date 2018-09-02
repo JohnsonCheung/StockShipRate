@@ -29,7 +29,7 @@ End Function
 Function Ly()
 Ly = X_Ly
 End Function
-Sub LySet(Ly$())
+Sub SetLy(Ly$())
 X_Ly = Ly
 End Sub
 
@@ -75,14 +75,14 @@ Dim O$(), T, F, E1
 For Each T In Tny
     For Each F In Fny(T)
         E1 = E(T, F)
-        Push O, ApLin(T, F, E1, FdStr(T, F, E1))
+        Push O, ApLin(T, F, E1, FdStr(E1))
     Next
 Next
 TFEFdLy = O
 End Function
 
 Function ItmLy(A) As String()
-ItmLy = AyRmvT1(AyWhT1EqV(Ly, A))
+ItmLy = AyT1Chd(Ly, A)
 End Function
 
 Function Ly_Er() As String()
@@ -144,30 +144,19 @@ End Function
 Function EleSpecStr$(E)
 EleSpecStr = LinRmvT1(EleLin(E))
 End Function
-
-Function FdDr(F, E) As Variant()
-With FdSpec(F, E)
-FdDr = Array(.F, .Ty, .Sz, .Req, .AlwZLen, .Dft, .VRul, .VTxt)
-End With
+Function FdStr$(E)
+FdStr = EleSpecStr(E)
 End Function
 
-Function FdStr$(T, F, E)
-FdStr = FdM.FdStr(Fd(T, F, E))
-End Function
-
-Function Fd(T, F, E) As dao.Field
+Function Fd(T, F, EleSpecStr$) As DAO.Field
 Select Case True
 Case IsId(T, F): Set Fd = NewFd_zId(F)
 Case IsFk(F): Set Fd = NewFd_zFk(F)
-Case Else: Set Fd = NewFd_zSpec(FdSpec(F, E))
+Case Else: Set Fd = NewFd_zFdStr(F, EleSpecStr)
 End Select
 End Function
 
-Function FdSpec(F, E) As FdSpec
-FdSpec = EleSpecStr_FdSpec(EleSpecStr(E), F)
-End Function
-
-Function Td(T) As dao.TableDef
+Function Td(T) As DAO.TableDef
 Set Td = NewTd(T, FdAy(T))
 End Function
 
@@ -175,8 +164,8 @@ Function Tny() As String()
 Tny = AyMapSy(LyTFld, "LinT1")
 End Function
 
-Function TdAy() As dao.TableDef()
-Dim O() As dao.TableDef, T
+Function TdAy() As DAO.TableDef()
+Dim O() As DAO.TableDef, T
 For Each T In Tny
     PushObj O, Td(T)
 Next
@@ -233,7 +222,7 @@ FbBrw Fb
 End Sub
 
 Sub DbCrtSchm1(A As Database, SchmLy$())
-LySet SchmLy
+SetLy SchmLy
 AyDoPX TdAy, "DbAppTd", A
 AyDoPX PkSqy, "DbRun", A
 AyDoPX SkSqy, "DbRun", A
@@ -251,8 +240,8 @@ B = Replace(A, "*", T)
 Fny = AyRmvEle(SslSy(B), "|")
 End Function
 
-Function FdAy(T) As dao.Field()
-Dim O() As dao.Field, F
+Function FdAy(T) As DAO.Field()
+Dim O() As DAO.Field, F
 For Each F In Fny(T)
     PushObj O, Fd(T, F, E(T, F))
 Next

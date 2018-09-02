@@ -1,7 +1,5 @@
 Option Compare Database
 Option Explicit
-Private X_Spnm$
-
 Sub SpnmImp(A)
 DbImpSpec CurrentDb, A
 End Sub
@@ -11,7 +9,6 @@ SpnmFt = PgmObjPth & SpnmFn(A)
 End Function
 
 Sub DbImpSpec(A As Database, Spnm)
-X_Spnm = Spnm
 Const CSub$ = "DbImpSpec"
 Dim Ft$
     Ft = SpnmFt(Spnm)
@@ -22,7 +19,7 @@ Dim SamTim As Boolean
 Dim DifSz As Boolean
 Dim SamSz As Boolean
 Dim DifFt As Boolean
-Dim Rs As dao.Recordset
+Dim Rs As DAO.Recordset
     Q = FmtQQ("Select Ft,Lines,Tim,Sz,LdTim from Spec where SpecNm = '?'", Spnm)
     Set Rs = CurrentDb.OpenRecordset(Q)
     
@@ -101,7 +98,6 @@ End Property
 Property Get SpnmFny() As String()
 SpnmFny = DbtFny(CurrentDb, "Spec")
 End Property
-
 
 Function SpnmTim(A) As Date
 SpnmTim = Nz(TfkV("Spec", "Tim", A), 0)

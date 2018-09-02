@@ -31,51 +31,51 @@ Property Let Y(V As Byte)
 RsF(TblRs("CurYM"), "Y") = V
 End Property
 
-Function FmDte() As Date
+Property Get FmDte() As Date
 FmDte = DateSerial(Y, M, 1)
-End Function
-Function ToDte() As Date
+End Property
+Property Get ToDte() As Date
 ToDte = DteLasDayOfMth(FmDte)
-End Function
-Function FmYYYYxMMxDD$()
+End Property
+Property Get FmYYYYxMMxDD$()
 FmYYYYxMMxDD = Format(FmDte, "YYYY-MM-DD")
-End Function
-Function ToYYYYxMMxDD$()
+End Property
+Property Get ToYYYYxMMxDD$()
 ToYYYYxMMxDD = Format(ToDte, "YYYY-MM-DD")
-End Function
-Function BegY() As Byte
+End Property
+Property Get BegY() As Byte
 BegY = IIf(M = 1, Y - 1, Y)
-End Function
-Function BegM() As Byte
+End Property
+Property Get BegM() As Byte
 BegM = IIf(M = 1, 12, M - 1)
-End Function
-Function NxtY() As Byte
+End Property
+Property Get NxtY() As Byte
 NxtY = IIf(M = 12, Y + 1, Y)
-End Function
+End Property
 
-Function NxtM() As Byte
+Property Get NxtM() As Byte
 NxtM = IIf(M = 12, 1, M + 1)
-End Function
+End Property
 
-Function YYYYxMM$()
+Property Get YYYYxMM$()
 YYYYxMM = YYYY & "-" & MM
-End Function
+End Property
 
-Function YYYYxMMxLasDD$()
+Property Get YYYYxMMxLasDD$()
 YYYYxMMxLasDD = Format(YM_LasDte(Y, M), "YYYY-MM-DD")
-End Function
+End Property
 
-Function PrvYYYYxMM$()
+Property Get PrvYYYYxMM$()
 Dim YYYY$, MM$, Y As Byte, M As Byte
 M = M_PrvM(FstM)
 Y = YM_YofPrvM(FstY, FstM)
 PrvYYYYxMM = Y + 2000 & "-" & Format(M, "00")
-End Function
+End Property
 
-Function MM$()
+Property Get MM$()
 MM = Format(M, "00")
-End Function
+End Property
 
-Function YYYY$()
+Property Get YYYY$()
 YYYY = Format(2000 + Y)
-End Function
+End Property
