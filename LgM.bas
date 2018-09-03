@@ -22,7 +22,7 @@ If ErNo = 3024 Then
     Set L = X_L
     Exit Function
 End If
-Ny0LyDmp "Err Er#", Er, ErNo
+NyLyDmp "Err Er#", Er, ErNo
 Stop
 End Function
 Sub LgBeg()
@@ -37,7 +37,7 @@ Set X_L = FbDb(LgFb)
 End Sub
 
 Sub LgCrt_v1()
-DbCrtSchm FbCrt(LgFb), LgSchm_Ly
+SchmM.DbCrtSchm FbCrt(LgFb), LgSchm_Ly
 End Sub
 
 Sub LgCrt()
@@ -132,7 +132,7 @@ Dim J%, V
 With L.TableDefs("LgV").OpenRecordset
     For Each V In Av
         .AddNew
-        !Lines = VarLines(V)
+        !Lines = VarStres(V)
         .Update
     Next
     .Close

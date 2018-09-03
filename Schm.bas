@@ -4,72 +4,42 @@ Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = True
 Option Compare Database
 Option Explicit
-Const C_FEle$ = "FEle"
-Const C_Ele$ = "Ele"
-Const C_TFld$ = "TFld"
-Const C_TDes$ = "TDes"
-Const C_FDes$ = "FDes"
-Private X_Ly$()
+Const C_E$ = "E"
+Const C_TF$ = "TF"
+Const C_EF$ = "EF"
+Const C_D$ = "D"
+Private X_Schmy$()
 Public T, F, L
-Property Get Ele$()
+Property Get E$()
 On Error GoTo X
-Select Case True
-Case IsId: Ele = "*Id"
-Case IsFk: Ele = "*Fk"
-Case Else: Ele = LinT1(LinFEle)
-End Select
+E = LinT1(EFLin)
 Exit Property
 X: Debug.Print "Schm.E: PrpEr.."
 End Property
 
-Property Get LinFEle$()
+Property Get EFLin$()
 On Error GoTo X
-LinFEle = T1LikSslAy_T1(LyFEle, F)
+EFLin = T1LikSslAy_T1(EFLy, F)
 Exit Property
-X: Debug.Print "Schm.LinFEle: PrpEr.."
+X: Debug.Print "Schm.EFLin: PrpEr.."
 End Property
 
 Property Get Ly()
 On Error GoTo X
-Ly = X_Ly
+Ly = X_Schmy
 Exit Property
 X: Debug.Print "Schm.Ly: PrpEr.."
 End Property
 
 Sub SetLy(Ly$())
-X_Ly = Ly
+X_Schmy = Ly
 End Sub
-
-Property Get Z_Ly() As String()
-On Error GoTo X
-Dim O$()
-Push O, "dfd"
-Push O, "Ele Mem   Mem"
-Push O, "Ele Txt   Txt"
-Push O, "Ele Crt   Dte;Req;Dft=Now;"
-Push O, "FEle Amt *Amt"
-Push O, "FEle Crt CrtTim"
-Push O, "FEle Dte *Dte"
-Push O, "FEle Txt Fun *Txt"
-Push O, "FEle Mem Lines"
-Push O, "TFld Sess * CrtTim"
-Push O, "TFld Msg  * Fun *Txt | CrtTim"
-Push O, "TFld Lg   * Sess Msg CrtTim"
-Push O, "TFld LgV  * Lg Lines"
-Push O, "FDes Fun Function name that call the log"
-Push O, "FDes Fun Function name that call the log"
-Push O, "TDes Msg it will a new record when Lg-function is first time using the Fun+MsgTxt"
-Push O, "TDes Msg ..."
-Z_Ly = O
-Exit Property
-X: Debug.Print "Schm.Z_Ly: PrpEr.."
-End Property
 
 Function TFELy() As String()
 Dim O$()
 For Each T In Tny
     For Each F In Fny
-        Push O, ApLin(T, F, Ele)
+        Push O, ApLin(T, F, E)
     Next
 Next
 TFELy = O
@@ -79,82 +49,121 @@ Function QTFEF1Ly() As String()
 Dim O$()
 For Each T In Tny
     For Each F In Fny
-        Push O, ApLin(T, F, Ele, EleSpec)
+        Push O, ApLin(T, F, E, EleSpec)
     Next
 Next
 QTFEF1Ly = O
 End Function
 
-Function ItmLy(A) As String()
+Private Function ItmLy(A) As String()
 ItmLy = AyT1Chd(Ly, A)
 End Function
-Property Get ErLy() As String()
-ErLy = AyWhPredXPNot(Ly, "LinInT1Ay", Sy(C_Ele, C_FDes, C_FEle, C_TDes, C_TFld))
-End Property
-Property Get ErNoTFld() As String()
-If Sz(LyTFld) = 0 Then ErNoTFld = Sy("No TFld lines")
-End Property
+Function ErLy() As String()
+If Sz(X_Schmy) = 0 Then
+    ErLy = Sy("no Ly is given")
+    Exit Function
+End If
+If Sz(ErLy) > 0 Then Exit Function
+ErLy = AyWhPredXPNot(Ly, "LinInT1Ay", Sy(C_E, C_D, C_EF, C_TF))
+End Function
+
+Function ErNoTFld() As String()
+If Sz(TFLy) = 0 Then ErNoTFld = Sy("No TFld lines")
+End Function
 
 Property Get ErDupT() As String()
-Dim Dup$()
-Dup = AyWhDup(Tny)
-ErDupT = Sy(FmtQQ("These [?] is duplicated in TFld-lines", JnSpc(Dup)))
+On Error GoTo X
+ErDupT = AyDupChk(Tny, "These T[?] is duplicated in TFld-lines")
+Exit Property
+X: Debug.Print "Schm.ErDupT: PrpEr.."
 End Property
-Property Get EleAy() As String()
-EleAy = AyT1Ay(EleLy)
+Property Get EAy() As String()
+On Error GoTo X
+EAy = AyT1Ay(ELy)
+Exit Property
+X: Debug.Print "Schm.EAy: PrpEr.."
 End Property
+Private Sub Z_ErDupE()
+Dim Ly$()
+Ly = Sy("Ele AA", "Ele BB", "Ele AA")
+Expect = Sy("These Ele[AA] are duplicated in Ele-lines")
+GoSub Tst
+Exit Sub
+Tst:
+    SetLy Ly
+    Actual = ErDupE
+    C
+    Return
+End Sub
 Function ErDupE() As String()
-Dim Dup$()
-Dup = AyWhDup(EleAy)
-If Sz(Dup) > 0 Then Push ErDupE, FmtQQ("These E[?] are duplicated in Ele-lines", JnSpc(Dup))
+ErDupE = AyDupChk(EAy, "These Ele[?] are duplicated in Ele-lines")
 End Function
+Private Sub Z_ErDupF()
+Dim Ly$()
+Ly = Sy("TFld AA BB BB")
+Expect = Sy("These F[BB] are duplicated in T[AA]")
+GoSub Tst
+Exit Sub
+Tst:
+    SetLy Ly
+    Actual = ErDupF
+    C
+    Return
+End Sub
+Private Sub Z_ErDupT()
+Dim Ly$()
+Ly = Sy("TFld AA BB BB", "TFld AA DD")
+Expect = Sy("These T[AA] is duplicated in TFld-lines")
+GoSub Tst
+Exit Sub
+Tst:
+    SetLy Ly
+    Actual = ErDupT
+    C
+    Return
+End Sub
+
 Function ErDupF() As String()
-Dim Tny1$(): Tny1 = Tny
-If Sz(Tny1) = 0 Then Exit Function
-Dim Dup$()
-For Each T In Tny1
-    Dup = AyWhDup(Fny)
-    If Sz(Dup) > 0 Then Push ErDupF, FmtQQ("These F[?] are duplicated in T[?]", JnSpc(Dup), T)
+For Each T In AyNz(Tny)
+    Push ErDupF, AyDupChk(Fny, FmtQQ("These F[?] are duplicated in T[?]", "?", T))
 Next
 End Function
-Function ErEleLin() As String()
-Dim Dup$()
-Dup = AyWhDup(Tny)
-If Sz(Dup) > 0 Then Push ErDupE, FmtQQ("These T[?] are duplicated in TFld-lines", JnSpc(Dup))
+
+Function ErEle() As String()
+ErEle = AyDupChk(EAy, "These Ele[?] are duplicated in Ele-lines")
 End Function
 
 Function ErFldHasNoEle() As String()
-Dim Tny1$(), Fny1$()
-For Each T In Tny1
-    Fny1 = Fny
-    For Each F In Fny1
-        E = Ele
-        If E = "" Then Push Ly_Er, FmtQQ("T[?] F[?] has no TEle", T, F)
+For Each T In AyNz(Tny)
+    For Each F In AyNz(Fny)
+       PushNonEmp ErFldHasNoEle, StrEmpChkMsg(E, FmtQQ("T[?] F[?] has no TEle", T, F))
     Next
 Next
 End Function
 
-Property Get Ly_Er() As String()
+Property Get Er() As String()
 On Error GoTo X
-Ly_Er = AyAddAp(ErLy, ErNoTFld, ErDupT, ErDupF, ErDupE, ErEle, ErFldHasNoEle)
+Er = AyAddAp(ErLy, ErNoTFld, ErDupT, ErDupF, ErDupE, ErEle, ErFldHasNoEle)
 Exit Property
-X: Debug.Print "Schm.Ly_Er: PrpEr.."
+X: Debug.Print "Schm.Er_Ly: PrpEr.."
 End Property
 
-Property Get EleLy() As String():  EleLy = ItmLy(C_Ele):   End Property
-Property Get LyFEle() As String(): LyFEle = ItmLy(C_FEle): End Property
-Property Get LyTFld() As String(): LyTFld = ItmLy(C_TFld): End Property
-Property Get LyFDes() As String(): LyFDes = ItmLy(C_FDes): End Property
-Property Get LyTDes() As String(): LyTDes = ItmLy(C_TDes): End Property
+Property Get EFLy() As String():  EFLy = ItmLy(C_EF): End Property
+Property Get TFLy() As String():  TFLy = ItmLy(C_TF): End Property
+Property Get ELy() As String():   ELy = ItmLy(C_E):   End Property
+Property Get DLy() As String():   DLy = ItmLy(C_D): End Property
 Property Get PkTny() As String(): PkTny = AyT1Ay(PkTFLy):  End Property
 
 Sub Z()
-Z_Ini
+Z_ErDupT
+Z_ErDupF
+Z_ErDupE
 Z_Tny
+Exit Sub
 Z_DbCrtSchm
 End Sub
 Sub Z_Ini()
-If Sz(X_Ly) = 0 Then X_Ly = Z_Ly
+X_Schmy = Z_Schmy
 End Sub
 
 Sub Z_Tny()
@@ -188,27 +197,19 @@ Sep:
     Return
 End Sub
 
-Property Get EleLin$()
+Property Get ELin$()
 On Error GoTo X
-Dim A$
-A = Ele
-Select Case A
-Case "*Id", "*Fk": EleLin = A
-Case Else:         EleLin = AyFstT1(EleLy, A)
-End Select
+ELin = AyFstT1(ELy, E)
 Exit Property
-X: Debug.Print "Schm.EleLin: PrpEr.."
+X: Debug.Print "Schm.ELin: PrpEr.."
 End Property
 
 Property Get EleSpec$()
 On Error GoTo X
-Dim A$, B$
-A = EleLin
-B = LinShiftT1(A)
-Select Case B
-Case "*Id": EleSpec = "Lng;Req"
-Case "*Fk": EleSpec = "Lng"
-Case Else:  EleSpec = A
+Select Case True
+Case IsId: EleSpec = "*Id"
+Case IsFk: EleSpec = "*Fk"
+Case Else: EleSpec = LinRmvT1(ELin)
 End Select
 Exit Property
 X: Debug.Print "Schm.EleSpec: PrpEr.."
@@ -216,19 +217,26 @@ End Property
 
 Property Get FdScl$()
 On Error GoTo X
-FdScl = F & ";" & EleSpec
+FdScl = ApScl(T, F, EleSpec)
 Exit Property
 X: Debug.Print "Schm.FdScl: PrpEr.."
 End Property
 
 Property Get No_F() As Boolean
+On Error GoTo X
 No_F = F = ""
+Exit Property
+X: Debug.Print "Schm.No_F: PrpEr.."
 End Property
 Property Get No_T() As Boolean
+On Error GoTo X
 No_T = T = ""
+Exit Property
+X: Debug.Print "Schm.No_T: PrpEr.."
 End Property
 
 Property Get Fd() As DAO.Field
+On Error GoTo X
 If No_F Then Exit Property
 Select Case True
 Case IsId: Set Fd = NewFd_zId(F)
@@ -236,7 +244,7 @@ Case IsFk: Set Fd = NewFd_zFk(F)
 Case Else: Set Fd = NewFd_zFdScl(FdScl)
 End Select
 Exit Property
-X: Debug.Print "Schm.Fd1: PrpEr.."
+X: Debug.Print "Schm.Fd: PrpEr.."
 End Property
 
 Function Td() As DAO.TableDef
@@ -246,7 +254,7 @@ End Function
 
 Property Get Tny() As String()
 On Error GoTo X
-Tny = AyMapSy(LyTFld, "LinT1")
+Tny = AyMapSy(TFLy, "LinT1")
 Exit Property
 X: Debug.Print "Schm.Tny: PrpEr.."
 End Property
@@ -267,12 +275,13 @@ X: Debug.Print "Schm.PkSqy: PrpEr.."
 End Property
 
 Property Get SkSslAy() As String()
+On Error GoTo X
 'On Error GoTo X
 Dim A$(), O$()
-A = LyTFld
+A = TFLy
 If Sz(A) = 0 Then Exit Property
 For Each L In A
-    PushNonEmpty O, SkSsl
+    PushNonEmp O, SkSsl
 Next
 SkSslAy = O
 Exit Property
@@ -298,7 +307,7 @@ End Property
 
 Property Get PkTFLy() As String()
 On Error GoTo X
-PkTFLy = AyWhPred(LyTFld, "TFLinHasPk")
+PkTFLy = AyWhPred(TFLy, "TFLinHasPk")
 Exit Property
 X: Debug.Print "Schm.PkTFLy: PrpEr.."
 End Property
@@ -328,7 +337,7 @@ Kill Fb
 End Sub
 
 Sub DbCrtSchm(A As Database)
-If AyBrwEr(Ly_Er) Then Exit Sub
+If AyBrwEr(Er) Then Exit Sub
 AyDoPX TdAy, "DbAppTd", A
 AyDoPX PkSqy, "DbRun", A
 AyDoPX SkSqy, "DbRun", A
@@ -337,7 +346,7 @@ End Sub
 Property Get TFLin$()
 On Error GoTo X
 If No_T Then Exit Property
-TFLin = AySng(AyWhT1EqV(LyTFld, T), "Schm.TFLin.PrpEr")
+TFLin = AySng(AyWhT1EqV(TFLy, T), "Schm.TFLin.PrpEr")
 Exit Property
 X: Debug.Print "Schm.TFLin: PrpEr.."
 End Property
@@ -383,4 +392,45 @@ WinSetDbg
 Stop
 T = "LgV"
 Stop
+End Sub
+Sub Z_SchmScly()
+Z_Ini
+D SchmScly
+End Sub
+Function SchmScly() As String()
+Dim O$()
+For Each T In AyNz(Tny)
+    PushAy O, TdScly
+Next
+SchmScly = O
+End Function
+Function TdScly() As String()
+TdScly = AyIns(FdScly, TdScl)
+End Function
+Function TdScl$()
+TdScl = ApScl(T, TDes)
+End Function
+Function TDes$()
+TDes = AddLbl("Des", "Des")
+End Function
+Function FDes$()
+FDes = AddLbl("Des", "Des")
+End Function
+Function FdScly() As String()
+Dim O$()
+For Each F In Fny
+    Push O, FdScl
+Next
+FdScly = O
+End Function
+Sub Z_ErLy()
+Dim Ly$()
+Expect = Sy("No Ly is given")
+GoSub Tst
+Exit Sub
+Tst:
+    SetLy Ly
+    Actual = ErLy
+    C
+    Return
 End Sub

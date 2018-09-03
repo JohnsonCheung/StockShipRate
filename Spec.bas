@@ -58,11 +58,11 @@ End Select
 
 Dim Av(): Av = Array(Spnm, DbNm(A), Ft, LasFt, CurT, LasT, CurS, LasS, LdDTim)
 Select Case True
-Case DifFt:            FunMsgDmpAv CSub, Imported & FtDif______ & C, Av
-Case SamTim And SamSz: FunMsgDmpAv CSub, NoImport & SamTimSz___ & C, Av
-Case SamTim And DifSz: FunMsgDmpAv CSub, NoImport & SamTimDifSz & C, Av
-Case CurOld:           FunMsgDmpAv CSub, NoImport & CurIsOld___ & C, Av
-Case CurNew:           FunMsgDmpAv CSub, Imported & CurIsNew___ & C, Av
+Case DifFt:            FunMsgDmp CSub, Imported & FtDif______ & C, Av
+Case SamTim And SamSz: FunMsgDmp CSub, NoImport & SamTimSz___ & C, Av
+Case SamTim And DifSz: FunMsgDmp CSub, NoImport & SamTimDifSz & C, Av
+Case CurOld:           FunMsgDmp CSub, NoImport & CurIsOld___ & C, Av
+Case CurNew:           FunMsgDmp CSub, Imported & CurIsNew___ & C, Av
 Case Else: Stop
 End Select
 End Sub

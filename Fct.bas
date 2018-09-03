@@ -177,6 +177,11 @@ Function ApLin$(ParamArray Ap())
 Dim Av(): Av = Ap
 ApLin = JnSpc(AyRmvEmp(Av))
 End Function
+Sub Z_ApScl()
+Actual = ApScl(" ", "")
+Expect = ""
+C
+End Sub
 Function ApScl$(ParamArray Ap())
 Dim Av(): Av = Ap
 ApScl = JnSC(AyRmvEmp(Av))
@@ -1092,14 +1097,13 @@ For J = 0 To UB(O)
 Next
 MsgNy = O
 End Function
-Sub Ny0LyDmp(A, ParamArray Ap())
+Sub NyLyDmp(A, ParamArray Ap())
 Dim Av(): Av = Ap
 D NyLy(CvNy(A), Av, 0)
 End Sub
 Function NyLy(A$(), Av(), Optional Indent% = 4) As String()
 NyLy = NyAv_Ly(A, Av, Indent)
 End Function
-
 Function NyLin$(A$(), Av())
 NyLin = NyAv_Lin(A, Av)
 End Function
@@ -1131,7 +1135,7 @@ U = UB(A)
 If U = -1 Then Exit Function
 Dim O$(), J%
 For J = 0 To U
-    Push O, NmV_Lin(A(J), Av(J))
+    Push O, NmvStr(A(J), Av(J))
 Next
 NyAv_Lin = Join(AyAddPfx(O, " | "))
 End Function
@@ -1159,11 +1163,11 @@ For J = 1 To UB(O)
 Next
 NmV_Ly = O
 End Function
-Function NmV_Lin$(Nm$, V)
-NmV_Lin = Nm & "=[" & VarLin(V) & "]"
+Function NmvStr(Nm$, V)
+NmvStr = Nm & "=[" & VarStr(V) & "]"
 End Function
-Function VarLines$(V)
-VarLines = JnCrLf(VarLy(V))
+Function VarStres$(V)
+VarStres = JnCrLf(VarLy(V))
 End Function
 Function IsItr(A) As Boolean
 IsItr = TypeName(A) = "Collection"
@@ -1200,11 +1204,11 @@ If U >= 0 Then
 End If
 AySampleLin = "*Ay:[" & U & "]" & S
 End Function
-Function VarLin$(V)
+Function VarStr$(V)
 Select Case True
-Case IsPrim(V):   VarLin = V
-Case IsArray(V):  VarLin = AySampleLin(V)
-Case IsObject(V): VarLin = "*Type:" & TypeName(V)
+Case IsPrim(V):   VarStr = V
+Case IsArray(V):  VarStr = AySampleLin(V)
+Case IsObject(V): VarStr = "*Type:" & TypeName(V)
 Case Else: Stop
 End Select
 End Function
@@ -1272,7 +1276,6 @@ MsgAv_Ly = AyAdd(B, C)
 End Function
 Function MsgAv_Lin$(A$, Av())
 Dim B$(), C$
-B = SplitVBar(A)
 C = NyLin(MsgNy(A), Av)
 MsgAv_Lin = EnsSfxDot(A) & C
 End Function
@@ -2072,7 +2075,7 @@ Dim Av(): Av = Ap
 Dim O$(), J%, U&
 U = UB(Av)
 For J = 0 To UB(Av)
-    PushNonEmpty O, Av(J)
+    PushNonEmp O, Av(J)
 Next
 ApSy = O
 End Function
@@ -3090,6 +3093,23 @@ A.Execute FmtQQ("Select Distinct ?,Count(*) as Cnt into [?] from [?] group by ? 
 A.Execute FmtQQ("Select x.* into [?] from [?] x inner join [?] a on ?", TarTbl, T, Tmp, Jn)
 DbDrpTbl A, Tmp
 End Sub
+Function StrEmpChkMsg$(A, QMsg$)
+If A = "" Then StrEmpChkMsg = QMsg
+End Function
+
+Function AyDupChk(A, QMsg$) As String()
+AyDupChk = Sy(AyDupChkMsg(A, QMsg))
+End Function
+
+Function AyDupChkMsg$(A, QMsg$)
+Dim Dup$()
+Dup = AyWhDup(A)
+If Sz(Dup) = 0 Then Exit Function
+AyDupChkMsg = FmtQQ(QMsg, JnSpc(Dup))
+End Function
+Function AyNz(A)
+If Sz(A) = 0 Then Set AyNz = New Collection Else AyNz = A
+End Function
 Sub C()
 Debug.Assert VarType(Actual) = VarType(Expect)
 If IsArray(Actual) Then
@@ -3269,7 +3289,7 @@ If Sz(O) > 0 Then DbtChkCol = O: Exit Function
 For J = 0 To UB(Ay)
     F = Ay(J).Extnm
     Ty = Ay(J).Ty
-    PushNonEmpty O, DbtChkFldType(A, T, F, Ty)
+    PushNonEmp O, DbtChkFldType(A, T, F, Ty)
 Next
 If Sz(0) > 0 Then
     PushMsgUnderLin O, "Some field has unexpected type"
@@ -4591,7 +4611,7 @@ Dim O: O = AyCln(A)
 If Sz(A) > 0 Then
     Dim X
     For Each X In A
-        PushNonEmpty O, X
+        PushNonEmp O, X
     Next
 End If
 AyRmvEmp = O
@@ -5145,8 +5165,8 @@ Function UB&(A)
 UB = Sz(A) - 1
 End Function
 
-Sub PushNonEmpty(O, A)
-If A = "" Then Exit Sub
+Sub PushNonEmp(O, A)
+If IsEmp(A) Then Exit Sub
 Push O, A
 End Sub
 Function DaoTy_Str$(T As DAO.DataTypeEnum)
@@ -5925,6 +5945,7 @@ For Each I In A
 Next
 AyMapInto = O
 End Function
+
 Sub Asg(Fm, OTo)
 If IsObject(Fm) Then
     Set OTo = Fm
@@ -5932,12 +5953,32 @@ Else
     OTo = Nz(Fm, "")
 End If
 End Sub
+Function AyMapXABCInto(Ay, XABC$, A, B, C, OInto)
+Erase OInto
+Dim X
+For Each X In Ay
+    Push OInto, Run(XABC, X, A, B, C)
+Next
+AyMapXABCInto = OInto
+End Function
+
+Function AyMapXABCDInto(Ay, XABC$, A, B, C, D, OInto)
+Erase OInto
+Dim X
+For Each X In Ay
+    Push OInto, Run(XABC, X, A, B, C, D)
+Next
+AyMapXABCDInto = OInto
+End Function
+
 Function ItrMap(A, Map$) As Variant()
 ItrMap = ItrMapInto(A, Map, EmpAy)
 End Function
+
 Function AyMapSy(A, MapFunNm$) As String()
 AyMapSy = AyMapInto(A, MapFunNm, EmpSy)
 End Function
+
 Function AyCsv$(A)
 AyCsv = Join(A, ",")
 Exit Function
@@ -6572,14 +6613,55 @@ Dim Av(): Av = Ap
 AyDmp MsgAv_Ly(A, Av)
 End Sub
 
-Sub FunMsgDmpAv(A, Msg$, Av())
-AyDmp FunMsgLy(A, Msg, Av)
+
+Sub MsgSclDmp(A$, ParamArray Ap())
+Dim Av(): Av = Ap
+D MsgScl(A, Av)
 End Sub
 
 Sub FunMsgDmp(A, Msg$, ParamArray Ap())
 Dim Av(): Av = Ap
-FunMsgDmpAv A, Msg, Av
+D FunMsgAvScl(A, Msg, Av)
 End Sub
+
+Sub FunMsgLyDmp(A, Msg$, ParamArray Ap())
+Dim Av(): Av = Ap
+D FunMsgAv_Ly(A, Msg, Av)
+End Sub
+
+Function MsgAv_Scl$(A$, Av())
+MsgAv_Scl = "Msg=" & A & ";" & NyScl(MsgNy(A), Av)
+End Function
+
+Function MsgScl$(A$, Av())
+MsgScl = MsgAv_Scl(A, Av)
+End Function
+
+Function NyAv_Scl$(A$(), Av())
+Dim O$(), J%, X, Y
+X = A
+Y = Av
+Stop
+AyabSetSamMax X, Y
+For J = 0 To UB(X)
+    Push O, RmvSqBkt(X(J)) & "=" & VarStr(Y(J))
+Next
+NyAv_Scl = JnSC(O)
+End Function
+
+Function NyScl$(A$(), Av())
+NyScl = NyAv_Scl(A, Av)
+End Function
+
+Function FunMsgAvScl(A, Msg$, Av())
+FunMsgAvScl = A & ";" & MsgAv_Scl(Msg, Av)
+End Function
+
+Sub FunMsgSclDmp(A, Msg$, ParamArray Ap())
+Dim Av(): Av = Ap
+D FunMsgAvScl(A, Msg, Av)
+End Sub
+
 Function TblTblDes$(T)
 TblTblDes = T & " " & TblDes(T)
 End Function
@@ -6835,8 +6917,13 @@ Dim O, B, X
 O = AyCln(A)
 B = O
 For Each X In A
-    
+    If AyHas(B, X) Then
+        Push O, X
+    Else
+        Push B, X
+    End If
 Next
+AyWhDup = O
 End Function
 Sub DbCrtSchm(A As Database, Schmy$())
 Schm.SetLy Schmy

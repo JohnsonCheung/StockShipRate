@@ -21,7 +21,9 @@ Property Get PrpNm$()
 PrpNm = LinPrpNm(Lin)
 End Property
 Private Sub EnsOnePrp()
+Const CSub$ = "EnsOnePrp"
 Const C$ = "On Error Goto X"
+Const Trc As Boolean = True
 Dim Nm$
 Nm = PrpNm
 If Nm = "" Then Stop
@@ -38,13 +40,18 @@ If X_Md.Lines(Lno + 1, 1) <> C Then X_Md.InsertLines Lno + 1, C
     If E <> A Then
         If L = 0 Then
             LblX_Ins
+            If Trc Then FunMsgDmp CSub, "LblX_Ins with [line]", L, LblX_Expected_Lin
         Else
             LblX_Rpl L
+            If Trc Then FunMsgDmp CSub, "LblX_Rpl [at] with [line]", L, LblX_Expected_Lin
         End If
     End If
 'Ensure Exit Property
     L = LnoOf_InsExitPrp
-    If L <> 0 Then X_Md.InsertLines L, "Exit Property"
+    If L <> 0 Then
+        X_Md.InsertLines L, "Exit Property"
+        FunMsgDmp CSub, "Exit Property is inserted [at]", L
+    End If
 End Sub
 Property Get LblX_Expected_Lin$()
 If IsNothing(X_Md) Then Exit Property
