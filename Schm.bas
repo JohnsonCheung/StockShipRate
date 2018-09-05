@@ -14,21 +14,21 @@ Property Get E$()
 On Error GoTo X
 E = LinT1(EFLin)
 Exit Property
-X: Debug.Print "Schm.E: PrpEr.."
+X: Debug.Print "Schm.E.PrpEr..."
 End Property
 
 Property Get EFLin$()
 On Error GoTo X
 EFLin = T1LikLikSslAy_T1(EFLy, T, F)
 Exit Property
-X: Debug.Print "Schm.EFLin: PrpEr.."
+X: Debug.Print "Schm.EFLin.PrpEr..."
 End Property
 
 Property Get Ly()
 On Error GoTo X
 Ly = X_Schmy
 Exit Property
-X: Debug.Print "Schm.Ly: PrpEr.."
+X: Debug.Print "Schm.Ly.PrpEr..."
 End Property
 
 Sub SetLy(Ly$())
@@ -75,13 +75,13 @@ Property Get ErDupT() As String()
 On Error GoTo X
 ErDupT = AyDupChk(Tny, "These T[?] is duplicated in TFld-lines")
 Exit Property
-X: Debug.Print "Schm.ErDupT: PrpEr.."
+X: Debug.Print "Schm.ErDupT.PrpEr..."
 End Property
 Property Get EAy() As String()
 On Error GoTo X
 EAy = AyT1Ay(ELy)
 Exit Property
-X: Debug.Print "Schm.EAy: PrpEr.."
+X: Debug.Print "Schm.EAy.PrpEr..."
 End Property
 Private Sub Z_ErDupE()
 Dim Ly$()
@@ -145,7 +145,7 @@ Property Get Er() As String()
 On Error GoTo X
 Er = AyAddAp(ErLy, ErNoTFld, ErDupT, ErDupF, ErDupE, ErEle, ErFldHasNoEle)
 Exit Property
-X: Debug.Print "Schm.Er_Ly: PrpEr.."
+X: Debug.Print "Schm.Er.PrpEr..."
 End Property
 
 Property Get EFLy() As String():  EFLy = ItmLy(C_EF): End Property
@@ -201,7 +201,7 @@ Property Get ELin$()
 On Error GoTo X
 ELin = AyFstT1(ELy, E)
 Exit Property
-X: Debug.Print "Schm.ELin: PrpEr.."
+X: Debug.Print "Schm.ELin.PrpEr..."
 End Property
 
 Property Get EleSpec$()
@@ -212,30 +212,30 @@ Case IsFk: EleSpec = "*Fk"
 Case Else: EleSpec = LinRmvT1(ELin)
 End Select
 Exit Property
-X: Debug.Print "Schm.EleSpec: PrpEr.."
+X: Debug.Print "Schm.EleSpec.PrpEr..."
 End Property
 
 Property Get FdScl$()
 On Error GoTo X
 FdScl = ApScl(T, F, EleSpec)
 Exit Property
-X: Debug.Print "Schm.FdScl: PrpEr.."
+X: Debug.Print "Schm.FdScl.PrpEr..."
 End Property
 
 Property Get No_F() As Boolean
 On Error GoTo X
 No_F = F = ""
 Exit Property
-X: Debug.Print "Schm.No_F: PrpEr.."
+X: Debug.Print "Schm.No_F.PrpEr..."
 End Property
 Property Get No_T() As Boolean
 On Error GoTo X
 No_T = T = ""
 Exit Property
-X: Debug.Print "Schm.No_T: PrpEr.."
+X: Debug.Print "Schm.No_T.PrpEr..."
 End Property
 
-Property Get Fd() As DAO.Field
+Property Get Fd() As Dao.Field
 On Error GoTo X
 If No_F Then Exit Property
 Select Case True
@@ -244,10 +244,10 @@ Case IsFk: Set Fd = NewFd_zFk(F)
 Case Else: Set Fd = NewFd_zFdScl(FdScl)
 End Select
 Exit Property
-X: Debug.Print "Schm.Fd: PrpEr.."
+X: Debug.Print "Schm.Fd.PrpEr..."
 End Property
 
-Function Td() As DAO.TableDef
+Function Td() As Dao.TableDef
 If No_T Then Exit Function
 Set Td = NewTd(T, FdAy)
 End Function
@@ -256,11 +256,11 @@ Property Get Tny() As String()
 On Error GoTo X
 Tny = AyMapSy(TFLy, "LinT1")
 Exit Property
-X: Debug.Print "Schm.Tny: PrpEr.."
+X: Debug.Print "Schm.Tny.PrpEr..."
 End Property
 
-Function TdAy() As DAO.TableDef()
-Dim O() As DAO.TableDef
+Function TdAy() As Dao.TableDef()
+Dim O() As Dao.TableDef
 For Each T In Tny
     PushObj O, Td
 Next
@@ -271,7 +271,7 @@ Property Get PkSqy() As String()
 On Error GoTo X
 PkSqy = AyMapSy(PkTny, "TnPkSql")
 Exit Property
-X: Debug.Print "Schm.PkSqy: PrpEr.."
+X: Debug.Print "Schm.PkSqy.PrpEr..."
 End Property
 
 Property Get SkSslAy() As String()
@@ -285,7 +285,7 @@ For Each L In A
 Next
 SkSslAy = O
 Exit Property
-X: Debug.Print "Schm.SkSslAy: PrpEr.."
+X: Debug.Print "Schm.SkSslAy.PrpEr..."
 End Property
 
 Property Get SkSsl$()
@@ -295,25 +295,24 @@ A = SkP1: If A = "" Then Exit Property
 B = Replace(A, " * ", "")
 SkSsl = Replace(B, "*", LinT1(B))
 Exit Property
-X: Debug.Print "Schm.SkSsl: PrpEr.."
+X: Debug.Print "Schm.SkSsl.PrpEr..."
 End Property
 
 Property Get SkP1$()
 On Error GoTo X
 SkP1 = Trim(TakBef(L, "|"))
 Exit Property
-X: Debug.Print "Schm.SkP1: PrpEr.."
+X: Debug.Print "Schm.SkP1.PrpEr..."
 End Property
 
 Property Get PkTFLy() As String()
 On Error GoTo X
 PkTFLy = AyWhPred(TFLy, "TFLinHasPk")
 Exit Property
-X: Debug.Print "Schm.PkTFLy: PrpEr.."
+X: Debug.Print "Schm.PkTFLy.PrpEr..."
 End Property
 
 Function SkSqy() As String()
-On Error GoTo X
 Dim O$(), A$(), B$(), J%, U%, T$
 A = SkSslAy
 U = UB(A)
@@ -324,8 +323,6 @@ For J = 0 To U
     O(J) = TnSkSql(T, A(J))
 Next
 SkSqy = O
-Exit Function
-X: Debug.Print "Schm.SkSqy: PrpEr.."
 End Function
 
 Sub Z_DbCrtSchm()
@@ -348,7 +345,7 @@ On Error GoTo X
 If No_T Then Exit Property
 TFLin = AySng(AyWhT1EqV(TFLy, T), "Schm.TFLin.PrpEr")
 Exit Property
-X: Debug.Print "Schm.TFLin: PrpEr.."
+X: Debug.Print "Schm.TFLin.PrpEr..."
 End Property
 
 Property Get Fny() As String()
@@ -359,11 +356,11 @@ If LinShiftT1(A) <> T Then Debug.Print "Schm.Fny PrpEr": Exit Property
 B = Replace(A, "*", T)
 Fny = AyRmvEle(SslSy(B), "|")
 Exit Property
-X: Debug.Print "Schm.Fny: PrpEr.."
+X: Debug.Print "Schm.Fny.PrpEr..."
 End Property
 
-Function FdAy() As DAO.Field()
-Dim O() As DAO.Field
+Function FdAy() As Dao.Field()
+Dim O() As Dao.Field
 For Each F In Fny
     PushObj O, Fd
 Next
@@ -374,14 +371,14 @@ Property Get IsFk() As Boolean
 On Error GoTo X
 IsFk = AyHas(Tny, F)
 Exit Property
-X: Debug.Print "Schm.IsFk: PrpEr.."
+X: Debug.Print "Schm.IsFk.PrpEr..."
 End Property
 
 Property Get IsId() As Boolean
 On Error GoTo X
 IsId = T = F
 Exit Property
-X: Debug.Print "Schm.IsId: PrpEr.."
+X: Debug.Print "Schm.IsId.PrpEr..."
 End Property
 
 Sub A()

@@ -16,6 +16,21 @@ For Each IQ In CvNy(A)
 Next
 End Function
 
+Function IsProd() As Boolean
+IsProd = Not IsDev
+End Function
+
+Function IsDev() As Boolean
+Static X As Boolean, Y As Boolean
+If Not X Then
+    X = True
+    Y = Not PthIsExist("N:\SAPAccessReports\")
+End If
+IsDev = Y
+End Function
+
+
+
 Sub MsgRunQry(A$)
 MsgSet "Running query (" & A & ") ..."
 End Sub
@@ -45,8 +60,8 @@ Function ChkF_Uom() As String()
 ChkF_Uom = FxChkWs(IFxUom, "Sales text file")
 End Function
 
-Function Lnk() As String()
-Lnk = ChkFil: If Sz(Lnk) > 0 Then Exit Function
+Property Get Lnk(Optional Anyy) As String()
+Lnk = ChkFil: If Sz(Lnk) > 0 Then Exit Property
 WtLnkFx ">InvH", IFxInv, "Invoices"
 WtLnkFx ">InvD", IFxInv, "Detail"
 WtLnkFx ">MB52", IFxMB52
@@ -62,7 +77,7 @@ If IsDev Then
 End If
 WttLnkFb TT, IFbStkShpRate, Fbtt
 Lnk = ChkCol
-End Function
+End Property
 
 Function ChkCol() As String()
 Dim A$(), B$(), C$(), D$(), E$(), F$()

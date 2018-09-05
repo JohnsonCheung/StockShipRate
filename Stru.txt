@@ -13,14 +13,6 @@ IniRate: ZHT1 Whs | RateSc FmDte ToDte
 IniRateH: Fx FxSz FxTim LdDte
 InvD: InvD | InvH Sku Sc Amt
 InvH: InvH | VndShtNm InvNo Whs Dte Sc Amt CrtDte
-LoAlignC: LoNm FldLikSsl
-LoFml: LoNm FldNm Fml
-LoFmt: LoNm Seq Fmt FldLikSsl
-LoReSeq: LoNm ReSeq
-LoTAvg: LoNm FldLikSsl
-LoTCnt: LoNm FldLikSsl
-LoTSum: LoNm FldLikSsl
-LoWdt: LoNm Seq Wdt FldLikSsl
 Prm: UOMFn UomPth ZHT1Fn ZHT1Pth InvPth MB52Pth
 Spec: Spec | SpecNm Lines Ft Sz Tim LdTim CrtTim
 Tmp: F1
