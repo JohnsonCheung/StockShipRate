@@ -19,7 +19,7 @@ End Property
 
 Property Get EFLin$()
 On Error GoTo X
-EFLin = T1LikSslAy_T1(EFLy, F)
+EFLin = T1LikLikSslAy_T1(EFLy, T, F)
 Exit Property
 X: Debug.Print "Schm.EFLin: PrpEr.."
 End Property
@@ -163,7 +163,7 @@ Exit Sub
 Z_DbCrtSchm
 End Sub
 Sub Z_Ini()
-X_Schmy = Z_Schmy
+X_Schmy = ZASchmy
 End Sub
 
 Sub Z_Tny()

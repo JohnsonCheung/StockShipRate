@@ -5,6 +5,41 @@ Private X_Sess&
 Private X_Msg&
 Private X_Lg&
 
+Public Const LgSchmNm$ = "LgSchm" ' The LgSchm-Spnm
+
+Property Get LgSchmLines$()
+LgSchmLines = SpnmLines(LgSchmNm)
+End Property
+
+Property Get LgSchmLy() As String()
+LgSchmLy = SpnmLy(LgSchmNm)
+End Property
+
+Sub LgSchmImp()
+SpnmImp LgSchmNm
+End Sub
+
+Sub LgSchmExpIfNotExist()
+SpnmExpIfNotExist LgSchmNm
+End Sub
+
+Sub LgSchmExp()
+SpnmExp LgSchmNm
+End Sub
+
+Property Get LgSchmFt$()
+LgSchmFt = SpnmFt(LgSchmNm)
+End Property
+
+Sub LgSchmBrw()
+LgSchmExpIfNotExist
+SpnmBrw LgSchmNm
+End Sub
+
+Sub LgSchmIni()
+SpnmIni LgSchmNm
+End Sub
+
 Private Function L() As Database
 On Error GoTo X
 If IsNothing(X_L) Then
@@ -25,9 +60,11 @@ End If
 NyLyDmp "Err Er#", Er, ErNo
 Stop
 End Function
+
 Sub LgBeg()
 Lg ".", "Beg"
 End Sub
+
 Sub LgEnd()
 Lg ".", "End"
 End Sub
@@ -37,7 +74,8 @@ Set X_L = FbDb(LgFb)
 End Sub
 
 Sub LgCrt_v1()
-SchmM.DbCrtSchm FbCrt(LgFb), LgSchm_Ly
+LgSchmImp
+SchmM.DbCrtSchm FbCrt(LgFb), LgSchmLy
 End Sub
 
 Sub LgCrt()
@@ -132,7 +170,7 @@ Dim J%, V
 With L.TableDefs("LgV").OpenRecordset
     For Each V In Av
         .AddNew
-        !Lines = VarStres(V)
+        !Lines = VarLines(V)
         .Update
     Next
     .Close
@@ -143,7 +181,9 @@ Sub LgDbBrw()
 Acs.OpenCurrentDatabase LgFb
 AcsVis Acs
 End Sub
-
+Sub LgSchmKill()
+FfnDltIfExist LgSchmFt
+End Sub
 Sub LgKill()
 LgCls
 If FfnIsExist(LgFb) Then Kill LgFb: Exit Sub
