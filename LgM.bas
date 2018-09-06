@@ -6,7 +6,9 @@ Private X_Msg&
 Private X_Lg&
 
 Public Const LgSchmNm$ = "LgSchm" ' The LgSchm-Spnm
-
+Function BB1()
+BB1 = 1
+End Function
 Property Get LgSchmLines$()
 LgSchmLines = SpnmLines(LgSchmNm)
 End Property
@@ -37,7 +39,7 @@ SpnmBrw LgSchmNm
 End Sub
 
 Sub LgSchmIni()
-SpnmIni LgSchmNm
+SpnmFtIni LgSchmNm
 End Sub
 
 Private Function L() As Database
@@ -52,6 +54,7 @@ Dim Er$, ErNo%
 ErNo = Err.Number
 Er = Err.Description
 If ErNo = 3024 Then
+    LgSchmImp
     LgCrt_v1
     LgOpn
     Set L = X_L
@@ -74,22 +77,24 @@ Set X_L = FbDb(LgFb)
 End Sub
 
 Sub LgCrt_v1()
-LgSchmImp
-SchmM.DbCrtSchm FbCrt(LgFb), LgSchmLy
+Dim Fb$
+Fb = LgFb
+If FfnIsExist(Fb) Then Exit Sub
+SchmM.DbCrtSchm FbCrt(Fb), LgSchmLy
 End Sub
 
 Sub LgCrt()
 FbCrt LgFb
-Dim Db As Database, T As Dao.TableDef
+Dim Db As Database, T As dao.TableDef
 Set Db = FbDb(LgFb)
 '
-Set T = New Dao.TableDef
+Set T = New dao.TableDef
 T.Name = "Sess"
 TdAddId T
 TdAddStamp T, "Dte"
 Db.TableDefs.Append T
 '
-Set T = New Dao.TableDef
+Set T = New dao.TableDef
 T.Name = "Msg"
 TdAddId T
 TdAddTxtFld T, "Fun"
@@ -97,7 +102,7 @@ TdAddTxtFld T, "MsgTxt"
 TdAddStamp T, "Dte"
 Db.TableDefs.Append T
 '
-Set T = New Dao.TableDef
+Set T = New dao.TableDef
 T.Name = "Lg"
 TdAddId T
 TdAddLngFld T, "Sess"
@@ -105,7 +110,7 @@ TdAddLngFld T, "Msg"
 TdAddStamp T, "Dte"
 Db.TableDefs.Append T
 '
-Set T = New Dao.TableDef
+Set T = New dao.TableDef
 T.Name = "LgV"
 TdAddId T
 TdAddLngFld T, "Lg"
@@ -243,7 +248,7 @@ Q = FmtQQ("Select Lines from LgV where Lg = ? order by LgV", A)
 LgLinesAy = RsAy(L.OpenRecordset(Q))
 End Function
 
-Function CurLgRs(Optional Top% = 50) As Dao.Recordset
+Function CurLgRs(Optional Top% = 50) As dao.Recordset
 Set CurLgRs = L.OpenRecordset(FmtQQ("Select Top ? x.*,Fun,MsgTxt from Lg x left join Msg a on x.Msg=a.Msg order by Sess desc,Lg", Top))
 End Function
 
@@ -271,7 +276,7 @@ Function CurSessLy(Optional Sep$, Optional Top% = 50) As String()
 CurSessLy = RsLy(CurSessRs(Top), Sep)
 End Function
 
-Function CurSessRs(Optional Top% = 50) As Dao.Recordset
+Function CurSessRs(Optional Top% = 50) As dao.Recordset
 Set CurSessRs = L.OpenRecordset(FmtQQ("Select Top ? * from sess order by Sess desc", Top))
 End Function
 

@@ -163,7 +163,7 @@ Exit Sub
 Z_DbCrtSchm
 End Sub
 Sub Z_Ini()
-X_Schmy = ZASchmy
+X_Schmy = LgSchmy
 End Sub
 
 Sub Z_Tny()
@@ -235,7 +235,7 @@ Exit Property
 X: Debug.Print "Schm.No_T.PrpEr..."
 End Property
 
-Property Get Fd() As Dao.Field
+Property Get Fd() As dao.Field
 On Error GoTo X
 If No_F Then Exit Property
 Select Case True
@@ -247,7 +247,7 @@ Exit Property
 X: Debug.Print "Schm.Fd.PrpEr..."
 End Property
 
-Function Td() As Dao.TableDef
+Function Td() As dao.TableDef
 If No_T Then Exit Function
 Set Td = NewTd(T, FdAy)
 End Function
@@ -259,8 +259,8 @@ Exit Property
 X: Debug.Print "Schm.Tny.PrpEr..."
 End Property
 
-Function TdAy() As Dao.TableDef()
-Dim O() As Dao.TableDef
+Function TdAy() As dao.TableDef()
+Dim O() As dao.TableDef
 For Each T In Tny
     PushObj O, Td
 Next
@@ -359,8 +359,8 @@ Exit Property
 X: Debug.Print "Schm.Fny.PrpEr..."
 End Property
 
-Function FdAy() As Dao.Field()
-Dim O() As Dao.Field
+Function FdAy() As dao.Field()
+Dim O() As dao.Field
 For Each F In Fny
     PushObj O, Fd
 Next

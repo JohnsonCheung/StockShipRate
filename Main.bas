@@ -1,6 +1,7 @@
 Option Compare Database
 Option Explicit
 Public LnkColStr As New LnkColStr
+
 Function OupFunSsl_Run(A)
 Dim IQ, Q$
 For Each IQ In CvNy(A)
@@ -16,52 +17,39 @@ For Each IQ In CvNy(A)
 Next
 End Function
 
-Function IsProd() As Boolean
-IsProd = Not IsDev
-End Function
-
-Function IsDev() As Boolean
-Static X As Boolean, Y As Boolean
-If Not X Then
-    X = True
-    Y = Not PthIsExist("N:\SAPAccessReports\")
-End If
-IsDev = Y
-End Function
-
-
-
 Sub MsgRunQry(A$)
 MsgSet "Running query (" & A & ") ..."
 End Sub
 
-Function ChkFil() As String()
-ChkFil = AyAddAp(ChkF_MB52, ChkF_Uom, Either(IsFstYM, "ChkF_Rate ChkF_Inv"))
+Function IFxChk() As String()
+IFxChk = AyAddAp(IFxChk_zMB52, IFxChk_zUom, BoolRunTFFun(IsFstYM, "IFxChk_zRate IFxChk_zInv"))
 End Function
 
-Function ChkF_Rate() As String()
+Function IFxChk_zRate() As String()
 If Not FfnIsExist(IFxRate) Then
-    ChkF_Rate = MsgAp_Ly("It is first record of Year/Month, [rate file (ZHT1)] is needed.|It is not found in [folder]", _
+    IFxChk_zRate = MsgAp_Ly("It is first record of Year/Month, [rate file (ZHT1)] is needed.|It is not found in [folder]", _
     FfnFn(IFxRate), FfnPth(IFxRate))
     Exit Function
 End If
-ChkF_Rate = FxChkWs(IFxRate, "Rate file (ZHT1)", "8701 8601")
+IFxChk_zRate = FxChk(IFxRate, "Rate file (ZHT1)", "8701 8601")
 End Function
 
-Function ChkF_MB52() As String()
-ChkF_MB52 = FxChkWs(IFxMB52, MB52FnSpec)
+Function IFxChk_zMB52() As String()
+IFxChk_zMB52 = FxChk(IFxMB52, MB52FnSpec)
 End Function
 
-Function ChkF_Inv() As String()
-ChkF_Inv = FxChkWs(IFxInv, "Invoice file", "Invoices Detail")
+Function IFxChk_zInv() As String()
+IFxChk_zInv = FxChk(IFxInv, "Invoice file", "Invoices Detail")
 End Function
 
-Function ChkF_Uom() As String()
-ChkF_Uom = FxChkWs(IFxUom, "Sales text file")
+Function IFxChk_zUom() As String()
+IFxChk_zUom = FxChk(IFxUom, "Sales text file")
 End Function
 
-Property Get Lnk(Optional Anyy) As String()
-Lnk = ChkFil: If Sz(Lnk) > 0 Then Exit Property
+Property Get Lnk() As String()
+Lnk = IFxChk
+If Sz(Lnk) = 0 Then Exit Property
+
 WtLnkFx ">InvH", IFxInv, "Invoices"
 WtLnkFx ">InvD", IFxInv, "Detail"
 WtLnkFx ">MB52", IFxMB52
@@ -76,10 +64,11 @@ If IsDev Then
     Fbtt = AyAddPfx(CvTT(TT), "^")
 End If
 WttLnkFb TT, IFbStkShpRate, Fbtt
-Lnk = ChkCol
+
+Lnk = LnkColChk
 End Property
 
-Function ChkCol() As String()
+Function LnkColChk() As String()
 Dim A$(), B$(), C$(), D$(), E$(), F$()
 A = WtChkCol(">MB52", LnkColStr.MB52)
 B = WtChkCol(">Uom", LnkColStr.Uom)
@@ -90,7 +79,7 @@ Else
     E = WtChkCol(">InvD", LnkColStr.InvD)
     F = WtChkCol(">InvH", LnkColStr.InvH)
 End If
-ChkCol = AyAddAp(A, C, B, D, E, F)
+LnkColChk = AyAddAp(A, C, B, D, E, F)
 End Function
 
 Sub Import()
@@ -166,6 +155,18 @@ For Y = FstY To CurY
 Next
 End Sub
 
+Sub IFxOpn_zUom()
+FxOpn IFxUom
+End Sub
+
+Sub IFxOpn_zInv()
+FxOpn IFxRate
+End Sub
+
+Sub IFxOpn_zMB52()
+FxOpn IFxMB52
+End Sub
+
 Property Get InvLdDte()
 Q = FmtQQ("Select IR_LdDte from YM where Y=? and M=?", Y, M)
 InvLdDte = RsV(CurrentDb.OpenRecordset(Q))
@@ -220,7 +221,7 @@ W.Execute "insert into [InvD] (InvH,Sku,Sc,Amt)" & _
                       " select InvH,Sku,Sc,Amt from [#IInvD]'"
 Q = FmtQQ("Select IR_Fx, IR_FxSz, IR_FxTim, IR_LdDte from YM where Y=? and M=?", Y, M)
 
-RsUpdDr W.OpenRecordset(Q), FfnStamp(A)
+DrUpdRs FfnStampDr(A), W.OpenRecordset(Q)
 End Sub
 
 Function IRDrLy(A()) As String()
@@ -230,7 +231,7 @@ IRDrLy = MsgLy("[Invoice file] of [time] and [size] with [n-invoices], [n-lines]
     Fx, Tim, FfnSz(A), NInv, NInvLin, Round(Sc, 1), Round(Amt, 2), Y + 2000, M)
 End Function
 
-Function TmpInvHD_IRDr(Fx) As Variant()
+Function TmpInv_IRDr(TmpInvH, TmpInvD) As Variant()
 Dim Sz&, Tim As Date, Sc#, Amt@, NInv%, NInvLin%, NSku%
 With W.OpenRecordset("Select Count(*), Sum(Amt), Sum(Sc) from [#IInvH]")
     NInv = .Fields(0).Value
@@ -240,11 +241,13 @@ With W.OpenRecordset("Select Count(*), Sum(Amt), Sum(Sc) from [#IInvH]")
 End With
 NSku = W.OpenRecordset("Select Count(*) from (Select Distinct Sku from [#IInvD])").Fields(0).Value
 NInvLin = W.OpenRecordset("Select Count(*) from [#IInvD]").Fields(0).Value
-TmpInvHD_IRDr = Array(Fx, Sz, Tim, Sc, Amt, NInv, NInvLin, NSku, Now)
+TmpInv_IRDr = Array(IFxInv, Sz, Tim, Sc, Amt, NInv, NInvLin, NSku, Now)
 End Function
+
 Property Get MB52FnSpec$()
 MB52FnSpec = "MB52 " & YYYYxMM & "-??.xls"
 End Property
+
 Property Get IniMB52FnSpec$()
 IniMB52FnSpec = "MB52 " & YYYYxMM & "-??.xls"
 End Property
@@ -269,7 +272,7 @@ Q = FmtQQ("Insert into [YMOH] (Y,M,Sku,Whs,EndOH) select ?,?,Sku,Whs,EndOH from 
 
 'Update YM: Y M *Fx *FxTim *FxSz *NRec *NSku *Sc *DteLd
 Q = FmtQQ("Select EndOH_Fx, EndOH_FxSz, EndOH_FxTim, EndOH_LdDte from YM where Y=? and M=?", Y, M)
-RsUpdDr W.OpenRecordset(Q), FfnStamp(IFxMB52)
+DrUpdRs FfnStampDr(IFxMB52), W.OpenRecordset(Q)
 WDrp "#OH"
 End Sub
 Property Get IFxMB52$()
@@ -283,21 +286,19 @@ Property Get MB52Pth$()
 MB52Pth = PthEnsSfx(PnmVal("MB52Pth")) & 2000 + Y & "\"
 End Property
 
-Sub Rpt()
+Sub Main()
 'The @Main is the detail of showing how NxtMth YMRate is calculate
-Const IsForceLd As Boolean = True
-If Not Cfm Then Exit Sub
-If AyBrwEr(Lnk) Then Exit Sub
+AyBrwThw Lnk
 Import
 LdDta True
-If Not IsFstYM Then
-    Oup
-    Upd
-    Gen
-End If
+Oup
+Upd
+Gen
 WCls
 End Sub
-
+Private Function BB()
+BB = 2
+End Function
 Sub LdDta(Optional IsForceLd As Boolean)
 Lg "LdDta", "Start with [IsForceLd]", IsForceLd
 LdMB52 IsForceLd
@@ -308,22 +309,21 @@ Else
 End If
 Lg "LdDta", "End"
 End Sub
+Property Get FmtSpec$()
 
-Function Cfm() As Boolean
-'Reset_YM           this should be put in front of starting the whole process
-'Reset_YMRate
-Cfm = True
-End Function
-
+End Property
 Sub Gen()
-OupFx_Gen OupFx, WFb
+If IsFstYM Then Exit Sub
+OupFx_Gen OupFx, WFb, FmtSpec
 End Sub
 
 Sub Oup()
+If IsFstYM Then Exit Sub
 OMain
 End Sub
 
 Sub Upd()
+If IsFstYM Then Exit Sub
 'Update YMRate: Y M Sku Whs RateSc
 'By @Main
 Q = FmtQQ("Delete * from [YMRate] where Y=? and M=?", Y, M): W.Execute Q
@@ -475,14 +475,15 @@ Q = "Select Fx, FxSz, FxTim, LdDte from [IniRateH]"
 If DbtNRec(W, "IniRateH") = 0 Then
     W.Execute "Insert into [IniRateH] (Fx) values ('x')"
 End If
-RsUpdDr W.OpenRecordset(Q), FfnStamp(IFxRate)
+DrUpdRs FfnStampDr(IFxRate), W.OpenRecordset(Q)
 WDrp "#Cpy #Cpy1 #Cpy2"
 End Sub
+
 Property Get IFxRate$()
 IFxRate = PnmFfn("ZHT1")
 End Property
 
-Sub IFxRateOpn()
+Sub IFxOpn_zRate()
 FxOpn IFxRate
 End Sub
 Property Get InvLdDTim$()
@@ -494,7 +495,7 @@ End Property
 Property Get MB52LdDTim$()
 MB52LdDTim = QQDTim("Select EndOH_LdDte from YM where Y=? and M=? and EndOH_Fx='?'", Y, M, IFxMB52)
 End Property
-Function FxLdTSz$(A, Optional ByVal FldPfx$)
+Function FxLdTSz$(A, ByVal FldPfx$)
 Dim P$
 P = FldPfx
 Q = FmtQQ("Select ?_FxTim,?_FxSz from YM where ?_Fx='?' and Y=? and M=?", P, P, P, A, Y, M)

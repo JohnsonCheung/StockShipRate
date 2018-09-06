@@ -1,10 +1,10 @@
 Option Compare Database
 Option Explicit
 Const Trc As Boolean = True
-Sub Z_MdRmvPrpOnEr()
+Private Sub Z_MdRmvPrpOnEr()
 MdRmvPrpOnEr ZBMd
 End Sub
-Sub Z_MdEnsPrpOnEr()
+Private Sub Z_MdEnsPrpOnEr()
 MdEnsPrpOnEr ZBMd
 End Sub
 Sub MdRmvPrpOnEr(A As CodeModule)
