@@ -1,7 +1,6 @@
 Option Compare Database
 Option Explicit
 Public Const ConstSepLin$ = "------------------------------------"
-Public Const ColrLines$ = ""
 Public Const FmtSpecNm$ = "Fmt"
 Public Const VdtEleSclNmSsl$ = "Req AlwZLen Sz Dft VRul VTxt Des Expr"
 Public Const VdtFmtSpecNmSsl$ = "Req AlwZLen Sz Dft VRul VTxt Des Expr"
@@ -43,6 +42,181 @@ Enum EApp
     ETaxCmp = 5
     ETaxAlert = 6
 End Enum
+Private Const ColrLines_1$ = "ActiveBorder -4934476" & _
+vbCrLf & "ActiveCaption -6703919" & _
+vbCrLf & "ActiveCaptionText -16777216" & _
+vbCrLf & "AliceBlue -984833" & _
+vbCrLf & "AntiqueWhite -332841" & _
+vbCrLf & "AppWorkspace -5526613" & _
+vbCrLf & "Aqua -16711681" & _
+vbCrLf & "Aquamarine -8388652" & _
+vbCrLf & "Azure -983041" & _
+vbCrLf & "Beige -657956" & _
+vbCrLf & "Bisque -6972" & _
+vbCrLf & "Black -16777216" & _
+vbCrLf & "BlanchedAlmond -5171" & _
+vbCrLf & "Blue -16776961" & _
+vbCrLf & "BlueViolet -7722014" & _
+vbCrLf & "Brown -5952982" & _
+vbCrLf & "BurlyWood -2180985" & _
+vbCrLf & "ButtonFace -986896" & _
+vbCrLf & "ButtonHighlight -1" & _
+vbCrLf & "ButtonShadow -6250336"
+Private Const ColrLines_2$ = "CadetBlue -10510688" & _
+vbCrLf & "Chartreuse -8388864" & _
+vbCrLf & "Chocolate -2987746" & _
+vbCrLf & "Control -986896" & _
+vbCrLf & "ControlDark -6250336" & _
+vbCrLf & "ControlDarkDark -9868951" & _
+vbCrLf & "ControlLight -1842205" & _
+vbCrLf & "ControlLightLight -1" & _
+vbCrLf & "ControlText -16777216" & _
+vbCrLf & "Coral -32944" & _
+vbCrLf & "CornflowerBlue -10185235" & _
+vbCrLf & "Cornsilk -1828" & _
+vbCrLf & "Crimson -2354116" & _
+vbCrLf & "Cyan -16711681" & _
+vbCrLf & "DarkBlue -16777077" & _
+vbCrLf & "DarkCyan -16741493" & _
+vbCrLf & "DarkGoldenrod -4684277" & _
+vbCrLf & "DarkGray -5658199" & _
+vbCrLf & "DarkGreen -16751616" & _
+vbCrLf & "DarkKhaki -4343957"
+Private Const ColrLines_3$ = "DarkMagenta -7667573" & _
+vbCrLf & "DarkOliveGreen -11179217" & _
+vbCrLf & "DarkOrange -29696" & _
+vbCrLf & "DarkOrchid -6737204" & _
+vbCrLf & "DarkRed -7667712" & _
+vbCrLf & "DarkSalmon -1468806" & _
+vbCrLf & "DarkSeaGreen -7357301" & _
+vbCrLf & "DarkSlateBlue -12042869" & _
+vbCrLf & "DarkSlateGray -13676721" & _
+vbCrLf & "DarkTurquoise -16724271" & _
+vbCrLf & "DarkViolet -7077677" & _
+vbCrLf & "DeepPink -60269" & _
+vbCrLf & "DeepSkyBlue -16728065" & _
+vbCrLf & "Desktop -16777216" & _
+vbCrLf & "DimGray -9868951" & _
+vbCrLf & "DodgerBlue -14774017" & _
+vbCrLf & "Firebrick -5103070" & _
+vbCrLf & "FloralWhite -1296" & _
+vbCrLf & "ForestGreen -14513374" & _
+vbCrLf & "Fuchsia -65281"
+Private Const ColrLines_4$ = "Gainsboro -2302756" & _
+vbCrLf & "GhostWhite -460545" & _
+vbCrLf & "Gold -10496" & _
+vbCrLf & "Goldenrod -2448096" & _
+vbCrLf & "GradientActiveCaption -4599318" & _
+vbCrLf & "GradientInactiveCaption -2628366" & _
+vbCrLf & "Gray -8355712" & _
+vbCrLf & "GrayText -9605779" & _
+vbCrLf & "Green -16744448" & _
+vbCrLf & "GreenYellow -5374161" & _
+vbCrLf & "Highlight -16746281" & _
+vbCrLf & "HighlightText -1" & _
+vbCrLf & "Honeydew -983056" & _
+vbCrLf & "HotPink -38476" & _
+vbCrLf & "HotTrack -16750900" & _
+vbCrLf & "InactiveBorder -722948" & _
+vbCrLf & "InactiveCaption -4207141" & _
+vbCrLf & "InactiveCaptionText -16777216" & _
+vbCrLf & "IndianRed -3318692" & _
+vbCrLf & "Indigo -11861886"
+Private Const ColrLines_5$ = "Info -31" & _
+vbCrLf & "InfoText -16777216" & _
+vbCrLf & "Ivory -16" & _
+vbCrLf & "Khaki -989556" & _
+vbCrLf & "Lavender -1644806" & _
+vbCrLf & "LavenderBlush -3851" & _
+vbCrLf & "LawnGreen -8586240" & _
+vbCrLf & "LemonChiffon -1331" & _
+vbCrLf & "LightBlue -5383962" & _
+vbCrLf & "LightCoral -1015680" & _
+vbCrLf & "LightCyan -2031617" & _
+vbCrLf & "LightGoldenrodYellow -329006" & _
+vbCrLf & "LightGray -2894893" & _
+vbCrLf & "LightGreen -7278960" & _
+vbCrLf & "LightPink -18751" & _
+vbCrLf & "LightSalmon -24454" & _
+vbCrLf & "LightSeaGreen -14634326" & _
+vbCrLf & "LightSkyBlue -7876870" & _
+vbCrLf & "LightSlateGray -8943463" & _
+vbCrLf & "LightSteelBlue -5192482"
+Private Const ColrLines_6$ = "LightYellow -32" & _
+vbCrLf & "Lime -16711936" & _
+vbCrLf & "LimeGreen -13447886" & _
+vbCrLf & "Linen -331546" & _
+vbCrLf & "Magenta -65281" & _
+vbCrLf & "Maroon -8388608" & _
+vbCrLf & "MediumAquamarine -10039894" & _
+vbCrLf & "MediumBlue -16777011" & _
+vbCrLf & "MediumOrchid -4565549" & _
+vbCrLf & "MediumPurple -7114533" & _
+vbCrLf & "MediumSeaGreen -12799119" & _
+vbCrLf & "MediumSlateBlue -8689426" & _
+vbCrLf & "MediumSpringGreen -16713062" & _
+vbCrLf & "MediumTurquoise -12004916" & _
+vbCrLf & "MediumVioletRed -3730043" & _
+vbCrLf & "Menu -986896" & _
+vbCrLf & "MenuBar -986896" & _
+vbCrLf & "MenuHighlight -13395457" & _
+vbCrLf & "MenuText -16777216" & _
+vbCrLf & "MidnightBlue -15132304"
+Private Const ColrLines_7$ = "MintCream -655366" & _
+vbCrLf & "MistyRose -6943" & _
+vbCrLf & "Moccasin -6987" & _
+vbCrLf & "NavajoWhite -8531" & _
+vbCrLf & "Navy -16777088" & _
+vbCrLf & "OldLace -133658" & _
+vbCrLf & "Olive -8355840" & _
+vbCrLf & "OliveDrab -9728477" & _
+vbCrLf & "Orange -23296" & _
+vbCrLf & "OrangeRed -47872" & _
+vbCrLf & "Orchid -2461482" & _
+vbCrLf & "PaleGoldenrod -1120086" & _
+vbCrLf & "PaleGreen -6751336" & _
+vbCrLf & "PaleTurquoise -5247250" & _
+vbCrLf & "PaleVioletRed -2396013" & _
+vbCrLf & "PapayaWhip -4139" & _
+vbCrLf & "PeachPuff -9543" & _
+vbCrLf & "Peru -3308225" & _
+vbCrLf & "Pink -16181" & _
+vbCrLf & "Plum -2252579"
+Private Const ColrLines_8$ = "PowderBlue -5185306" & _
+vbCrLf & "Purple -8388480" & _
+vbCrLf & "Red -65536" & _
+vbCrLf & "RosyBrown -4419697" & _
+vbCrLf & "RoyalBlue -12490271" & _
+vbCrLf & "SaddleBrown -7650029" & _
+vbCrLf & "Salmon -360334" & _
+vbCrLf & "SandyBrown -744352" & _
+vbCrLf & "ScrollBar -3618616" & _
+vbCrLf & "SeaGreen -13726889" & _
+vbCrLf & "SeaShell -2578" & _
+vbCrLf & "Sienna -6270419" & _
+vbCrLf & "Silver -4144960" & _
+vbCrLf & "SkyBlue -7876885" & _
+vbCrLf & "SlateBlue -9807155" & _
+vbCrLf & "SlateGray -9404272" & _
+vbCrLf & "Snow -1286" & _
+vbCrLf & "SpringGreen -16711809" & _
+vbCrLf & "SteelBlue -12156236" & _
+vbCrLf & "Tan -2968436"
+Private Const ColrLines_9$ = "Teal -16744320" & _
+vbCrLf & "Thistle -2572328" & _
+vbCrLf & "Tomato -40121" & _
+vbCrLf & "Transparent 16777215" & _
+vbCrLf & "Turquoise -12525360" & _
+vbCrLf & "Violet -1146130" & _
+vbCrLf & "Wheat -663885" & _
+vbCrLf & "White -1" & _
+vbCrLf & "WhiteSmoke -657931" & _
+vbCrLf & "Window -1" & _
+vbCrLf & "WindowFrame -10197916" & _
+vbCrLf & "WindowText -16777216" & _
+vbCrLf & "Yellow -256" & _
+vbCrLf & "YellowGreen -6632142"
+Public Const ColrLines$ = ColrLines_1 & vbCrLf & ColrLines_2 & vbCrLf & ColrLines_3 & vbCrLf & ColrLines_4 & vbCrLf & ColrLines_5 & vbCrLf & ColrLines_6 & vbCrLf & ColrLines_7 & vbCrLf & ColrLines_8 & vbCrLf & ColrLines_9
 Public Q$
 Const PSep$ = " "
 Const PSep1$ = " "
@@ -178,7 +352,7 @@ Function DbScly(A As Database) As String()
 DbScly = AySy(AyOfAy_Ay(AyMap(ItrMap(A.TableDefs, "TdScly"), "TdScly_AddPfx")))
 End Function
 Function TdScly(A As dao.TableDef) As String()
-TdScly = AyAdd(sy(TdScl(A)), TdFdScly(A))
+TdScly = AyAdd(Sy(TdScl(A)), TdFdScly(A))
 End Function
 Function TdScl$(A As dao.TableDef)
 TdScl = ApScl(A.Name, AddLbl(A.OpenRecordset.RecordCount, "NRec"), AddLbl(A.DateCreated, "CrtDte"), AddLbl(A.LastUpdated, "UpdDte"))
@@ -363,9 +537,9 @@ Function AyWhT2EqV(A$(), V) As String()
 AyWhT2EqV = AyWhPredXP(A, "LinHasT2", V)
 End Function
 
-Function sy(ParamArray Ap())
+Function Sy(ParamArray Ap())
 Dim Av(): Av = Ap
-sy = AySy(Av)
+Sy = AySy(Av)
 End Function
 
 Sub WtReSeq(T, ReSeqSpec$)
@@ -1259,7 +1433,7 @@ If Not NoTrim Then
     O1 = Trim(O1)
     O2 = Trim(O2)
 End If
-StrBrk1At = sy(O1, O2)
+StrBrk1At = Sy(O1, O2)
 End Function
 
 Function StrBrk1(A, Sep$, Optional NoTrim As Boolean) As String()
@@ -3446,7 +3620,7 @@ DbDrpTbl A, Tmp
 End Sub
 
 Function AyDupChk(A, QMsg$) As String()
-AyDupChk = AyRmvEmp(sy(AyDupMsg(A, QMsg)))
+AyDupChk = AyRmvEmp(Sy(AyDupMsg(A, QMsg)))
 End Function
 
 Function AyDupMsg$(A, QMsg$)
@@ -7604,7 +7778,7 @@ Sub WinAlignV()
 OCCwinVert.Execute
 End Sub
 Function AyEmpChk(A, Msg$) As String()
-If Sz(A) = 0 Then AyEmpChk = sy(Msg)
+If Sz(A) = 0 Then AyEmpChk = Sy(Msg)
 End Function
 Function LyWhT1Er(A, Ny0) As String()
 'return subset of Ly for those T1 not in Ny0
@@ -7705,7 +7879,7 @@ Function ColrStr_MayColr(A)
 Dim X$
 X = TXyX(ColrLy, A)
 If X = "" Then Exit Function
-ColrStr_MayColr = CLong(X)
+ColrStr_MayColr = CLng(X)
 End Function
 
 Function SpnmFt$(A)
@@ -7905,9 +8079,9 @@ Function LinesConstLines$(A, VarNm$)
 LinesConstLines = JnCrLf(LyConstLy(SplitCrLf(A), VarNm))
 End Function
 
-Function LyConstLy(A, VarNm) As String()
+Function LyConstLy_zOneChunk(A, VarNm, Mdy$) As String()
 If Sz(A) = 0 Then
-    LyConstLy = sy(FmtQQ("Public Const ?$ = """"", VarNm))
+    LyConstLy_zOneChunk = Sy(FmtQQ("? Const ?$ = """"", Mdy, VarNm))
     Exit Function
 End If
 Dim O$(), L$
@@ -7917,14 +8091,71 @@ For J = 0 To U
     L = StrQuoteAsVb(A(J))
     Select Case True
     Case J = 0
-        Push O, FmtQQ("Public Const ?$ = ? & _", VarNm, L)
+        Push O, FmtQQ("? Const ?$ = ? & _", Mdy, VarNm, L)
     Case J = U
         Push O, "vbCrLf & " & L
     Case Else
         Push O, "vbCrLf & " & L & " & _"
     End Select
 Next
-LyConstLy = O
+LyConstLy_zOneChunk = O
+End Function
+
+Function N_ZerFill$(N, NDig%)
+N_ZerFill = Format(N, String(NDig, "0"))
+End Function
+Function N_NDig%(N)
+N_NDig = Len(CStr(N))
+End Function
+Function AyAddItm(A, Itm)
+Dim O
+O = A
+Push O, Itm
+AyAddItm = O
+End Function
+Function AyMid(A, Fm&, Sz&)
+Dim O, J&
+O = AyCln(A)
+For J = Fm To Min(Fm + Sz - 1, UB(A))
+    Push O, A(J)
+Next
+AyMid = O
+End Function
+Private Function LyConstLy_zChunk(A, VarNy$()) As String()
+Dim J%, Ay$(), O$()
+For J = 0 To UB(VarNy)
+    Ay = AyMid(A, J * 20, 20)
+    PushAy O, LyConstLy_zOneChunk(Ay, VarNy(J), "Private")
+Next
+LyConstLy_zChunk = O
+End Function
+Private Function NmNy(Nm$, N%) As String()
+Dim O$(), J%, NDig%
+NDig = N_NDig(N)
+For J = 1 To N
+    Push O, Nm & "_" & N_ZerFill(J, NDig)
+Next
+NmNy = O
+End Function
+
+Function LyConstLy_zLasLin$(VarNm, Ny$())
+Dim B$
+B = Join(Ny, " & vbCrLf & ")
+LyConstLy_zLasLin = FmtQQ("Public Const ?$ = ?", VarNm, B)
+End Function
+
+Function LyConstLy(A, VarNm) As String()
+Dim N%
+N = Sz(A)
+If N <= 20 Then
+    LyConstLy = LyConstLy_zOneChunk(A, VarNm, "Public")
+    Exit Function
+End If
+Dim VarNy$(), Lin$, Ay$()
+VarNy = NmNy(CStr(VarNm), (N - 1) \ 20 + 1)
+Ay = LyConstLy_zChunk(A, VarNy)
+Lin = LyConstLy_zLasLin(VarNm, VarNy)
+LyConstLy = AyAddItm(Ay, Lin)
 End Function
 
 Function SpnmConstLines$(A, Nm$)
@@ -7968,9 +8199,30 @@ Dim A$(), B$()
 A = ConstLy(Nm)
 If Sz(A) = 0 Then Exit Function
 B = LyConstLy(A, Nm)
-ConstNewLy = AyAddAp(A, sy(ConstSepLin), B)
+ConstNewLy = AyAddAp(A, Sy(ConstSepLin), B)
 End Function
 
 Function ConstFt$(Nm)
 ConstFt = SpecPth & Nm & ".Const.txt"
+End Function
+Function ColrSq() As Variant()
+Dim J%, O(), Ly$(), Nm$, Colr&
+Ly = ColrLy
+ReDim O(1 To Sz(Ly), 1 To 2)
+For J = 1 To Sz(Ly)
+    LinT1RestAsg Ly(J - 1), Nm, Colr
+    O(J, 1) = Nm
+    O(J, 2) = Colr
+Next
+ColrSq = O
+End Function
+Function ColrWb() As Workbook
+Dim Ws As Worksheet, Sq(), J%
+Sq = ColrSq
+Set Ws = RgWs(SqRg(ColrSq, NewA1))
+For J = 1 To UBound(Sq, 1)
+    WsRC(Ws, J, 3).Interior.Color = Sq(J, 2)
+Next
+WsCC(Ws, 1, 2).EntireColumn.AutoFit
+Set ColrWb = WsWb(WsVis(Ws))
 End Function

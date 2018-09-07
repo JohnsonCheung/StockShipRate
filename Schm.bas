@@ -60,15 +60,15 @@ ItmLy = AyT1Chd(Ly, A)
 End Function
 Function ErLy() As String()
 If Sz(X_Schmy) = 0 Then
-    ErLy = sy("no Ly is given")
+    ErLy = Sy("no Ly is given")
     Exit Function
 End If
 If Sz(ErLy) > 0 Then Exit Function
-ErLy = AyWhPredXPNot(Ly, "LinInT1Ay", sy(C_E, C_D, C_EF, C_TF))
+ErLy = AyWhPredXPNot(Ly, "LinInT1Ay", Sy(C_E, C_D, C_EF, C_TF))
 End Function
 
 Function ErNoTFld() As String()
-If Sz(TFLy) = 0 Then ErNoTFld = sy("No TFld lines")
+If Sz(TFLy) = 0 Then ErNoTFld = Sy("No TFld lines")
 End Function
 
 Property Get ErDupT() As String()
@@ -85,8 +85,8 @@ X: Debug.Print "Schm.EAy.PrpEr..."
 End Property
 Private Sub Z_ErDupE()
 Dim Ly$()
-Ly = sy("Ele AA", "Ele BB", "Ele AA")
-Expect = sy("These Ele[AA] are duplicated in Ele-lines")
+Ly = Sy("Ele AA", "Ele BB", "Ele AA")
+Expect = Sy("These Ele[AA] are duplicated in Ele-lines")
 GoSub Tst
 Exit Sub
 Tst:
@@ -100,8 +100,8 @@ ErDupE = AyDupChk(EAy, "These Ele[?] are duplicated in Ele-lines")
 End Function
 Private Sub Z_ErDupF()
 Dim Ly$()
-Ly = sy("TFld AA BB BB")
-Expect = sy("These F[BB] are duplicated in T[AA]")
+Ly = Sy("TFld AA BB BB")
+Expect = Sy("These F[BB] are duplicated in T[AA]")
 GoSub Tst
 Exit Sub
 Tst:
@@ -112,8 +112,8 @@ Tst:
 End Sub
 Private Sub Z_ErDupT()
 Dim Ly$()
-Ly = sy("TFld AA BB BB", "TFld AA DD")
-Expect = sy("These T[AA] is duplicated in TFld-lines")
+Ly = Sy("TFld AA BB BB", "TFld AA DD")
+Expect = Sy("These T[AA] is duplicated in TFld-lines")
 GoSub Tst
 Exit Sub
 Tst:
@@ -416,7 +416,7 @@ FdScly = O
 End Function
 Sub Z_ErLy()
 Dim Ly$()
-Expect = sy("No Ly is given")
+Expect = Sy("No Ly is given")
 GoSub Tst
 Exit Sub
 Tst:

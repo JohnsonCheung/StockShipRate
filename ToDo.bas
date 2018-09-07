@@ -4,7 +4,7 @@ Private Sub Main()
 SetColr_ToDo
 PtFmt
 HowToEnsFirstTime_FmtSpec
-Addition_API_for_MsgLy
+Addition_API_forMsgLy
 End Sub
 
 Private Sub PtFmt()
@@ -34,10 +34,14 @@ Private Sub SetColr_ToDo()
 '       Use Enums: System.Drawing.KnownColor is no good, because the EnmNm is in seq, it is not return
 '       Use VBA.ColorConstants-module is good, but there is few constant
 '       Answer: Use *KnownColor to feed in struct-*Color, there is *Color.ToArgb & *KnownColor has name
-'               Run the FSharp program. Put the generated file (in bin\debug\) into:
-'               So that $Spec\Color.Const.txt
+'               Run the FSharp program.
+'               Put the generated file
+'                   in
+'                       C:\Users\user\Source\Repos\EnumLines\EnumLines\bin\Debug\ColorLines.Const.Txt
+'                   Into
+'                       C:\Users\user\Desktop\MHD\SAPAccessReports\StockShipRate\StockShipRate\Spec
 '               Run ConstGen: It will addd the Public Const ColorLines = ".... at end
-'
+'               Put Fct-Module
 'To find some common values to feed into ColrLines
 '
 'Colr* 4-functions
