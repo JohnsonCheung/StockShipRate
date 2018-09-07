@@ -49,6 +49,7 @@ Const PSep1$ = " "
 Public Actual, Expect
 Public Schm As New Schm
 Private X_W As Database
+
 Function SclShift$(OA)
 BrkS1Asg OA, ";", SclShift, OA
 End Function
@@ -886,8 +887,8 @@ Function LcVTCnt(A As ListColumn, FmtSpecLy$()) As Boolean
 LcVTCnt = LcV_zTF(A, "TCnt", FmtSpecLy)
 End Function
 
-Function LcVColr&(A As ListColumn, FmtSpecLy$())
-LcVColr = ColrStr_Colr(LcV_zXTF(A, "Colr", FmtSpecLy))
+Function LcVMayColr(A As ListColumn, FmtSpecLy$())
+LcVMayColr = ColrStr_MayColr(LcV_zXTF(A, "Colr", FmtSpecLy))
 End Function
 
 Function StrMatchLikAy(A, LikAy$()) As Boolean
@@ -907,7 +908,7 @@ LcSetOutLin A, LcVOutLin(A, FmtSpecLy)
 End Sub
 
 Sub LcSetXColr(A As ListColumn, FmtSpecLy$())
-LcSetColr A, LcVColr(A, FmtSpecLy)
+LcSetColr A, LcVMayColr(A, FmtSpecLy)
 End Sub
 
 Sub LcSetXAlignC(A As ListColumn, FmtSpecLy$())
@@ -982,22 +983,28 @@ DoCmd.RunSQL "Create Table Tmp (F1 Text)"
 DbtPrp(CurrentDb, "Tmp", "XX") = "AFdf"
 Debug.Assert DbtPrp(CurrentDb, "Tmp", "XX") = "AFdf"
 End Sub
+
 Property Get DbtPrpLoFmlVbl$(A As Database, T)
 DbtPrpLoFmlVbl = DbtPrp(A, T, "LoFmlVbl")
 End Property
+
 Property Get TblPrpLoFmlVbl$(T)
 TblPrpLoFmlVbl = DbtPrpLoFmlVbl(CurrentDb, T)
 End Property
+
 Property Let TblPrpLoFmlVbl(T, LoFmlVbl$)
 DbtPrpLoFmlVbl(CurrentDb, T) = LoFmlVbl
 End Property
+
 Property Let DbtPrpLoFmlVbl(A As Database, T, LoFmlVbl$)
 DbtPrp(A, T, "LoFmlVbl") = LoFmlVbl
 End Property
+
 Property Get DbtPrp(A As Database, T, P)
 If Not DbtHasPrp(A, T, P) Then Exit Property
 DbtPrp = A.TableDefs(T).Properties(P).Value
 End Property
+
 Function VarDaoTy(A) As dao.DataTypeEnum
 Dim O As dao.DataTypeEnum
 Select Case VarType(A)
@@ -1008,22 +1015,26 @@ Case VbVarType.vbDate: O = dbDate
 Case Else: Stop
 End Select
 VarDaoTy = O
-
 End Function
+
 Function CvFld2(A As dao.Field) As dao.Field2
 Set CvFld2 = A
 End Function
+
 Function DbtfVal(A As Database, T, F)
 DbtfVal = A.TableDefs(T).OpenRecordset.Fields(F).Value
 End Function
+
 Function DbtfkV(A As Database, T, F, K())
 Dim W$, Sk$(), Rs As dao.Recordset
 Sk = DbtSk(A, T)
 W = KyVy_BExpr(Sk, K)
 Q = FmtQQ("Select ? from [?] where ?", F, T, W)
 Set Rs = A.OpenRecordset(Q)
-DbtfkV = RsV(Rs, F)
+If RsIsNoRec(Rs) Then Exit Function
+DbtfkV = Nz(RsV(Rs, F), Empty)
 End Function
+
 Function KyVy_BExpr$(Ky$(), Vy())
 Dim U%, S$
 U = UB(Ky)
@@ -2523,7 +2534,8 @@ Function LcLo(A As ListColumn) As ListObject
 Set LcLo = A.Parent
 End Function
 
-Sub LcSetColr(A As ListColumn, Colr&)
+Sub LcSetColr(A As ListColumn, Colr)
+If Not IsLng(Colr) Then Exit Sub
 Dim R As Range
 Set R = A.DataBodyRange
 Set R = RgNMoreTop(R)
@@ -6227,6 +6239,9 @@ End Function
 Function IsStr(A) As Boolean
 IsStr = VarType(A) = vbString
 End Function
+Function IsLng(A) As Boolean
+IsLng = VarType(A) = vbLong
+End Function
 Function IsEmp(A) As Boolean
 IsEmp = True
 Select Case True
@@ -7652,6 +7667,7 @@ For Each X In AyNz(Spny)
     SpnmExp X, OvrWrt:=True
 Next
 End Sub
+
 Sub SpecPthClr()
 PthClr SpecPth
 End Sub
@@ -7664,12 +7680,32 @@ Function SpecPth$()
 SpecPth = PthEns(CDbPth & "Spec\")
 End Function
 
-Function ColrStr$(A)
+Function ColrStr$(A&)
 
 End Function
 
-Function ColrStr_Colr&(A)
- 
+Function HasT1(A, T) As Boolean
+HasT1 = LinT1(A) = T
+End Function
+
+Function TXyX$(A, T)
+'TXy is Sy with 2 terms T & X
+'TXyX is return first X of TX of TXy matched T
+Dim L
+For Each L In AyNz(A)
+    If HasT1(L, T) Then TXyX = LinRmvT1(L): Exit Function
+Next
+End Function
+
+Function ColrLy() As String()
+ColrLy = SplitCrLf(ColrLines)
+End Function
+
+Function ColrStr_MayColr(A)
+Dim X$
+X = TXyX(ColrLy, A)
+If X = "" Then Exit Function
+ColrStr_MayColr = CLong(X)
 End Function
 
 Function SpnmFt$(A)
@@ -7780,7 +7816,6 @@ Sub SpnmExpIfNotExist(A)
 If FfnIsExist(A) Then Exit Sub
 StrWrt SpnmLines(A), SpnmFt(A)
 End Sub
-
 
 Function SpnmLines$(A)
 SpnmLines = SpnmV(A, "Lines")
