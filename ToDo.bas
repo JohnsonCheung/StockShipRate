@@ -27,7 +27,7 @@ Private Sub SetColr_ToDo()
 '   Call FmtSpec_Brw 'Edt
 '       Edit and Save, then Call Gen will auto import
 'where to add autoImp?
-'   ?
+'   Under WbFmtAllLo
 'AutoImp will show msg if import/noImport
 'ColrLy
 '   what is the common color name in DotNet Library

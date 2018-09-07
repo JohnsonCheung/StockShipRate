@@ -932,6 +932,9 @@ Sub LoFmt(A As ListObject, FmtSpecLy$())
 'TCnt1 = AyFstEle(TCnt)
 'AlignC1 = AyFstEle(AlignC)
 If LoFmtSpecLy_HasTot(A, FmtSpecLy) Then A.ShowTotals = True
+ItrDoXP A.ListColumns, "LcSetXLinR", FmtSpecLy
+ItrDoXP A.ListColumns, "LcSetXLinL", FmtSpecLy
+ItrDoXP A.ListColumns, "LcSetXLinB", FmtSpecLy
 ItrDoXP A.ListColumns, "LcSetXFmt", FmtSpecLy
 ItrDoXP A.ListColumns, "LcSetXFml", FmtSpecLy
 ItrDoXP A.ListColumns, "LcSetXWdt", FmtSpecLy
@@ -941,7 +944,161 @@ ItrDoXP A.ListColumns, "LcSetXTCnt", FmtSpecLy
 ItrDoXP A.ListColumns, "LcSetXOutLin", FmtSpecLy
 ItrDoXP A.ListColumns, "LcSetXAlignC", FmtSpecLy
 ItrDoXP A.ListColumns, "LcSetXColr", FmtSpecLy
+LoSetTit A, FmtSpecLy
+LoBdrAround A
 End Sub
+
+Sub LoSetTit(A As ListObject, FmtSpecLy$())
+Dim Sq(), At As Range, NR%, R As Range, Fny$()
+Fny = LoFny(A)
+Sq = FmtSpecLy_TitSq(FmtSpecLy, A.Name, Fny)
+If Sz(Sq) = 0 Then Exit Sub
+Set R = RgRC(A.DataBodyRange, 1, 1)
+NR = UBound(Sq, 1)
+If NR + 2 < R.Row Then LoVis A: FunEr "LoSetTit", "No enough row above the Lo to put the Tit. [Tit-R] [LoAt-R]", NR, R.Row - 1
+Set At = RgRC(A.DataBodyRange, 0 - UBound(Sq, 1), 1)
+Set R = RgReSz(At, Sq)
+SqRg Sq, At
+RgMgeTit R
+RgBdrInner R
+RgBdrAround R
+End Sub
+
+Private Sub Z_FmtSpecLy_TitSq()
+Dim A$(), Fny$(), T$
+T = "T"
+A = Sy("Tit T A A;B;C", "Tit T D df;s", "Tit T B 234")
+Fny = SslSy("A B C D E F")
+GoSub Tst
+Exit Sub
+Tst:
+    Actual = FmtSpecLy_TitSq(A, T, Fny)
+    Ass SqIsEq(Actual, Expect)
+    Return
+End Sub
+
+Function SqIsEq(A, B) As Boolean
+Dim NR&, NC&
+NR = UBound(A, 1)
+NC = UBound(A, 2)
+If NR <> UBound(B, 1) Then Exit Function
+If NC <> UBound(B, 2) Then Exit Function
+Dim R&, C&
+For R = 1 To NR
+    For C = 1 To NC
+        If A(R, C) <> B(R, C) Then Exit Function
+    Next
+Next
+SqIsEq = True
+End Function
+Function AyMaxSz%(A)
+If Sz(A) = 0 Then Exit Function
+Dim O&, I, S&
+For Each I In A
+    O = Max(O, Sz(I))
+Next
+AyMaxSz = O
+End Function
+Function FmtSpecLy_TitSq(A$(), T$, Fny$()) As Variant()
+Dim Col(), NC%, C%, R%, Tit$, CurNR%, CurV$, J%, I
+NC = Sz(Fny)
+ReDim Col(NC - 1)
+    For C = 0 To NC - 1
+        Tit = Trim(FmtSpecLy_Tit(A$(), T, Fny(C)))
+        If Tit <> "" Then
+            Col(C) = SplitSC(Tit)
+        End If
+    Next
+Dim NR%
+    NR = AyMaxSz(Col)
+Dim O()
+    ReDim O(1 To NR, 1 To NC)
+    For C = 1 To NC
+        CurNR = Sz(Col(C - 1))
+        For R = 1 To NR
+            If CurNR > R Then
+                CurV = Trim(Col(R - 1))
+                If CurV <> "" Then
+                    O(R, C) = CurV
+                End If
+            End If
+        Next
+    Next
+FmtSpecLy_TitSq = O
+End Function
+Function FmtSpecLy_Tit$(A$(), T$, F$)
+Dim J%, O$, L, TT$, FF$, Tit$
+For Each L In A
+    If LinShiftT1(L) = "Tit" Then
+        LinTTRstAsg L, TT, FF, Tit
+        If TT = T Then
+            If FF = F Then
+                FmtSpecLy_Tit = Tit
+                Exit Function
+            End If
+        End If
+    End If
+Next
+End Function
+Sub RgMgeTit(A As Range)
+Dim J%
+For J = 1 To A.Rows.Count
+    RgMgeHSamVal RgR(A, J)
+Next
+For J = 1 To A.Columns.Count
+    RgMgeVEmpVal RgC(A, J)
+Next
+End Sub
+
+Function RgR(A As Range, R)
+Set RgR = RgRR(A, R, R)
+End Function
+
+Sub RgMgeVEmpVal(A As Range)
+Dim LasV, R1, R2, V, J%
+LasV = RgRC(A, 1, 1).Value
+R1 = 1
+For J = 2 To A.Rows.Count
+    V = RgRC(A, J, 1).Value
+    If Not IsEmpty(V) Then
+        R2 = J - 1
+        If R2 > R1 Then
+            RgCRR(A, 1, R1, R2).MergeCells = True
+        End If
+        R1 = J
+        LasV = V
+    End If
+Next
+End Sub
+
+Sub RgMgeHSamVal(A As Range)
+A.Application.DisplayAlerts = False
+Dim J%, C1%, C2%, V, LasV
+LasV = RgRC(A, 1, 1).Value
+C1 = 1
+For J = 2 To A.Columns.Count
+    V = RgRC(A, 1, J).Value
+    If V <> LasV Then
+        C2 = J - 1
+        RgRCC(A, 1, C1, C2).MergeCells = True
+        C1 = J
+        LasV = V
+    End If
+Next
+A.Application.DisplayAlerts = True
+End Sub
+
+Sub RgBdrInner(A As Range)
+BdrSetLin A.Borders(xlInsideHorizontal)
+BdrSetLin A.Borders(xlInsideVertical)
+End Sub
+
+Function LoBdrAround(A As ListObject)
+Dim R As Range
+Set R = RgNMoreTop(A.DataBodyRange)
+If A.ShowTotals Then Set R = RgNMoreBelow(R)
+RgBdrAround R
+End Function
 
 Function XFLinX$(A, F)
 Dim X$, FLikSsl$
@@ -1049,6 +1206,19 @@ Function LcVWdt%(A As ListColumn, FmtSpecLy$())
 LcVWdt = Val(LcV_zXTF(A, "Wdt", FmtSpecLy))
 End Function
 
+Function LcVBdrB(A As ListColumn, FmtSpecLy$()) As Boolean
+LcVBdrB = LcV_zTF(A, "BdrB", FmtSpecLy)
+End Function
+
+Function LcVBdrR(A As ListColumn, FmtSpecLy$()) As Boolean
+LcVBdrR = LcV_zTF(A, "BdrR", FmtSpecLy)
+End Function
+
+Function LcVBdrL(A As ListColumn, FmtSpecLy$()) As Boolean
+LcVBdrL = LcV_zTF(A, "BdrL", FmtSpecLy)
+End Function
+
+
 Function LcVTSum(A As ListColumn, FmtSpecLy$()) As Boolean
 LcVTSum = LcV_zTF(A, "TSum", FmtSpecLy)
 End Function
@@ -1115,6 +1285,76 @@ End Sub
 Sub LcSetFmt(A As ListColumn, Fmt$)
 If Fmt <> "" Then A.DataBodyRange.NumberFormat = Fmt
 End Sub
+Function LcRg(A As ListColumn) As Range
+Dim O As Range
+Set O = RgNMoreTop(A.DataBodyRange)
+If LcLo(A).ShowTotals Then Set O = RgNMoreBelow(O)
+Set LcRg = O
+End Function
+
+Sub LcSetBdrL(A As ListColumn, B As Boolean)
+If B Then RgBdrL LcRg(A)
+End Sub
+
+Sub LcSetXBdrL(A As ListColumn, FmtSpecLy$())
+LcSetBdrL A, LcVBdrL(A, FmtSpecLy)
+End Sub
+
+Sub LcSetBdrR(A As ListColumn, B As Boolean)
+If B Then RgBdrR LcRg(A)
+End Sub
+
+Sub LcSetXBdrR(A As ListColumn, FmtSpecLy$())
+LcSetBdrR A, LcVBdrR(A, FmtSpecLy)
+End Sub
+
+Sub BdrSetLin(A As Border)
+With A
+    .LineStyle = XlLineStyle.xlContinuous
+    .Weight = xlMedium
+    .Color = ColorConstants.vbBlack
+End With
+End Sub
+
+Sub RgBdrL(A As Range)
+BdrSetLin A.Borders(xlEdgeLeft)
+If A.Column > 1 Then BdrSetLin RgC(A, 0).Borders(xlEdgeRight)
+End Sub
+
+Sub RgBdrR(A As Range)
+BdrSetLin A.Borders(xlEdgeRight)
+BdrSetLin RgC(A, 2).Borders(xlEdgeLeft)
+End Sub
+
+Sub RgBdrB(A As Range)
+RgBdrL A
+RgBdrR A
+End Sub
+
+Sub RgBdrTop(A As Range)
+BdrSetLin A.Borders(xlEdgeTop)
+If A.Row > 1 Then BdrSetLin A.Borders(xlEdgeBottom)
+End Sub
+
+Sub RgBdrBottom(A As Range)
+BdrSetLin A.Borders(xlEdgeBottom)
+BdrSetLin A.Borders(xlEdgeTop)
+End Sub
+
+Sub RgBdrAround(A As Range)
+RgBdrL A
+RgBdrR A
+RgBdrTop A
+RgBdrBottom A
+End Sub
+Sub LcSetBdrB(A As ListColumn, B As Boolean)
+If B Then RgBdrB LcRg(A)
+End Sub
+
+Sub LcSetXBdrB(A As ListColumn, FmtSpecLy$())
+LcSetBdrB A, LcVBdrB(A, FmtSpecLy)
+End Sub
+
 Sub LcSetXFmt(A As ListColumn, FmtSpecLy$())
 LcSetFmt A, LcVFmt(A, FmtSpecLy)
 End Sub
@@ -2632,6 +2872,7 @@ End Function
 Function SqRg(A, At As Range) As Range
 Dim O As Range
 Set O = RgReSz(At, A)
+O.MergeCells = False
 O.Value = A
 Set SqRg = O
 End Function
@@ -2710,11 +2951,7 @@ End Function
 
 Sub LcSetColr(A As ListColumn, Colr)
 If Not IsLng(Colr) Then Exit Sub
-Dim R As Range
-Set R = A.DataBodyRange
-Set R = RgNMoreTop(R)
-If LcLo(A).ShowTotals Then Set R = RgNMoreBelow(R)
-R.Interior.Color = Colr
+LcRg(A).Interior.Color = Colr
 End Sub
 
 Sub AyDoABX(Ay, ABX$, A, B)
@@ -4584,15 +4821,7 @@ Function OupFx_Crt$(A)
 OupFx_Crt = AttExp("Tp", A)
 End Function
 Sub TpRfh()
-BB
 WbVis WbRfh(TpWb)
-End Sub
-Function BB()
-
-End Function
-Sub AA()
-
-D Run("BB")
 End Sub
 Sub OupFx_Gen(A$, Fb$, ParamArray WbFmtrAp())
 Dim Av(): Av = WbFmtrAp
@@ -4679,6 +4908,7 @@ Asg Ay(0), AyFstEle
 End Function
 
 Sub WbFmtAllLo(A As Workbook)
+FmtSpec_Imp
 AyBrwThw FmtSpec_ErLy
 AyDoXP WbLoAy(A), "LoFmt", FmtSpec_Ly
 End Sub
@@ -6145,6 +6375,9 @@ SubStrCnt = O
 End Function
 Function RgCC(A As Range, C1, C2) As Range
 Set RgCC = RgRCRC(A, 1, C1, A.Rows.Count, C2)
+End Function
+Function RgC(A As Range, C) As Range
+Set RgC = RgCC(A, C, C)
 End Function
 
 Sub ZZ_FmtQQAv()
