@@ -12,16 +12,16 @@ Private X_Schmy$()
 Public T, F, L
 Property Get E$()
 On Error GoTo X
-E = LinT1(EFLin)
+E = LinT1(ETFLin)
 Exit Property
 X: Debug.Print "Schm.E.PrpEr..."
 End Property
 
-Property Get EFLin$()
+Property Get ETFLin$()
 On Error GoTo X
-EFLin = T1LikLikSslAy_T1(EFLy, T, F)
+ETFLin = T1LikLikSslAy_T1(ETFLy, T, F)
 Exit Property
-X: Debug.Print "Schm.EFLin.PrpEr..."
+X: Debug.Print "Schm.ETFLin.PrpEr..."
 End Property
 
 Property Get Ly()
@@ -136,7 +136,9 @@ End Function
 Function ErFldHasNoEle() As String()
 For Each T In AyNz(Tny)
     For Each F In AyNz(Fny)
-       PushNonEmp ErFldHasNoEle, StrEmpChkMsg(E, FmtQQ("T[?] F[?] has no TEle", T, F))
+        If E = "" Then
+            Push ErFldHasNoEle, FmtQQ("T[?] F[?] cannot be found in any EF-lines", T, F)
+        End If
     Next
 Next
 End Function
@@ -148,7 +150,7 @@ Exit Property
 X: Debug.Print "Schm.Er.PrpEr..."
 End Property
 
-Property Get EFLy() As String():  EFLy = ItmLy(C_EF): End Property
+Property Get ETFLy() As String():  ETFLy = ItmLy(C_EF): End Property
 Property Get TFLy() As String():  TFLy = ItmLy(C_TF): End Property
 Property Get ELy() As String():   ELy = ItmLy(C_E):   End Property
 Property Get DLy() As String():   DLy = ItmLy(C_D): End Property
@@ -162,8 +164,9 @@ Z_Tny
 Exit Sub
 Z_DbCrtSchm
 End Sub
+
 Sub Z_Ini()
-X_Schmy = LgSchmy
+X_Schmy = LgIniSchmy
 End Sub
 
 Sub Z_Tny()
@@ -313,16 +316,7 @@ X: Debug.Print "Schm.PkTFLy.PrpEr..."
 End Property
 
 Function SkSqy() As String()
-Dim O$(), A$(), B$(), J%, U%, T$
-A = SkSslAy
-U = UB(A)
-If UB(A) = -1 Then Exit Function
-ReDim O(U)
-For J = 0 To U
-    T = LinShiftT1(A(J))
-    O(J) = TnSkSql(T, A(J))
-Next
-SkSqy = O
+SkSqy = AyMapSy(SkSslAy, "TnSkSsl_SkSql")
 End Function
 
 Sub Z_DbCrtSchm()

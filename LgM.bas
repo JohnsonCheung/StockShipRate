@@ -9,6 +9,7 @@ Public Const LgSchmNm$ = "LgSchm" ' The LgSchm-Spnm
 Function BB1()
 BB1 = 1
 End Function
+
 Property Get LgSchmLines$()
 LgSchmLines = SpnmLines(LgSchmNm)
 End Property

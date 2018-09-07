@@ -286,7 +286,7 @@ Property Get MB52Pth$()
 MB52Pth = PthEnsSfx(PnmVal("MB52Pth")) & 2000 + Y & "\"
 End Property
 
-Sub Main()
+Sub Rpt()
 'The @Main is the detail of showing how NxtMth YMRate is calculate
 AyBrwThw Lnk
 Import
@@ -296,9 +296,11 @@ Upd
 Gen
 WCls
 End Sub
+
 Private Function BB()
 BB = 2
 End Function
+
 Sub LdDta(Optional IsForceLd As Boolean)
 Lg "LdDta", "Start with [IsForceLd]", IsForceLd
 LdMB52 IsForceLd
@@ -309,12 +311,10 @@ Else
 End If
 Lg "LdDta", "End"
 End Sub
-Property Get FmtSpec$()
 
-End Property
 Sub Gen()
 If IsFstYM Then Exit Sub
-OupFx_Gen OupFx, WFb, FmtSpec
+OupFx_Gen OupFx, WFb
 End Sub
 
 Sub Oup()
