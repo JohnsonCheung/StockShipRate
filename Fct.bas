@@ -932,9 +932,9 @@ Sub LoFmt(A As ListObject, FmtSpecLy$())
 'TCnt1 = AyFstEle(TCnt)
 'AlignC1 = AyFstEle(AlignC)
 If LoFmtSpecLy_HasTot(A, FmtSpecLy) Then A.ShowTotals = True
-ItrDoXP A.ListColumns, "LcSetXLinR", FmtSpecLy
-ItrDoXP A.ListColumns, "LcSetXLinL", FmtSpecLy
-ItrDoXP A.ListColumns, "LcSetXLinB", FmtSpecLy
+ItrDoXP A.ListColumns, "LcSetXBdrR", FmtSpecLy
+ItrDoXP A.ListColumns, "LcSetXBdrL", FmtSpecLy
+ItrDoXP A.ListColumns, "LcSetXBdrB", FmtSpecLy
 ItrDoXP A.ListColumns, "LcSetXFmt", FmtSpecLy
 ItrDoXP A.ListColumns, "LcSetXFml", FmtSpecLy
 ItrDoXP A.ListColumns, "LcSetXWdt", FmtSpecLy
@@ -955,7 +955,7 @@ Sq = FmtSpecLy_TitSq(FmtSpecLy, A.Name, Fny)
 If Sz(Sq) = 0 Then Exit Sub
 Set R = RgRC(A.DataBodyRange, 1, 1)
 NR = UBound(Sq, 1)
-If NR + 2 < R.Row Then LoVis A: FunEr "LoSetTit", "No enough row above the Lo to put the Tit. [Tit-R] [LoAt-R]", NR, R.Row - 1
+If NR + 2 >= R.Row Then LoVis A: FunEr "LoSetTit", "No enough row above the Lo to put the Tit. [Tit-R] [LoAt-R]", NR, R.Row - 1
 Set At = RgRC(A.DataBodyRange, 0 - UBound(Sq, 1), 1)
 Set R = RgReSz(At, Sq)
 SqRg Sq, At
@@ -963,12 +963,16 @@ RgMgeTit R
 RgBdrInner R
 RgBdrAround R
 End Sub
-
+Sub AAA()
+Z_FmtSpecLy_TitSq
+End Sub
 Private Sub Z_FmtSpecLy_TitSq()
-Dim A$(), Fny$(), T$
+Dim A$(), Fny$(), T$, O()
 T = "T"
 A = Sy("Tit T A A;B;C", "Tit T D df;s", "Tit T B 234")
 Fny = SslSy("A B C D E F")
+Expect = O
+ReDim Expect(1 To 2, 1 To 3)
 GoSub Tst
 Exit Sub
 Tst:
@@ -1000,31 +1004,32 @@ Next
 AyMaxSz = O
 End Function
 Function FmtSpecLy_TitSq(A$(), T$, Fny$()) As Variant()
-Dim Col(), NC%, C%, R%, Tit$, CurNR%, CurV$, J%, I
+Dim Col(), NC%, C%, R%, Tit$, F$, CurNTit%, CurV$, J%, I, CurTit$()
 NC = Sz(Fny)
 ReDim Col(NC - 1)
-    For C = 0 To NC - 1
-        Tit = Trim(FmtSpecLy_Tit(A$(), T, Fny(C)))
-        If Tit <> "" Then
-            Col(C) = SplitSC(Tit)
+    For C = 1 To NC
+        F = Trim(Fny(C - 1))
+        Tit = Trim(FmtSpecLy_Tit(A$(), T, F))
+        If Tit = "" Then
+            Col(C - 1) = Sy(F)
+        Else
+            Col(C - 1) = AyTrim(SplitSC(Tit))
         End If
     Next
-Dim NR%
-    NR = AyMaxSz(Col)
+FmtSpecLy_TitSq = SqTranspose(DrySq(Col))
+End Function
+Function SqTranspose(A)
+Dim NR&, NC&, R&, C&
+NR = UBound(A, 1)
+NC = UBound(A, 2)
 Dim O()
-    ReDim O(1 To NR, 1 To NC)
+ReDim O(1 To NC, 1 To NR)
+For R = 1 To NR
     For C = 1 To NC
-        CurNR = Sz(Col(C - 1))
-        For R = 1 To NR
-            If CurNR > R Then
-                CurV = Trim(Col(R - 1))
-                If CurV <> "" Then
-                    O(R, C) = CurV
-                End If
-            End If
-        Next
+        O(C, R) = A(R, C)
     Next
-FmtSpecLy_TitSq = O
+Next
+SqTranspose = O
 End Function
 Function FmtSpecLy_Tit$(A$(), T$, F$)
 Dim J%, O$, L, TT$, FF$, Tit$
@@ -1055,22 +1060,32 @@ Set RgR = RgRR(A, R, R)
 End Function
 
 Sub RgMgeVEmpVal(A As Range)
-Dim LasV, R1, R2, V, J%
-LasV = RgRC(A, 1, 1).Value
+Dim R1, R2, V, J%
+If IsEmpty(RgRC(A, 1, 1).Value) Then Stop
 R1 = 1
 For J = 2 To A.Rows.Count
     V = RgRC(A, J, 1).Value
     If Not IsEmpty(V) Then
         R2 = J - 1
         If R2 > R1 Then
-            RgCRR(A, 1, R1, R2).MergeCells = True
+            RgMge RgCRR(A, 1, R1, R2)
         End If
         R1 = J
-        LasV = V
     End If
 Next
+If IsEmpty(V) Then
+    R2 = J - 1
+    If R2 > R1 Then
+        RgMge RgCRR(A, 1, R1, R2)
+    End If
+End If
 End Sub
 
+Sub RgMge(A As Range)
+A.MergeCells = True
+A.HorizontalAlignment = XlHAlign.xlHAlignCenter
+A.VerticalAlignment = XlVAlign.xlVAlignCenter
+End Sub
 Sub RgMgeHSamVal(A As Range)
 A.Application.DisplayAlerts = False
 Dim J%, C1%, C2%, V, LasV
@@ -1080,7 +1095,9 @@ For J = 2 To A.Columns.Count
     V = RgRC(A, 1, J).Value
     If V <> LasV Then
         C2 = J - 1
-        RgRCC(A, 1, C1, C2).MergeCells = True
+        If Not IsEmpty(LasV) Then
+            RgRCC(A, 1, C1, C2).MergeCells = True
+        End If
         C1 = J
         LasV = V
     End If
@@ -7113,8 +7130,9 @@ Dim NC%, NR&
 NC = DryNCol(A)
 NR = Sz(A)
 ReDim O(1 To NR, 1 To NC)
-For R = 1 To NR
-    Dr = A(R - 1)
+R = 0
+For Each Dr In A
+    R = R + 1
     For C = 1 To Min(Sz(Dr), NC)
         O(R, C) = Dr(C - 1)
     Next
