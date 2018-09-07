@@ -280,7 +280,7 @@ End Function
 
 Sub SchmyAsg(A, OEr$(), OTF$(), OETF$(), OE$(), OD$())
 Dim Ny$(), Er$()
-    Ny = Sy(C_TF, C_ETF, C_E, C_D)
+    Ny = sy(C_TF, C_ETF, C_E, C_D)
     AyAsg LyBrk1(A, Ny), OTF, OETF, OE, OD, OEr
 End Sub
 

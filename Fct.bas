@@ -178,7 +178,7 @@ Function DbScly(A As Database) As String()
 DbScly = AySy(AyOfAy_Ay(AyMap(ItrMap(A.TableDefs, "TdScly"), "TdScly_AddPfx")))
 End Function
 Function TdScly(A As dao.TableDef) As String()
-TdScly = AyAdd(Sy(TdScl(A)), TdFdScly(A))
+TdScly = AyAdd(sy(TdScl(A)), TdFdScly(A))
 End Function
 Function TdScl$(A As dao.TableDef)
 TdScl = ApScl(A.Name, AddLbl(A.OpenRecordset.RecordCount, "NRec"), AddLbl(A.DateCreated, "CrtDte"), AddLbl(A.LastUpdated, "UpdDte"))
@@ -363,9 +363,9 @@ Function AyWhT2EqV(A$(), V) As String()
 AyWhT2EqV = AyWhPredXP(A, "LinHasT2", V)
 End Function
 
-Function Sy(ParamArray Ap())
+Function sy(ParamArray Ap())
 Dim Av(): Av = Ap
-Sy = AySy(Av)
+sy = AySy(Av)
 End Function
 
 Sub WtReSeq(T, ReSeqSpec$)
@@ -1259,7 +1259,7 @@ If Not NoTrim Then
     O1 = Trim(O1)
     O2 = Trim(O2)
 End If
-StrBrk1At = Sy(O1, O2)
+StrBrk1At = sy(O1, O2)
 End Function
 
 Function StrBrk1(A, Sep$, Optional NoTrim As Boolean) As String()
@@ -3446,7 +3446,7 @@ DbDrpTbl A, Tmp
 End Sub
 
 Function AyDupChk(A, QMsg$) As String()
-AyDupChk = AyRmvEmp(Sy(AyDupMsg(A, QMsg)))
+AyDupChk = AyRmvEmp(sy(AyDupMsg(A, QMsg)))
 End Function
 
 Function AyDupMsg$(A, QMsg$)
@@ -7604,7 +7604,7 @@ Sub WinAlignV()
 OCCwinVert.Execute
 End Sub
 Function AyEmpChk(A, Msg$) As String()
-If Sz(A) = 0 Then AyEmpChk = Sy(Msg)
+If Sz(A) = 0 Then AyEmpChk = sy(Msg)
 End Function
 Function LyWhT1Er(A, Ny0) As String()
 'return subset of Ly for those T1 not in Ny0
@@ -7907,7 +7907,7 @@ End Function
 
 Function LyConstLy(A, VarNm) As String()
 If Sz(A) = 0 Then
-    LyConstLy = Sy(FmtQQ("Public Const ?$ = """"", VarNm))
+    LyConstLy = sy(FmtQQ("Public Const ?$ = """"", VarNm))
     Exit Function
 End If
 Dim O$(), L$
@@ -7968,7 +7968,7 @@ Dim A$(), B$()
 A = ConstLy(Nm)
 If Sz(A) = 0 Then Exit Function
 B = LyConstLy(A, Nm)
-ConstNewLy = AyAddAp(A, Sy(ConstSepLin), B)
+ConstNewLy = AyAddAp(A, sy(ConstSepLin), B)
 End Function
 
 Function ConstFt$(Nm)
