@@ -337,7 +337,7 @@ End Sub
 Property Get TFLin$()
 On Error GoTo X
 If No_T Then Exit Property
-TFLin = AySng(AyWhT1EqV(TFLy, T), "Schm.TFLin.PrpEr")
+TFLin = AySng(AyWhT1(TFLy, T), "Schm.TFLin.PrpEr")
 Exit Property
 X: Debug.Print "Schm.TFLin.PrpEr..."
 End Property

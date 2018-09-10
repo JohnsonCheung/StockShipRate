@@ -1,228 +1,19 @@
 Option Compare Database
 Option Explicit
-Public Const ConstSepLin$ = "------------------------------------"
-Public Const FmtSpecNm$ = "Fmt"
-Public Const VdtEleSclNmSsl$ = "Req AlwZLen Sz Dft VRul VTxt Des Expr"
-Public Const VdtFmtSpecNmSsl$ = "Req AlwZLen Sz Dft VRul VTxt Des Expr"
-Public Const StdEleLines$ = _
-"E Crt Dte;Req;Dft=Now" & vbCrLf & _
-"E Tim Dte" & vbCrLf & _
-"E Lng Lng" & vbCrLf & _
-"E Mem Mem" & vbCrLf & _
-"E Dte Dte" & vbCrLf & _
-"E Nm  Txt;Req;Sz=50"
-Public Const StdETFLines$ = _
-"ETF Nm  * *Nm          " & vbCrLf & _
-"ETF Tim * *Tim         " & vbCrLf & _
-"ETF Dte * *Dte         " & vbCrLf & _
-"ETF Crt * CrtTim       " & vbCrLf & _
-"ETF Lng * Sz           " & vbCrLf & _
-"ETF Mem * Lines *Ft *Fx"
-Public Const SpecSchmLines$ = "TF Spec * SpecNm | Lines Ft Sz Tim LdTim CrtTim " & vbCrLf & StdETFLines & vbCrLf & StdEleLines
-Public Const C_Des$ = "Description"
-Public Fso As New Scripting.FileSystemObject
-Public Fcmd As New Fcmd
-Private Const Z_ReSeqSpec$ = _
-"Flg RecTy Amt Key Uom MovTy Qty BchRateUX RateTy Bch Las GL |" & _
-" Flg IsAlert IsWithSku |" & _
-" Key Sku PstMth PstDte |" & _
-" Bch BchNo BchPermitDate BchPermit |" & _
-" Las LasBchNo LasPermitDate LasPermit |" & _
-" GL GLDocNo GLDocDte GLAsg GLDocTy GLLin GLPstKy GLPc GLAc GLBusA GLRef |" & _
-" Uom Des StkUom Ac_U"
-Type AttRs
-    TblRs As dao.Recordset
-    AttRs As dao.Recordset
-End Type
-Enum EApp
-    EDuty = 1
-    EStkHld = 2
-    EShpRate = 3
-    EShpCst = 4
-    ETaxCmp = 5
-    ETaxAlert = 6
-End Enum
-Private Const ColrLines_1$ = "ActiveBorder -4934476" & _
-vbCrLf & "ActiveCaption -6703919" & _
-vbCrLf & "ActiveCaptionText -16777216" & _
-vbCrLf & "AliceBlue -984833" & _
-vbCrLf & "AntiqueWhite -332841" & _
-vbCrLf & "AppWorkspace -5526613" & _
-vbCrLf & "Aqua -16711681" & _
-vbCrLf & "Aquamarine -8388652" & _
-vbCrLf & "Azure -983041" & _
-vbCrLf & "Beige -657956" & _
-vbCrLf & "Bisque -6972" & _
-vbCrLf & "Black -16777216" & _
-vbCrLf & "BlanchedAlmond -5171" & _
-vbCrLf & "Blue -16776961" & _
-vbCrLf & "BlueViolet -7722014" & _
-vbCrLf & "Brown -5952982" & _
-vbCrLf & "BurlyWood -2180985" & _
-vbCrLf & "ButtonFace -986896" & _
-vbCrLf & "ButtonHighlight -1" & _
-vbCrLf & "ButtonShadow -6250336"
-Private Const ColrLines_2$ = "CadetBlue -10510688" & _
-vbCrLf & "Chartreuse -8388864" & _
-vbCrLf & "Chocolate -2987746" & _
-vbCrLf & "Control -986896" & _
-vbCrLf & "ControlDark -6250336" & _
-vbCrLf & "ControlDarkDark -9868951" & _
-vbCrLf & "ControlLight -1842205" & _
-vbCrLf & "ControlLightLight -1" & _
-vbCrLf & "ControlText -16777216" & _
-vbCrLf & "Coral -32944" & _
-vbCrLf & "CornflowerBlue -10185235" & _
-vbCrLf & "Cornsilk -1828" & _
-vbCrLf & "Crimson -2354116" & _
-vbCrLf & "Cyan -16711681" & _
-vbCrLf & "DarkBlue -16777077" & _
-vbCrLf & "DarkCyan -16741493" & _
-vbCrLf & "DarkGoldenrod -4684277" & _
-vbCrLf & "DarkGray -5658199" & _
-vbCrLf & "DarkGreen -16751616" & _
-vbCrLf & "DarkKhaki -4343957"
-Private Const ColrLines_3$ = "DarkMagenta -7667573" & _
-vbCrLf & "DarkOliveGreen -11179217" & _
-vbCrLf & "DarkOrange -29696" & _
-vbCrLf & "DarkOrchid -6737204" & _
-vbCrLf & "DarkRed -7667712" & _
-vbCrLf & "DarkSalmon -1468806" & _
-vbCrLf & "DarkSeaGreen -7357301" & _
-vbCrLf & "DarkSlateBlue -12042869" & _
-vbCrLf & "DarkSlateGray -13676721" & _
-vbCrLf & "DarkTurquoise -16724271" & _
-vbCrLf & "DarkViolet -7077677" & _
-vbCrLf & "DeepPink -60269" & _
-vbCrLf & "DeepSkyBlue -16728065" & _
-vbCrLf & "Desktop -16777216" & _
-vbCrLf & "DimGray -9868951" & _
-vbCrLf & "DodgerBlue -14774017" & _
-vbCrLf & "Firebrick -5103070" & _
-vbCrLf & "FloralWhite -1296" & _
-vbCrLf & "ForestGreen -14513374" & _
-vbCrLf & "Fuchsia -65281"
-Private Const ColrLines_4$ = "Gainsboro -2302756" & _
-vbCrLf & "GhostWhite -460545" & _
-vbCrLf & "Gold -10496" & _
-vbCrLf & "Goldenrod -2448096" & _
-vbCrLf & "GradientActiveCaption -4599318" & _
-vbCrLf & "GradientInactiveCaption -2628366" & _
-vbCrLf & "Gray -8355712" & _
-vbCrLf & "GrayText -9605779" & _
-vbCrLf & "Green -16744448" & _
-vbCrLf & "GreenYellow -5374161" & _
-vbCrLf & "Highlight -16746281" & _
-vbCrLf & "HighlightText -1" & _
-vbCrLf & "Honeydew -983056" & _
-vbCrLf & "HotPink -38476" & _
-vbCrLf & "HotTrack -16750900" & _
-vbCrLf & "InactiveBorder -722948" & _
-vbCrLf & "InactiveCaption -4207141" & _
-vbCrLf & "InactiveCaptionText -16777216" & _
-vbCrLf & "IndianRed -3318692" & _
-vbCrLf & "Indigo -11861886"
-Private Const ColrLines_5$ = "Info -31" & _
-vbCrLf & "InfoText -16777216" & _
-vbCrLf & "Ivory -16" & _
-vbCrLf & "Khaki -989556" & _
-vbCrLf & "Lavender -1644806" & _
-vbCrLf & "LavenderBlush -3851" & _
-vbCrLf & "LawnGreen -8586240" & _
-vbCrLf & "LemonChiffon -1331" & _
-vbCrLf & "LightBlue -5383962" & _
-vbCrLf & "LightCoral -1015680" & _
-vbCrLf & "LightCyan -2031617" & _
-vbCrLf & "LightGoldenrodYellow -329006" & _
-vbCrLf & "LightGray -2894893" & _
-vbCrLf & "LightGreen -7278960" & _
-vbCrLf & "LightPink -18751" & _
-vbCrLf & "LightSalmon -24454" & _
-vbCrLf & "LightSeaGreen -14634326" & _
-vbCrLf & "LightSkyBlue -7876870" & _
-vbCrLf & "LightSlateGray -8943463" & _
-vbCrLf & "LightSteelBlue -5192482"
-Private Const ColrLines_6$ = "LightYellow -32" & _
-vbCrLf & "Lime -16711936" & _
-vbCrLf & "LimeGreen -13447886" & _
-vbCrLf & "Linen -331546" & _
-vbCrLf & "Magenta -65281" & _
-vbCrLf & "Maroon -8388608" & _
-vbCrLf & "MediumAquamarine -10039894" & _
-vbCrLf & "MediumBlue -16777011" & _
-vbCrLf & "MediumOrchid -4565549" & _
-vbCrLf & "MediumPurple -7114533" & _
-vbCrLf & "MediumSeaGreen -12799119" & _
-vbCrLf & "MediumSlateBlue -8689426" & _
-vbCrLf & "MediumSpringGreen -16713062" & _
-vbCrLf & "MediumTurquoise -12004916" & _
-vbCrLf & "MediumVioletRed -3730043" & _
-vbCrLf & "Menu -986896" & _
-vbCrLf & "MenuBar -986896" & _
-vbCrLf & "MenuHighlight -13395457" & _
-vbCrLf & "MenuText -16777216" & _
-vbCrLf & "MidnightBlue -15132304"
-Private Const ColrLines_7$ = "MintCream -655366" & _
-vbCrLf & "MistyRose -6943" & _
-vbCrLf & "Moccasin -6987" & _
-vbCrLf & "NavajoWhite -8531" & _
-vbCrLf & "Navy -16777088" & _
-vbCrLf & "OldLace -133658" & _
-vbCrLf & "Olive -8355840" & _
-vbCrLf & "OliveDrab -9728477" & _
-vbCrLf & "Orange -23296" & _
-vbCrLf & "OrangeRed -47872" & _
-vbCrLf & "Orchid -2461482" & _
-vbCrLf & "PaleGoldenrod -1120086" & _
-vbCrLf & "PaleGreen -6751336" & _
-vbCrLf & "PaleTurquoise -5247250" & _
-vbCrLf & "PaleVioletRed -2396013" & _
-vbCrLf & "PapayaWhip -4139" & _
-vbCrLf & "PeachPuff -9543" & _
-vbCrLf & "Peru -3308225" & _
-vbCrLf & "Pink -16181" & _
-vbCrLf & "Plum -2252579"
-Private Const ColrLines_8$ = "PowderBlue -5185306" & _
-vbCrLf & "Purple -8388480" & _
-vbCrLf & "Red -65536" & _
-vbCrLf & "RosyBrown -4419697" & _
-vbCrLf & "RoyalBlue -12490271" & _
-vbCrLf & "SaddleBrown -7650029" & _
-vbCrLf & "Salmon -360334" & _
-vbCrLf & "SandyBrown -744352" & _
-vbCrLf & "ScrollBar -3618616" & _
-vbCrLf & "SeaGreen -13726889" & _
-vbCrLf & "SeaShell -2578" & _
-vbCrLf & "Sienna -6270419" & _
-vbCrLf & "Silver -4144960" & _
-vbCrLf & "SkyBlue -7876885" & _
-vbCrLf & "SlateBlue -9807155" & _
-vbCrLf & "SlateGray -9404272" & _
-vbCrLf & "Snow -1286" & _
-vbCrLf & "SpringGreen -16711809" & _
-vbCrLf & "SteelBlue -12156236" & _
-vbCrLf & "Tan -2968436"
-Private Const ColrLines_9$ = "Teal -16744320" & _
-vbCrLf & "Thistle -2572328" & _
-vbCrLf & "Tomato -40121" & _
-vbCrLf & "Transparent 16777215" & _
-vbCrLf & "Turquoise -12525360" & _
-vbCrLf & "Violet -1146130" & _
-vbCrLf & "Wheat -663885" & _
-vbCrLf & "White -1" & _
-vbCrLf & "WhiteSmoke -657931" & _
-vbCrLf & "Window -1" & _
-vbCrLf & "WindowFrame -10197916" & _
-vbCrLf & "WindowText -16777216" & _
-vbCrLf & "Yellow -256" & _
-vbCrLf & "YellowGreen -6632142"
-Public Const ColrLines$ = ColrLines_1 & vbCrLf & ColrLines_2 & vbCrLf & ColrLines_3 & vbCrLf & ColrLines_4 & vbCrLf & ColrLines_5 & vbCrLf & ColrLines_6 & vbCrLf & ColrLines_7 & vbCrLf & ColrLines_8 & vbCrLf & ColrLines_9
 Public Q$
-Const PSep$ = " "
-Const PSep1$ = " "
 Public Actual, Expect
 Public Schm As New Schm
+Public Fso As New Scripting.FileSystemObject
+Public Fcmd As New Fcmd
 Private X_W As Database
+
+Function LSFt1Ly_zColLnkLy() As String()
+LSFt1Ly_zColLnkLy = AyOfAy_Ay(AyMap(LSActiveStarWs2Ly, "LSFt1Ly_zColLnkLy_zOne"))
+End Function
+
+Function LSFt1Ly_zLnkFxLy() As String()
+LSFt1Ly_zLnkFxLy = AyMapSy(LSActiveStarWs2Ly, "LSFt1Ly_zLnkFxLy_zOne")
+End Function
 
 Function SclShift$(OA)
 BrkS1Asg OA, ";", SclShift, OA
@@ -492,12 +283,22 @@ Function LinHasT1(A, T1) As Boolean
 LinHasT1 = LinT1(A) = T1
 End Function
 
+Function LinHasTT(ByVal A, T1, T2) As Boolean
+If T1 <> LinShiftTerm(A) Then Exit Function
+If T2 <> LinShiftTerm(A) Then Exit Function
+LinHasTT = True
+End Function
+
 Function LinHasT2(A, T2) As Boolean
 LinHasT2 = LinT2(A) = T2
 End Function
 
 Function LinT2$(A)
 LinT2 = LinT1(LinRmvT1(A))
+End Function
+
+Function LinT3$(A)
+LinT3 = LinT1(LinRmvTT(A))
 End Function
 
 Function LinInT1Ay(A, T1Ay$())
@@ -529,8 +330,8 @@ LinShiftTerm O
 LinRmvT1 = O
 End Function
 
-Function AyWhT1EqV(A, V) As String()
-AyWhT1EqV = AyWhPredXP(A, "LinHasT1", V)
+Function AyWhT1(A, V) As String()
+AyWhT1 = AyWhPredXP(A, "LinHasT1", V)
 End Function
 
 Function AyWhT2EqV(A$(), V) As String()
@@ -665,7 +466,7 @@ End Sub
 
 Function DbSetTblDes$(A As Database, TblDes$)
 Dim T$, D$
-LinT1RestAsg TblDes, T, D
+LinTRstAsg TblDes, T, D
 DbtDes(A, T) = D
 End Function
 
@@ -703,7 +504,7 @@ ReDim O(U)
 O = AyMap(O, "EmpSy")
 Set NmDic = AyIxDic(Ny)
 For Each L In A
-    LinT1RestAsg LTrim(L), T1, T2
+    LinTRstAsg LTrim(L), T1, T2
     If NmDic.Exists(T1) Then
         Ix = NmDic(T1)
         Push O(Ix), T2 '<----
@@ -857,6 +658,52 @@ End Function
 Function AyMapPXSy(A, PX$, P) As String()
 AyMapPXSy = AyMapPXInto(A, PX, P, EmpSy)
 End Function
+Function TTXAyFst(Ay, A, B)
+Dim X, T1$, T2$, Rst$
+For Each X In AyNz(Ay)
+    LinT2RstAsg X, T1, T2, Rst
+    If T1 = A Then
+        If T2 = B Then
+            TTXAyFst = X
+            Exit Function
+        End If
+    End If
+Next
+End Function
+Function AyMapAXBSy(Ay, AXB$, A, B)
+AyMapAXBSy = AyMapAXBInto(Ay, AXB, A, B, EmpSy)
+End Function
+
+Function AyMapAXBInto(Ay, AXB$, A, B, OInto)
+Dim O: O = OInto
+Erase O
+If Sz(Ay) > 0 Then
+    Dim J&, X
+    ReDim O(UB(A))
+    For Each X In A
+        Asg Run(AXB, A, X, B), O(J)
+        J = J + 1
+    Next
+End If
+AyMapAXBInto = O
+End Function
+Function AyMapABXSy(Ay, ABX$, A, B) As String()
+AyMapABXSy = AyMapABXInto(Ay, ABX, A, B, EmpSy)
+End Function
+
+Function AyMapABXInto(Ay, ABX$, A, B, OInto)
+Dim O: O = OInto
+Erase O
+If Sz(Ay) > 0 Then
+    Dim J&, X
+    ReDim O(UB(A))
+    For Each X In A
+        Asg Run(ABX, A, B, X), O(J)
+        J = J + 1
+    Next
+End If
+AyMapABXInto = O
+End Function
 
 Function AyMapPXInto(A, PX$, P, OInto)
 Dim O: O = OInto
@@ -916,9 +763,9 @@ Next
 End Function
 Function LcFmtSpecLy_HasTot(A As ListColumn, FmtSpecLy$()) As Boolean
 LcFmtSpecLy_HasTot = True
-If LcV_zTF(A, "TSum", FmtSpecLy) Then Exit Function
-If LcV_zTF(A, "TAvg", FmtSpecLy) Then Exit Function
-If LcV_zTF(A, "TCnt", FmtSpecLy) Then Exit Function
+If LcV_zT0F2(A, "TSum", FmtSpecLy) Then Exit Function
+If LcV_zT0F2(A, "TAvg", FmtSpecLy) Then Exit Function
+If LcV_zT0F2(A, "TCnt", FmtSpecLy) Then Exit Function
 LcFmtSpecLy_HasTot = False
 End Function
 Sub LoFmt(A As ListObject, FmtSpecLy$())
@@ -931,6 +778,10 @@ Sub LoFmt(A As ListObject, FmtSpecLy$())
 'TAvg1 = AyFstEle(TAvg)
 'TCnt1 = AyFstEle(TCnt)
 'AlignC1 = AyFstEle(AlignC)
+With LoWs(A).Outline
+    .SummaryColumn = xlSummaryOnLeft
+    .SummaryRow = xlSummaryAbove
+End With
 If LoFmtSpecLy_HasTot(A, FmtSpecLy) Then A.ShowTotals = True
 ItrDoXP A.ListColumns, "LcSetXBdrR", FmtSpecLy
 ItrDoXP A.ListColumns, "LcSetXBdrL", FmtSpecLy
@@ -1035,7 +886,7 @@ Function FmtSpecLy_Tit$(A$(), T$, F$)
 Dim J%, O$, L, TT$, FF$, Tit$
 For Each L In A
     If LinShiftT1(L) = "Tit" Then
-        LinTTRstAsg L, TT, FF, Tit
+        LinT2RstAsg L, TT, FF, Tit
         If TT = T Then
             If FF = F Then
                 FmtSpecLy_Tit = Tit
@@ -1045,6 +896,20 @@ For Each L In A
     End If
 Next
 End Function
+
+Function FmtSpecLy_NTitRow(A$(), T$) As Byte
+Dim J%, O As Byte, L, TT$, FF$, Tit$
+For Each L In A
+    If LinShiftT1(L) = "Tit" Then
+        LinT2RstAsg L, TT, FF, Tit
+        If TT = T Then
+            O = Max(O, Sz(SplitSC(Tit)))
+        End If
+    End If
+Next
+FmtSpecLy_NTitRow = O
+End Function
+
 Sub RgMgeTit(A As Range)
 Dim J%
 For J = 1 To A.Rows.Count
@@ -1135,61 +1000,64 @@ Function LcLoNm$(A As ListColumn)
 LcLoNm = CvLo(A.Parent).Name
 End Function
 
-Function TFLinHasTF(A, T$, F$) As Boolean
+Function T0F2LinHasTF(A, T$, F$) As Boolean
 Dim TLik$, FLikSsl$
-LinT1RestAsg A, TLik, FLikSsl
+LinTRstAsg A, TLik, FLikSsl
 If T Like TLik Then
     If StrMatchLikSsl(F, FLikSsl) Then
-        TFLinHasTF = True
+        T0F2LinHasTF = True
         Exit Function
     End If
 End If
 End Function
 
-Function LcV_zTF(A As ListColumn, Itm$, FmtSpecLy$()) As Boolean
+Function LcV_zT0F2(A As ListColumn, Itm$, FmtSpecLy$()) As Boolean
 Dim L, LikT$, LikFSsl$
 Dim T$, F$
 T = LcLoNm(A)
 F = A.Name
 For Each L In FmtSpecLy
     If LinShiftT1(L) = Itm Then
-        If TFLinHasTF(L, T, F) Then LcV_zTF = True: Exit Function
+        If T0F2LinHasTF(L, T, F) Then LcV_zT0F2 = True: Exit Function
     End If
 Next
 End Function
 
-Function TXLinX$(A, T$)
+Function T0XLinX$(A, T$)
 Dim LikT$, X$
-LinT1RestAsg A, LikT, X
+LinTRstAsg A, LikT, X
 If T Like LikT Then
-    TXLinX = X
+    T0XLinX = X
     Exit Function
 End If
 End Function
 
-Function LcV_zTX$(A As ListColumn, Itm$, FmtSpecLy$())
+Function LcV_zT0X$(A As ListColumn, Itm$, FmtSpecLy$())
 Dim L, LikT$, X$
 Dim T$
 T = LcLoNm(A)
 For Each L In FmtSpecLy
     If LinShiftT1(L) = Itm Then
-        X = TXLinX(L, T)
-        If X <> "" Then LcV_zTX = X: Exit Function
+        X = T0XLinX(L, T)
+        If X <> "" Then LcV_zT0X = X: Exit Function
     End If
 Next
 End Function
-
-Function LcV_zXTF$(A As ListColumn, Itm$, FmtSpecLy$())
-Dim L, V$, LikT$, LikFSsl$
-Dim T$, F$
-T = LcLoNm(A)
-F = A.Name
+Function LcV_zXTF1$(A As ListColumn, Itm$, FmtSpecLy$())
+'No Dig = Exactly
+'0      = Lik
+'1      = Ssl
+'2      = LikSsl
+Dim L, V$, T$, F1$
+Dim TT$, FF$
+TT = LcLoNm(A)
+FF = A.Name
 For Each L In FmtSpecLy
     If LinShiftT1(L) = Itm Then
-        LinTTRstAsg L, V, LikT, LikFSsl
-        If T Like LikT Then
-            If StrMatchLikSsl(F, LikFSsl) Then
-                LcV_zXTF = V
+        LinT2RstAsg L, V, T, F1
+        If T = TT Then
+            If SslHas(F1, FF) Then
+                LcV_zXTF1 = V
                 Exit Function
             End If
         End If
@@ -1197,7 +1065,29 @@ For Each L In FmtSpecLy
 Next
 End Function
 
-Function LcV_zTFX$(A As ListColumn, Itm$, FmtSpecLy$())
+Function LcV_zXT0F2$(A As ListColumn, Itm$, FmtSpecLy$())
+'No Dig = Exactly
+'0      = Lik
+'1      = Ssl
+'2      = LikSsl
+Dim L, V$, LikT$, LikFSsl$
+Dim T$, F$
+T = LcLoNm(A)
+F = A.Name
+For Each L In FmtSpecLy
+    If LinShiftT1(L) = Itm Then
+        LinT2RstAsg L, V, LikT, LikFSsl
+        If T Like LikT Then
+            If StrMatchLikSsl(F, LikFSsl) Then
+                LcV_zXT0F2 = V
+                Exit Function
+            End If
+        End If
+    End If
+Next
+End Function
+
+Function LcV_zT0F2X$(A As ListColumn, Itm$, FmtSpecLy$())
 Dim L, LikT$, LikF$, V$
 Dim T$, F$
 T = LcLoNm(A)
@@ -1205,10 +1095,10 @@ F = A.Name
 
 For Each L In FmtSpecLy
     If LinShiftT1(L) = Itm Then
-        LinTTRstAsg L, LikT, LikF, V
+        LinT2RstAsg L, LikT, LikF, V
         If T Like LikT Then
             If F Like LikF Then
-                LcV_zTFX = V
+                LcV_zT0F2X = V
                 Exit Function
             End If
         End If
@@ -1216,40 +1106,40 @@ For Each L In FmtSpecLy
 Next
 End Function
 Function LcVFmt$(A As ListColumn, FmtSpecLy$())
-LcVFmt = LcV_zXTF(A, "Fmt", FmtSpecLy)
+LcVFmt = LcV_zXT0F2(A, "Fmt", FmtSpecLy)
 End Function
 
 Function LcVWdt%(A As ListColumn, FmtSpecLy$())
-LcVWdt = Val(LcV_zXTF(A, "Wdt", FmtSpecLy))
+LcVWdt = Val(LcV_zXT0F2(A, "Wdt", FmtSpecLy))
 End Function
 
 Function LcVBdrB(A As ListColumn, FmtSpecLy$()) As Boolean
-LcVBdrB = LcV_zTF(A, "BdrB", FmtSpecLy)
+LcVBdrB = LcV_zT0F2(A, "BdrB", FmtSpecLy)
 End Function
 
 Function LcVBdrR(A As ListColumn, FmtSpecLy$()) As Boolean
-LcVBdrR = LcV_zTF(A, "BdrR", FmtSpecLy)
+LcVBdrR = LcV_zT0F2(A, "BdrR", FmtSpecLy)
 End Function
 
 Function LcVBdrL(A As ListColumn, FmtSpecLy$()) As Boolean
-LcVBdrL = LcV_zTF(A, "BdrL", FmtSpecLy)
+LcVBdrL = LcV_zT0F2(A, "BdrL", FmtSpecLy)
 End Function
 
 
 Function LcVTSum(A As ListColumn, FmtSpecLy$()) As Boolean
-LcVTSum = LcV_zTF(A, "TSum", FmtSpecLy)
+LcVTSum = LcV_zT0F2(A, "TSum", FmtSpecLy)
 End Function
 
 Function LcVTAvg(A As ListColumn, FmtSpecLy$()) As Boolean
-LcVTAvg = LcV_zTF(A, "TAvg", FmtSpecLy)
+LcVTAvg = LcV_zT0F2(A, "TAvg", FmtSpecLy)
 End Function
 
 Function LcVTCnt(A As ListColumn, FmtSpecLy$()) As Boolean
-LcVTCnt = LcV_zTF(A, "TCnt", FmtSpecLy)
+LcVTCnt = LcV_zT0F2(A, "TCnt", FmtSpecLy)
 End Function
 
 Function LcVMayColr(A As ListColumn, FmtSpecLy$())
-LcVMayColr = ColrStr_MayColr(LcV_zXTF(A, "Colr", FmtSpecLy))
+LcVMayColr = ColrStr_MayColr(LcV_zXT0F2(A, "Colr", FmtSpecLy))
 End Function
 
 Function StrMatchLikAy(A, LikAy$()) As Boolean
@@ -1269,7 +1159,7 @@ LcSetOutLin A, LcVOutLin(A, FmtSpecLy)
 End Sub
 
 Sub LcSetXColr(A As ListColumn, FmtSpecLy$())
-LcSetColr A, LcVMayColr(A, FmtSpecLy)
+LcSetColr A, LcVMayColr(A, FmtSpecLy), FmtSpecLy_NTitRow(FmtSpecLy, LcLo(A).Name)
 End Sub
 
 Sub LcSetXAlignC(A As ListColumn, FmtSpecLy$())
@@ -1281,18 +1171,16 @@ If Lvl > 1 Then A.DataBodyRange.EntireColumn.OutlineLevel = Lvl
 End Sub
 
 Function LcVOutLin(A As ListColumn, FmtSpecLy$()) As Byte
-Dim ReSeq$
-ReSeq = LcV_zTX(A, "ReSeq", FmtSpecLy)
-LcVOutLin = ReSeqSpec_OutLin(ReSeq, A.Name)
+LcVOutLin = Val(LcV_zXTF1(A, "OLvl", FmtSpecLy))
 End Function
 
 Function LcVAlignC(A As ListColumn, FmtSpecLy$()) As Boolean
-LcVAlignC = LcV_zTF(A, "AlignC", FmtSpecLy)
+LcVAlignC = LcV_zT0F2(A, "AlignC", FmtSpecLy)
 End Function
 
 
 Function LcVFml$(A As ListColumn, FmtSpecLy$())
-LcVFml = LcV_zTFX(A, "Fml", FmtSpecLy)
+LcVFml = LcV_zT0F2X(A, "Fml", FmtSpecLy)
 End Function
 
 Sub LcSetXFml(A As ListColumn, FmtSpecLy$())
@@ -1302,11 +1190,15 @@ End Sub
 Sub LcSetFmt(A As ListColumn, Fmt$)
 If Fmt <> "" Then A.DataBodyRange.NumberFormat = Fmt
 End Sub
+
 Function LcRg(A As ListColumn) As Range
 Dim O As Range
-Set O = RgNMoreTop(A.DataBodyRange)
+Set O = A.DataBodyRange
 If LcLo(A).ShowTotals Then Set O = RgNMoreBelow(O)
 Set LcRg = O
+End Function
+Function LcTitRg(A As ListColumn, NTitRow As Byte) As Range
+Set LcTitRg = RgCRR(A.DataBodyRange, 1, -NTitRow, -1)
 End Function
 
 Sub LcSetBdrL(A As ListColumn, B As Boolean)
@@ -1396,16 +1288,26 @@ Sub LcSetWdt(A As ListColumn, W%)
 If W > 0 Then A.DataBodyRange.ColumnWidth = W
 End Sub
 
+Sub LcSetTotLnk(A As ListColumn)
+Dim R1 As Range, R2 As Range, R As Range, Ws As Worksheet
+Set R = A.DataBodyRange
+Set Ws = RgWs(R)
+Set R1 = RgRC(R, 0, 1)
+Set R2 = RgRC(R, R.Rows.Count + 1, 1)
+Ws.Hyperlinks.Add Anchor:=R1, Address:="", SubAddress:=R2.Address
+Ws.Hyperlinks.Add Anchor:=R2, Address:="", SubAddress:=R1.Address
+R1.Font.ThemeColor = xlThemeColorDark1
+End Sub
 Sub LcSetTCnt(A As ListColumn, B As Boolean)
-If B Then A.TotalsCalculation = xlTotalsCalculationCount
+If B Then A.TotalsCalculation = xlTotalsCalculationCount: LcSetTotLnk A
 End Sub
 
 Sub LcSetTSum(A As ListColumn, B As Boolean)
-If B Then A.TotalsCalculation = xlTotalsCalculationSum
+If B Then A.TotalsCalculation = xlTotalsCalculationSum: LcSetTotLnk A
 End Sub
 
 Sub LcSetTAvg(A As ListColumn, B As Boolean)
-If B Then A.TotalsCalculation = xlTotalsCalculationAverage
+If B Then A.TotalsCalculation = xlTotalsCalculationAverage: LcSetTotLnk A
 End Sub
 
 Sub ZZ_DbtPrp()
@@ -1456,52 +1358,72 @@ Function DbtfVal(A As Database, T, F)
 DbtfVal = A.TableDefs(T).OpenRecordset.Fields(F).Value
 End Function
 
-Function DbtfkV(A As Database, T, F, K())
+Property Get Dbtfk0V(A As Database, T, F, K0)
 Dim W$, Sk$(), Rs As dao.Recordset
 Sk = DbtSk(A, T)
-W = KyVy_BExpr(Sk, K)
+W = KyK0_BExpr(Sk, K0)
 Q = FmtQQ("Select ? from [?] where ?", F, T, W)
 Set Rs = A.OpenRecordset(Q)
-If RsIsNoRec(Rs) Then Exit Function
-DbtfkV = Nz(RsV(Rs, F), Empty)
+If RsIsNoRec(Rs) Then Exit Property
+Dbtfk0V = Nz(RsV(Rs, F), Empty)
+End Property
+Function CvK0(K0)
+Select Case True
+Case IsStr(K0): CvK0 = SslSy(K0)
+Case IsArray(K0): CvK0 = K0
+Case Else: FunEr "CvK0", "K0 should either be string or array, but now it has [typename]", TypeName(K0)
+End Select
 End Function
-
-Function KyVy_BExpr$(Ky$(), Vy())
-Dim U%, S$
+Function KyK0_BExpr$(Ky$(), K0)
+Dim U%, S$, Vy
 U = UB(Ky)
+Vy = CvK0(K0)
 If U <> UB(Vy) Then Stop
 Dim O$(), J%, V
 For J = 0 To U
     If IsNull(Vy(J)) Then
         Push O, Ky(J) & " is null"
     Else
-        V = Vy(J): GoSub X
+        V = Vy(J): GoSub GetS
         Push O, Ky(J) & "=" & S
     End If
 Next
-KyVy_BExpr = Join(O, " and ")
+KyK0_BExpr = Join(O, " and ")
 Exit Function
-X:
+GetS:
 Select Case True
 Case IsStr(V): S = "'" & V & "'"
 Case IsDate(V): S = "#" & V & "#"
 Case IsBool(V): S = IIf(V, "TRUE", "FALSE")
-Case IsNull(V): Stop
 Case IsNumeric(V): S = V
 Case Else: Stop
 End Select
 Return
 End Function
-Function TfidV(T, F, Id&)
+Property Get TfidV(T, F, Id&)
 TfidV = DbtfidV(CurrentDb, T, F, Id)
-End Function
+End Property
+Property Let TfidV(T, F, Id&, V)
+DbtfidV(CurrentDb, T, F, Id) = V
+End Property
 Function DbtidRs(A As Database, T, Id&) As dao.Recordset
 Q = FmtQQ("Select * From ? where ?=?", T, T, Id)
 Set DbtidRs = A.OpenRecordset(Q)
 End Function
-Function DbtfidV(A As Database, T, F, Id&)
-DbtfidV = DbtidRs(A, T, Id).Fields(F).Value
+Function DbtfidRs(A As Database, T, F, Id&) As dao.Recordset
+Q = FmtQQ("Select ? From ? where ?=?", F, T, T, Id)
+Set DbtfidRs = A.OpenRecordset(Q)
 End Function
+Property Get DbtfidV(A As Database, T, F, Id&)
+DbtfidV = DbtfidRs(A, T, F, Id).Fields(0).Value
+End Property
+Property Let DbtfidV(A As Database, T, F, Id&, V)
+With DbtfidRs(A, T, F, Id)
+    .Edit
+    .Fields(0).Value = V
+    .Update
+End With
+End Property
 Sub DbtfAddExpr(A As Database, T, F, Expr$, Optional Ty As dao.DataTypeEnum = dbText, Optional TxtSz% = 255)
 A.TableDefs(T).Fields.Append NewFd(F, Ty, TxtSz, Expr)
 End Sub
@@ -1697,17 +1619,17 @@ Function StrBrk1(A, Sep$, Optional NoTrim As Boolean) As String()
 StrBrk1 = StrBrk1At(A, InStr(A, Sep), Sep, NoTrim)
 End Function
 
-Sub LinT1RestAsg(A, OT, ORest)
+Sub LinTRstAsg(A, OT, ORest)
 Dim B$()
-B = LinT1Rest(A)
+B = LinTRst(A)
 OT = B(0)
 ORest = B(1)
 End Sub
 
-Function LinT1Rest(A) As String()
+Function LinTRst(A) As String()
 Dim L$
 L = LTrim(A)
-LinT1Rest = StrBrk1At(L, InStr(L, " "), " ")
+LinTRst = StrBrk1At(L, InStr(L, " "), " ")
 End Function
 
 Sub BrkAsg(A, Sep$, Optional O1, Optional O2, Optional NoTrim As Boolean)
@@ -1775,12 +1697,26 @@ End Function
 Function WttStru$(TT)
 WttStru = DbttStru(W, TT)
 End Function
+
 Function WFb$()
 WFb = ApnWFb(Apn)
 End Function
-Sub WImp(T$, LnkColStr$, Optional WhBExpr$)
-If FstChr(T) <> ">" Then Stop
-DbtImpMap W, T, LnkColStr, WhBExpr
+
+Sub WtImp(T$, ColLnk$())
+DbtImp W, T, ColLnk
+End Sub
+Function SqlSelInto$(Fm, Into, Ny$(), Ey$(), Optional WhBExpr$)
+Dim Sel$, Wh$
+Sel = SqpSel(Ny, Ey)
+Wh = SqpWh(WhBExpr)
+SqlSelInto = RplVBar(FmtQQ("Select |?|  Into [?]|  From [?]?;|", Sel, Into, Fm, Wh))
+End Function
+Function ColLnk_ImpSql$(A$(), T)
+
+End Function
+
+Sub DbtImp(A As Database, T, ColLnk$())
+A.Execute ColLnk_ImpSql(ColLnk, T)
 End Sub
 
 Sub FfnMov(Fm, ToFfn)
@@ -2415,9 +2351,17 @@ Fld2Lines = O
 End Function
 
 Function TfkV(T, F, ParamArray K())
-Dim Av(): Av = K
-TfkV = DbtfkV(CurrentDb, T, F, Av)
+Dim K0(): K0 = K
+TfkV = Dbtfk0V(CurrentDb, T, F, K0)
 End Function
+
+Property Let Tfk0V(T, F, K0, V)
+Dbtfk0V(CurrentDb, T, F, K0) = V
+End Property
+
+Property Get Tfk0V(T, F, K0)
+Tfk0V = Dbtfk0V(CurrentDb, T, F, K0)
+End Property
 
 Property Let RsV(A As dao.Recordset, Optional F = 0, V)
 With A
@@ -2767,17 +2711,7 @@ For J = 0 To UB(Tny)
     A.Execute S
 Next
 End Sub
-Function LnkColStr_Ly(A) As String()
-Dim A1$(), A2$(), Ay() As LnkCol
-Ay = LnkColStr_LnkColAy(A)
-A1 = LnkColAy_Ny(Ay)
-A2 = AyAlignL(AyQuoteSqBkt(LnkColAy_ExtNy(Ay)))
-Dim J%, O$()
-For J = 0 To UB(A1)
-    Push O, A2(J) & "  " & A1(J)
-Next
-LnkColStr_Ly = O
-End Function
+
 Function AyLasEle(A)
 Asg A(UB(A)), AyLasEle
 End Function
@@ -2786,72 +2720,16 @@ Function AscIsDig(A%) As Boolean
 AscIsDig = &H30 <= A And A <= &H39
 End Function
 
-Property Get LnkCol(Nm$, Ty As dao.DataTypeEnum, Extnm$) As LnkCol
-Dim O As New LnkCol
-Set LnkCol = O.Init(Nm, Ty, Extnm)
-End Property
-
-Function LnkColStr_LnkColAy(A) As LnkCol()
-Dim Emp() As LnkCol, Ay$()
-Ay = SplitVBar(A): If Sz(Ay) = 0 Then Stop: Exit Function
-LnkColStr_LnkColAy = AyMapInto(Ay, "LinLnkCol", Emp)
-End Function
-
 Function SplitVBar(A) As String()
 SplitVBar = Split(A, "|")
 End Function
 
-Sub ZZ_LinLnkCol()
-Dim A$, Act As LnkCol, Exp As LnkCol
-A = "AA Txt XX"
-Exp = LnkCol("AA", dbText, "AA")
-GoSub Tst
-Exit Sub
-Tst:
-Act = LinLnkCol(A)
-Debug.Assert LnkColIsEq(Act, Exp)
-Return
-End Sub
-Function LnkColIsEq(A As LnkCol, B As LnkCol) As Boolean
-With A
-    If .Extnm <> B.Extnm Then Exit Function
-    If .Ty <> B.Ty Then Exit Function
-    If .Nm <> B.Nm Then Exit Function
-End With
-LnkColIsEq = True
-End Function
-Function LinLnkCol(A) As LnkCol
-Dim Nm$, ShtTy$, Extnm$, Ty As dao.DataTypeEnum
-LinTTRstAsg A, Nm, ShtTy, Extnm
-Extnm = RmvOptSqBkt(Extnm)
-Ty = DaoShtTy_Ty(ShtTy)
-Set LinLnkCol = LnkCol(Nm, Ty, IIf(Extnm = "", Nm, Extnm))
-End Function
 Function RmvFstLasChr$(A)
 RmvFstLasChr = RmvFstChr(RmvLasChr(A))
 End Function
 Function DbtCnStr$(A As Database, T)
 DbtCnStr = A.TableDefs(T).Connect
 End Function
-Sub DbtImpMap(A As Database, T$, LnkColStr$, Optional WhBExpr$)
-If FstChr(T) <> ">" Then
-    Debug.Print "FstChr of T must be >"
-    Stop
-End If
-'Assume [>?] T exist
-'Create [#I?] T
-Dim S$
-S = LnkColStr_ImpSql(LnkColStr, T, WhBExpr)
-DbDrpTbl A, "#I" & Mid(T, 2)
-A.Execute S
-End Sub
-
-Function LnkColStr_ImpSql$(A$, T$, Optional WhBExpr$)
-Dim Ay() As LnkCol
-Ay = LnkColStr_LnkColAy(A)
-LnkColStr_ImpSql = LnkColAy_ImpSql(Ay, T, WhBExpr)
-End Function
-
 
 Function FstChr$(A)
 FstChr = Left(A, 1)
@@ -2966,9 +2844,12 @@ Function LcLo(A As ListColumn) As ListObject
 Set LcLo = A.Parent
 End Function
 
-Sub LcSetColr(A As ListColumn, Colr)
+Sub LcSetColr(A As ListColumn, Colr, Optional NTitRow As Byte = 0)
 If Not IsLng(Colr) Then Exit Sub
 LcRg(A).Interior.Color = Colr
+If NTitRow > 0 Then
+    LcTitRg(A, NTitRow).Interior.Color = Colr
+End If
 End Sub
 
 Sub AyDoABX(Ay, ABX$, A, B)
@@ -3271,23 +3152,6 @@ Act = PfxSsl_Sy(A)
 Debug.Assert AyIsEq(Act, Exp)
 Return
 End Sub
-Function ItrFstPrpEq(A, PrpNm$, V)
-Dim I, OP
-For Each I In A
-    OP = ObjPrp(I, PrpNm)
-    If OP = V Then
-        Asg I, ItrFstPrpEq
-        Exit Function
-    End If
-Next
-Exit Function ' If not found return Empty
-'Impossible
-Debug.Print PrpNm, V
-For Each I In A
-    Debug.Print ObjPrp(I, PrpNm)
-Next
-Stop
-End Function
 Function ObjPrp(A, PrpNm)
 On Error GoTo X
 Dim V
@@ -3449,12 +3313,19 @@ End Function
 Function TTStru$(TT)
 TTStru = DbttStru(CurrentDb, TT)
 End Function
+Sub TTStruDmp(TT)
+D TTStru(TT)
+End Sub
+
 Function TblStru$(T$)
 TblStru = DbtStru(CurrentDb, T)
 End Function
+Sub TblStruDmp(T$)
+D TblStru(T)
+End Sub
 
 Function QTbl$(T$, Optional WhBExpr$)
-QTbl = "Select *" & PFm(T) & PWh(WhBExpr)
+QTbl = "Select *" & PFm(T) & SqpWh(WhBExpr)
 End Function
 Function WtPrpLoFmlVbl$(T)
 WtPrpLoFmlVbl = FbtPrpLoFmlVbl(WFb, T)
@@ -3591,52 +3462,10 @@ Dim P%: P = InStrRev(A, "\")
 If P = 0 Then Exit Function
 FfnPth = Left(A, P)
 End Function
-Private Function ErzFws__2(Fx$, WsNm$, ColNy$()) As String()
 
-End Function
-Private Function ErzFws__3(Fx$, WsNm$, ColNy$(), DtaTyAy() As dao.DataTypeEnum) As String()
-
-End Function
-Sub ZZ_ErAyzFxWsMissingCol()
-'" [Material]             As Sku," & _
-'" [Plant]                As Whs," & _
-'" [Storage Location]     As Loc," & _
-'" [Batch]                As BchNo," & _
-'" [Unrestricted]         As OH " & _
-
-End Sub
-Function TblF_Ty(T, F) As dao.DataTypeEnum
-
-End Function
-Function TblErAyzCol(T$, ColNy$(), DtaTyAy() As dao.DataTypeEnum, Optional AddTblLinMsg As Boolean) As String()
-Dim Fny$(), F, Fny1$(), Fny2$()
-Fny = TblFny(T)
-For Each F In ColNy
-    If AyHas(Fny, F) Then
-        Push F, Fny1
-    Else
-        Push F, Fny2
-    End If
-Next
-Dim O$()
-If Sz(Fny2) > 0 Then
-    Dim J%
-    For J = 0 To UB(ColNy)
-        If AyHas(Fny2, ColNy(J)) Then
-            If TblF_Ty(T, ColNy(J)) <> DtaTyAy(J) Then
-                Push O, "Column [?] has unexpected DataType[?].  It is expected to be [?]"
-            End If
-        End If
-    Next
-End If
-If AddTblLinMsg Then
-    Push O, ""
-    
-End If
-End Function
 Function FfnNotFndChk(A) As String()
 If FfnIsExist(A) Then Exit Function
-FfnNotFndChk = MsgAp_Ly("[File] not exist", A)
+FfnNotFndChk = MsgLy("[File] not exist", A)
 End Function
 Function ChkFst(ChkSsl$) As String()
 Dim O$(), I
@@ -3806,21 +3635,21 @@ End Function
 Function SqlLngAy(A) As Long()
 SqlLngAy = DbqLngAy(CurrentDb, A)
 End Function
-Function FxChk(A, Optional FxKind$ = "Excel file", Optional WsNy0$ = "Sheet1") As String()
+Function FxWsChk(A, Optional FxKind$ = "Excel file", Optional WsNy0$ = "Sheet1") As String()
 If Not FfnIsExist(A) Then
     Dim M$
     M = FmtQQ("[?] not found in [folder]", FxKind)
-    FxChk = MsgLy(M, FfnFn(A), FfnPth(A))
+    FxWsChk = MsgLy(M, FfnFn(A), FfnPth(A))
     Exit Function
 End If
 If FxHasWs(A, WsNy0) Then Exit Function
 M = FmtQQ("[?] in [folder] does not have [expected worksheets], but [these worksheets].", FxKind)
-FxChk = MsgAp_Ly(M, FfnFn(A), FfnPth(A), CvNy(WsNy0), FxWsNy(A))
+FxWsChk = MsgLy(M, FfnFn(A), FfnPth(A), CvNy(WsNy0), FxWsNy(A))
 End Function
 
 Function BoolRunTFFun(A As Boolean, TFFun$)
 Dim T$, F$
-LinT1RestAsg TFFun, T, F
+LinTRstAsg TFFun, T, F
 If A Then
     BoolRunTFFun = Run(T)
 Else
@@ -3905,6 +3734,9 @@ ChkEq Actual, Expect
 End Sub
 Sub D(A)
 AyDmp VarLy(A)
+End Sub
+Sub DTy(A)
+Debug.Print TypeName(A)
 End Sub
 Sub AyDmp(A)
 Dim I
@@ -4029,7 +3861,7 @@ Else
     A.QueryDefs(Q).Sql = Sql
 End If
 End Sub
-Function LinShiftTerm$(O$)
+Function LinShiftTerm$(O)
 Dim A$, P%
 A = LTrim(O)
 P = InStr(A, " ")
@@ -4042,22 +3874,44 @@ LinShiftTerm = Left(A, P - 1)
 O = LTrim(Mid(A, P + 1))
 End Function
 
-Sub LinTTRstAsg(A, OT1$, OT2$, ORst$)
+Sub LinT2RstAsg(A, OT1$, OT2$, ORst$)
 Dim Ay$()
-Ay = LinTTRst(A)
+Ay = LinT2Rst(A)
 OT1 = Ay(0)
 OT2 = Ay(1)
-ORst = RTrim(Ay(2))
+ORst = Ay(2)
 End Sub
 
-Function LinTTRst(A) As String()
-Dim O$(2), L$
-L = A
-O(0) = LinShiftTerm(L)
-O(1) = LinShiftTerm(L)
-O(2) = L
-LinTTRst = O
+Sub LinT3RstAsg(A, OT1$, OT2$, OT3$, ORst$)
+Dim Ay$()
+Ay = LinT3Rst(A)
+OT1 = Ay(0)
+OT2 = Ay(1)
+OT3 = Ay(2)
+ORst = Ay(3)
+End Sub
+
+Function LinTnRst(ByVal A, N%) As String()
+Dim O$(), J%
+For J = 1 To N
+    GoSub X
+Next
+Push O, A
+LinTnRst = O
+Exit Function
+X:
+    Push O, LinShiftTerm(A)
+    Return
 End Function
+
+Function LinT2Rst(A) As String()
+LinT2Rst = LinTnRst(A, 1)
+End Function
+
+Function LinT3Rst(A) As String()
+LinT3Rst = LinTnRst(A, 3)
+End Function
+
 Function AyMinus(A, B)
 If Sz(B) = 0 Then AyMinus = A: Exit Function
 If Sz(A) = 0 Then AyMinus = A: Exit Function
@@ -4074,23 +3928,21 @@ Sub DbtRen(A As Database, Fm, ToTbl, Optional ReOpnFst As Boolean)
 If ReOpnFst Then DbReOpn A
 A.TableDefs(Fm).Name = ToTbl
 End Sub
+Function LSTblLnkColLy(T) As String()
+LSTblLnkColLy = AyRmvT1(AyWhT1(LSCln, T))
+End Function
+Function DbtfTyChkMsg$(A As Database, T, TyFldSsl$)
 
-Function DbtChkCol(A As Database, T$, LnkColStr$) As String()
-Dim Ay() As LnkCol, O$(), Fny$(), J%, Ty As dao.DataTypeEnum, F$
-Ay = LnkColStr_LnkColAy(LnkColStr)
-Fny = LnkColAy_ExtNy(Ay)
-O = DbtChk_zFny(A, T, Fny)
-If Sz(O) > 0 Then DbtChkCol = O: Exit Function
-For J = 0 To UB(Ay)
-    F = Ay(J).Extnm
-    Ty = Ay(J).Ty
-    PushNonEmp O, DbtChkFldType(A, T, F, Ty)
-Next
-If Sz(0) > 0 Then
+End Function
+Function DbtTyChk(A As Database, T, SCShtTyFldNmLy$()) As String()
+Dim O$()
+O = AyMapABXSy(SCShtTyFldNmLy, "DbtfTyMsg", A, T)
+If Sz(O) > 0 Then
     PushMsgUnderLin O, "Some field has unexpected type"
-    DbtChkCol = O
+    DbtTyChk = O
 End If
 End Function
+
 Function TakAft$(A, S)
 TakAft = TakAftAt(A, InStr(A, S), S)
 End Function
@@ -4147,12 +3999,7 @@ For J = 1 To UB(A)
 Next
 AyOfAy_Ay = O
 End Function
-Function ISpecINm$(A)
-ISpecINm = LinT1(A)
-End Function
-Sub LSpecDmp(A)
-Debug.Print RplVBar(A)
-End Sub
+
 Function CurY() As Byte
 CurY = CurYY - 2000
 End Function
@@ -4162,68 +4009,46 @@ End Function
 Function CurM() As Byte
 CurM = Month(Now)
 End Function
-Function LSpecLy(A) As String()
-Const L2Spec$ = ">GLAnp |" & _
-    "Whs    Txt Plant |" & _
-    "Loc    Txt [Storage Location]|" & _
-    "Sku    Txt Material |" & _
-    "PstDte Txt [Posting Date] |" & _
-    "MovTy  Txt [Movement Type]|" & _
-    "Qty    Txt Quantity|" & _
-    "BchNo  Txt Batch |" & _
-    "Where Plant='8601' and [Storage Location]='0002' and [Movement Type] like '6*'"
-End Function
 Function HasPfx(A, Pfx) As Boolean
 HasPfx = Left(A, Len(Pfx)) = Pfx
 End Function
 Function HasSfx(A, Sfx) As Boolean
 HasSfx = Right(A, Len(Sfx)) = Sfx
 End Function
-Sub LSpecAsg(A, Optional OTblNm$, Optional OLnkColStr$, Optional OWhBExpr$)
-Dim Ay$()
-Ay = AyTrim(SplitVBar(A))
-OTblNm = AyShift(Ay)
-If LinT1(AyLasEle(Ay)) = "Where" Then
-    OWhBExpr = LinRmvTerm(Pop(Ay))
-Else
-    OWhBExpr = ""
-End If
-OLnkColStr = JnVBar(Ay)
-End Sub
 Function Pop(A)
 Pop = AyLasEle(A)
-AyRmvLasEle A
+A = AyRmvLasEle(A)
 End Function
-Sub AyRmvLasEle(A)
+Property Get AyRmvFstEle(A)
+AyRmvFstEle = AyMid(A, 1)
+End Property
+Property Get AyRmvLasEle(A)
+Dim O
+O = A
 If Sz(A) = 1 Then
-    Erase A
-    Exit Sub
+    Erase O
+    AyRmvLasEle = O
+    Exit Property
 End If
-ReDim Preserve A(UB(A) - 1)
-End Sub
-Sub LSpecAy_Asg(A$(), OTny$(), OLnkColStrAy$(), OWhBExprAy$())
-Dim U%, J%
-U = UB(A)
-ReDim OTny(U)
-ReDim OLnkColStrAy(U)
-ReDim OWhBExprAy(U)
-For J = 0 To U
-    LSpecAsg A(J), OTny(J), OLnkColStrAy(J), OWhBExprAy(J)
-Next
-End Sub
+ReDim Preserve O(UB(O) - 1)
+End Property
 
-Function DbImp(A As Database, LSpec$()) As String()
-Dim O$(), J%, T$(), L$(), W$(), U%
-LSpecAy_Asg LSpec, T, L, W
-U = UB(LSpec)
-For J = 0 To U
-    PushAy O, DbtChkCol(A, T(J), L(J))
-Next
-If Sz(O) > 0 Then DbImp = O: Exit Function
-For J = 0 To U
-    DbtImpMap A, T(J), L(J), W(J)
-Next
-DbImp = O
+Sub DbImpTbl(A As Database, CTls$())
+
+'Dim O$(), J%, T$(), L$(), W$(), U%
+'LSpecAy_Asg LSpec, T, L, W
+'U = UB(LSpec)
+'For J = 0 To U
+'    PushAy O, DbtTyChk(A, T(J), L(J))
+'Next
+'If Sz(O) > 0 Then DbImp = O: Exit Sub
+'For J = 0 To U
+'    DbtImpMap A, T(J), L(J), W(J)
+'Next
+'DbImp = O
+End Sub
+Function LnkSpecLy_Tny(A) As String()
+
 End Function
 
 Function DbtChk_zMissFny(A As Database, T$, MissFny$(), ExistingFny$()) As String()
@@ -4265,7 +4090,11 @@ Miss = AyMinus(ExpFny, TFny)
 DbtChk_zFny = DbtChk_zMissFny(A, T, Miss, TFny)
 End Function
 Function QuoteSqBkt$(A)
-QuoteSqBkt = "[" & A & "]"
+If IsSqBktQuoted(A) Then
+    QuoteSqBkt = A
+Else
+    QuoteSqBkt = "[" & A & "]"
+End If
 End Function
 Function PushMsgUnderLin(O$(), M$)
 Push O, M
@@ -4403,12 +4232,24 @@ For J = 0 To U
 Next
 AyTrim = O
 End Function
-Function DbtChkFldType$(A As Database, T$, F, Ty As dao.DataTypeEnum)
-Dim ActTy As dao.DataTypeEnum
+
+Function SCShtTy_TyAy(A) As dao.DataTypeEnum()
+SCShtTy_TyAy = AyMapInto(SplitSC(A), "DaoShtTy_Ty", SCShtTy_TyAy)
+End Function
+
+Function DbtfTyMsg$(A As Database, T, F, SCShtTy$)
+Dim ActTy As dao.DataTypeEnum, TyAy() As dao.DataTypeEnum
 ActTy = A.TableDefs(T).Fields(F).Type
-If ActTy <> Ty Then
-    DbtChkFldType = FmtQQ("Table[?] field[?] should have type[?], but now it has type[?]", T, F, DaoTy_ShtTy(Ty), DaoTy_ShtTy(ActTy))
+TyAy = SCShtTy_TyAy(SCShtTy)
+If Not AyHas(TyAy, ActTy) Then
+    Dim S1$, S2$
+    S1 = DaoTyAy_SCShtTy(TyAy)
+    S2 = DaoTy_ShtTy(ActTy)
+    DbtfTyMsg = FmtQQ("Table[?] field[?] has type[?].  It should be type[?].", T, F, S1, S2)
 End If
+End Function
+Function DaoTyAy_SCShtTy$(A() As dao.DataTypeEnum)
+
 End Function
 Function OyPrpSy(A, PrpNm$) As String()
 If Sz(A) = 0 Then Exit Function
@@ -4418,12 +4259,7 @@ Function OyPrpInto(A, PrpNm$, OInto)
 If Sz(A) = 0 Then Exit Function
 OyPrpInto = ItrPrpInto(A, PrpNm, OInto)
 End Function
-Function LnkColAy_ExtNy(A() As LnkCol) As String()
-LnkColAy_ExtNy = OyPrpSy(A, "Extnm")
-End Function
-Function LnkColAy_Ny(A() As LnkCol) As String()
-LnkColAy_Ny = OyPrpSy(A, "Nm")
-End Function
+
 Sub WbVdtOupNy(A As Workbook, OupNy$())
 Dim O$(), N$, B$(), WsCdNy$()
 WsCdNy = WbWsCdNy(A)
@@ -4625,7 +4461,7 @@ On Error GoTo X
 ObjNm = A.Name
 Exit Function
 X:
-ObjNm = Err.Description
+ObjNm = "#" & Err.Description & "#"
 End Function
 Function DbNm$(A As Database)
 DbNm = ObjNm(A)
@@ -4691,7 +4527,7 @@ If IsEmpty(A) Then Set CvNothing = Nothing: Exit Function
 Set CvNothing = A
 End Function
 Function WbWsCd(A As Workbook, WsCdNm$) As Worksheet
-Set WbWsCd = CvNothing(ItrFstPrpEq(A.Sheets, "CodeName", WsCdNm))
+Set WbWsCd = CvNothing(ItrFstPrpEqV(A.Sheets, "CodeName", WsCdNm))
 End Function
 Function WbLasWs(A As Workbook) As Worksheet
 Set WbLasWs = A.Sheets(A.Sheets.Count)
@@ -4713,6 +4549,12 @@ Next
 End Function
 Function TblPk(T) As String()
 TblPk = DbtPk(CurrentDb, T)
+End Function
+Function TblSk(T) As String()
+'Sk is secondary key.  Same name as the table and is unique
+'Thw if there is key with same name as T, but not primary key.
+'This is done as DbtSIdx
+TblSk = DbtSk(CurrentDb, T)
 End Function
 Function TblRg(A$, At As Range) As Range
 Set TblRg = DbtRg(CurrentDb, A, At)
@@ -4752,32 +4594,7 @@ End Function
 Function AyAlignL(A) As String()
 AyAlignL = AyMapXPSy(A, "AlignL", AyWdt(A))
 End Function
-Function LSpecLnkColStr$(A)
-Dim L$
-LSpecAsg A, , L
-LSpecLnkColStr = L
-End Function
-Function LnkColAy_ImpSql$(A() As LnkCol, T$, Optional WhBExpr$)
-If FstChr(T) <> ">" Then
-    Debug.Print "T must have first char = '>'"
-    Stop
-End If
-Dim Ny$(), ExtNy$(), J%, O$(), S$, N$(), E$()
-Ny = LnkColAy_Ny(A)
-ExtNy = LnkColAy_ExtNy(A)
-N = AyAlignL(Ny)
-E = AyAlignL(AyQuoteSqBkt(ExtNy))
-Erase O
-For J = 0 To UB(Ny)
-    If ExtNy(J) = Ny(J) Then
-        Push O, FmtQQ("     ?    ?", Space(Len(E(J))), N(J))
-    Else
-        Push O, FmtQQ("     ? As ?", E(J), N(J))
-    End If
-Next
-S = Join(O, "," & vbCrLf)
-LnkColAy_ImpSql = FmtQQ("Select |?| Into [#I?]| From [?] |?", S, RmvFstChr(T), T, PWh(WhBExpr))
-End Function
+
 Sub WbMinLo(A As Workbook)
 ItrDo A.Sheets, "WsMinLo"
 End Sub
@@ -5175,7 +4992,7 @@ Function HasSqBkt(A) As Boolean
 HasSqBkt = FstChr(A) = "[" And LasChr(A) = "]"
 End Function
 Function RmvSqBkt$(A)
-If Not HasSqBkt(A) Then Stop
+If Not HasSqBkt(A) Then RmvSqBkt = A: Exit Function
 RmvSqBkt = RmvFstLasChr(A)
 End Function
 Function RmvOptSqBkt$(A)
@@ -5595,13 +5412,14 @@ End Function
 Function TblRs(T) As dao.Recordset
 Set TblRs = DbtRs(CurrentDb, T)
 End Function
-Sub TimFn(FnNm$)
+Sub FunTim(Fun$)
 Dim A!, B!
 A = Timer
-Run FnNm
+Run Fun
 B = Timer
-Debug.Print FnNm, B - A
+Debug.Print Fun, B - A
 End Sub
+
 Function RsCsvLyByFny0(A As dao.Recordset, Fny0) As String()
 Dim Fny$(), Flds As Fields, F
 Dim O$(), J&, I%, UFld%, Dr()
@@ -5623,6 +5441,7 @@ While Not A.EOF
 Wend
 RsCsvLyByFny0 = O
 End Function
+
 Function RsCsvLy(A As dao.Recordset) As String()
 Dim O$(), J&, I%, UFld%, Dr(), F As dao.Field
 UFld = A.Fields.Count - 1
@@ -5645,21 +5464,50 @@ End Function
 Function TblNRow&(T$, Optional WhBExpr$)
 TblNRow = DbtNRow(CurrentDb, T, WhBExpr)
 End Function
-Function PWh$(WhBExpr$)
-If WhBExpr = "" Then Exit Function
-PWh = PSep & "Where" & PSep1 & WhBExpr
+Sub AyAssSamSz(A, B)
+Ass Sz(A) = Sz(B)
+End Sub
+Function SqpSel$(Ny$(), Ey$())
+AyAssSamSz Ny, Ey
+If AyIsEq(Ny, Ey) Then
+    SqpSel = "Select" & vbCrLf & "    " & JnComma(Ny)
+    Exit Function
+End If
+Dim N$(), E$()
+    N = AyAlignL(Ny)
+    E = AyAlignL(AyQuoteSqBkt(Ey))
+
+Dim J%, O$(), S$
+S = Space(Len(E(0)))
+For J = 0 To UB(N)
+    If Ny(J) = Ey(J) Then
+        Push O, FmtQQ("     ?    ?", S, N(J))
+    Else
+        Push O, FmtQQ("     ? As ?", E(J), N(J))
+    End If
+Next
+SqpSel = JnCrLf(O)
 End Function
+
+Function SqpWh$(WhBExpr$)
+If WhBExpr = "" Then Exit Function
+SqpWh = PSep & vbCrLf & "  Where" & PSep1 & WhBExpr
+End Function
+
 Function DbtNRow&(A As Database, T$, Optional WhBExpr$)
 Dim S$
-S = "Select Count(*)" & PFm(T) & PWh(WhBExpr)
+S = "Select Count(*)" & PFm(T) & SqpWh(WhBExpr)
 DbtNRow = DbqLng(A, S)
 End Function
+
 Function TblNCol&(T)
 TblNCol = DbtNCol(CurrentDb, T)
 End Function
+
 Function DbtNCol&(A As Database, T)
 DbtNCol = A.OpenRecordset(T).Fields.Count
 End Function
+
 Function TblSq(A) As Variant()
 TblSq = DbtSq(CurrentDb, A)
 End Function
@@ -5910,17 +5758,47 @@ End Function
 Function ItrWhPrpIsTrue(A, P)
 ItrWhPrpIsTrue = ItrWhPrpIsTrueInto(A, P, EmpAy)
 End Function
-
+Function IdxFny(A As dao.Index) As String()
+If IsNothing(A) Then Exit Function
+IdxFny = ItrNy(A.Fields)
+End Function
 Function DbtPk(A As Database, T) As String()
-Dim I As dao.Index
-Set I = DbtPIdx(A, T): If IsNothing(I) Then Exit Function
-DbtPk = ItrNy(I.Fields)
+Dim O$()
+O = IdxFny(DbtPIdx(A, T))
+Select Case True
+Case Sz(O) = 0
+Case Sz(O) = 1 And O(0) = T
+Case Else
+    FunMsgBrw "DbtPk", "In [Db], [T] has primary key.  It should have single field and name eq to table. [Pk]", DbNm(A), T, JnSpc(O)
+End Select
+DbtPk = O
+End Function
+Function ItrFstPrpTrue(A, P)
+'Return first element in Itr-A with its PrpNm is true
+Dim X
+For Each X In A
+    If ObjPrp(X, P) Then Set ItrFstPrpTrue = X: Exit Function
+Next
+Set ItrFstPrpTrue = Nothing
+End Function
+Function ItrFstPrpEqV(A, P, V)
+'Return first element in Itr-A with its PrpNm is eq to V
+Dim X
+For Each X In A
+    If ObjPrp(A, P) = V Then Set ItrFstPrpEqV = X: Exit Function
+Next
+Set ItrFstPrpEqV = Nothing
 End Function
 Function DbtPIdx(A As Database, T) As dao.Index
+Set DbtPIdx = ItrFstPrpTrue(A.TableDefs(T).Indexes, "Primary")
+End Function
+Function DbtSIdx(A As Database, T) As dao.Index
 Dim O As dao.Index
-For Each O In A.TableDefs(T).Indexes
-    If O.Primary Then Set DbtPIdx = O: Exit Function
-Next
+Set O = ItrFstPrpEqV(A.TableDefs(T).Indexes, "Name", T)
+If Not O.Unique Then
+    FunEr "DbtSIdx", "[Tbl] has index of same name, but not unique in [Db]", T, DbNm(A)
+End If
+Set DbtSIdx = O
 End Function
 Function AyQuoteSng(A) As String()
 AyQuoteSng = AyQuote(A, "'")
@@ -6160,11 +6038,6 @@ End Sub
 Function LinT1$(A)
 LinT1 = LinShiftTerm(CStr(A))
 End Function
-
-Property Get TblImpSpec(T$, LnkSpec$, Optional WhBExpr$) As TblImpSpec
-Dim O As New TblImpSpec
-Set TblImpSpec = O.Init(T, LnkSpec$, WhBExpr)
-End Property
 
 Function TmpHom$()
 Static X$
@@ -6660,11 +6533,27 @@ End Function
 Function IsByt(A) As Boolean
 IsByt = VarType(A) = vbByte
 End Function
+Function IsAy(A) As Boolean
+IsAy = VarType(A) = vbArray + vbVariant
+End Function
 Function IsStr(A) As Boolean
 IsStr = VarType(A) = vbString
 End Function
 Function IsLng(A) As Boolean
 IsLng = VarType(A) = vbLong
+End Function
+Function FdEleScl$(A As dao.Field2)
+FdEleScl = A.Name
+End Function
+Function TfEleScl$(T, F)
+TfEleScl = DbtfEleScl(CurrentDb, T, F)
+End Function
+
+Function DbtfEleScl$(A As dao.Database, T, F)
+Dim Td As dao.TableDef, Fd As dao.Field2
+Set Td = A.TableDefs(T)
+Set Fd = Td.Fields(F)
+DbtfEleScl = FdEleScl(Fd)
 End Function
 Function IsEmp(A) As Boolean
 IsEmp = True
@@ -6736,6 +6625,7 @@ For Each Dr In Dry
 Next
 SqlQQStr_Sy = O
 End Function
+
 Function NewTd(T, FdAy() As dao.Field) As dao.TableDef
 Dim O As New dao.TableDef
 O.Name = T
@@ -6746,13 +6636,16 @@ End Function
 Function FldsCsv$(A As dao.Fields)
 FldsCsv = AyCsv(ItrVy(A))
 End Function
+
 Function VarCsv$(A)
 Select Case True
 Case IsStr(A): VarCsv = """" & A & """"
 Case IsDate(A): VarCsv = Format(A, "YYYY-MM-DD HH:MM:SS")
+Case IsObject(A): VarCsv = """[*" & TypeName(A) & "]"""
 Case Else: VarCsv = Nz(A, "")
 End Select
 End Function
+
 Function AyMapInto(A, MapFunNm$, OInto)
 Dim J&, O, I, U&
 O = OInto
@@ -6803,16 +6696,73 @@ End Function
 Function AyMapSy(A, MapFunNm$) As String()
 AyMapSy = AyMapInto(A, MapFunNm, EmpSy)
 End Function
-
-Function AyCsv$(A)
-AyCsv = Join(A, ",")
-Exit Function
-Dim J%
-For J = 0 To UB(A)
-    A(J) = VarCsv(A(J))
-Next
-AyCsv = Join(A, ",")
+Function AyRmvDDLin(A) As String()
+AyRmvDDLin = AyWhPredFalse(A, "LinIsDDLin")
 End Function
+
+Function LyCln(A) As String()
+LyCln = AyMapSy(AyRmvDDLin(AyRmvEmp(A)), "TakBefDD")
+End Function
+Function LSCln() As String()
+LSCln = LyCln(LSLy)
+End Function
+Function LSTny() As String()
+LSTny = AySrt(AyDistT1Ay(LSCln))
+End Function
+Function DryInsConst(A, C, Optional At& = 0) As Variant()
+Dim O(), Dr
+If Sz(A) = 0 Then Exit Function
+For Each Dr In A
+    Push O, AyIns(Dr, C, At)
+Next
+DryInsConst = O
+End Function
+
+Sub C3DryDo(C3Dry(), ABC$)
+Dim Dr
+For Each Dr In C3Dry
+    Run ABC, Dr(0), Dr(1), Dr(2)
+Next
+End Sub
+
+Sub C4DryDo(C4Dry(), ABCD$)
+Dim Dr
+For Each Dr In C4Dry
+    Run ABCD, Dr(0), Dr(1), Dr(2), Dr(3)
+Next
+End Sub
+
+Function LSImpSqy() As String()
+Dim TlsAy()
+TlsAy = AyMap(LSTny, "TblTls")
+LSImpSqy = AyMapSy(TlsAy, "TlsImpSql")
+End Function
+Function SLKClnInpy(A) As String()
+SLKClnInpy = SslSy(LinRmvT1(AyFstT1(A, "A-Inp")))
+End Function
+
+Function LSLy() As String()
+LSLy = SplitCrLf(LSLines)
+End Function
+Function AyDistT1Ay(A) As String()
+AyDistT1Ay = AyDist(AyT1Ay(A))
+End Function
+Function AyCsv$(A)
+If Sz(A) = 0 Then Exit Function
+Dim O$(), U&, J&, V
+U = UB(A)
+ReDim O(U)
+For Each V In A
+    O(J) = VarCsv(V)
+    J = J + 1
+Next
+AyCsv = Join(O, ",")
+End Function
+
+Function VblLines$(A)
+VblLines = Replace(A, "|", vbCrLf)
+End Function
+
 Sub ZZ_DbtUpdSeq()
 DoCmd.SetWarnings False
 DoCmd.RunSQL "Select * into [#A] from ZZ_DbtUpdSeq order by Sku,PermitDate"
@@ -7000,6 +6950,10 @@ Function AyT2Ay(A) As String()
 AyT2Ay = AyMapSy(A, "LinT2")
 End Function
 
+Function AyT3Ay(A) As String()
+AyT3Ay = AyMapSy(A, "LinT3")
+End Function
+
 Sub ZZ_ReSeqSpec_OLinFldAy()
 AyBrw ReSeqSpec_OLinFldAy(Z_ReSeqSpec)
 End Sub
@@ -7177,6 +7131,7 @@ AttIsOld = T1 < T2
 End Function
 
 Function DbtPkIxNm$(A As Database, T)
+ObjNm (DbtPIdx(A, T))
 Dim I As dao.Index
 For Each I In A.TableDefs(T).Indexes
     If I.Primary Then DbtPkIxNm = I.Name
@@ -7233,9 +7188,20 @@ End Function
 Sub Done()
 MsgBox "Done"
 End Sub
+Function AyWhRmvT1(A, T1$) As String()
+AyWhRmvT1 = AyRmvT1(AyWhT1(A, T1))
+End Function
 
-Function WtChkCol(T$, LnkColStr$) As String()
-WtChkCol = DbtChkCol(W, T, LnkColStr)
+Function LSTblShtTyFldNmLy(T) As String()
+
+End Function
+
+Function WtColChk(T$) As String()
+WtColChk = DbtTyChk(W, T, LSTblShtTyFldNmLy(T))
+End Function
+
+Function WttColChk(TT$) As String()
+WttColChk = AyOfAy_Ay(AyMap(CvTT(TT), "WtColChk"))
 End Function
 '
 'Function WQQRs(QQSql, ParamArray Ap()) As Recordset
@@ -7387,7 +7353,7 @@ DrUpdRs Dr, Rs
 End Sub
 Sub ApAddRs(Rs As dao.Recordset, ParamArray Ap())
 Dim Dr(): Dr = Ap
-DrAddRs Dr, Rs
+DrInsRs Dr, Rs
 End Sub
 Function FfnStampDr(A) As Variant()
 FfnStampDr = Array(A, FfnSz(A), FfnTim(A), Now)
@@ -7406,7 +7372,7 @@ Rs.Edit
 DrSetRs A, Rs
 Rs.Update
 End Sub
-Sub DrAddRs(A, Rs As dao.Recordset)
+Sub DrInsRs(A, Rs As dao.Recordset)
 Rs.AddNew
 DrSetRs A, Rs
 Rs.Update
@@ -7461,13 +7427,28 @@ End Sub
 Function AyFstT1$(A, T1)
 AyFstT1 = AyFstPredXPYes(A, "LinHasT1", T1)
 End Function
+
+Function AyFstTT$(A, T1, T2)
+AyFstTT = AyFstPredXABYes(A, "LinHasTT", T1, T2)
+End Function
+
+Function AyFstT2$(A, T2)
+AyFstT2 = AyFstPredXPYes(A, "LinHasT2", T2)
+End Function
+
 Function AyFstPredXPYes(A, XP$, P)
-If Sz(A) = 0 Then Debug.Print "AyFstPredXP: No element in Ay": Exit Function
+If Sz(A) = 0 Then Exit Function
 Dim X
 For Each X In A
     If Run(XP, X, P) Then Asg X, AyFstPredXPYes: Exit Function
 Next
-Debug.Print FmtQQ("AyFstPredXP: No element in Ay of NEle[?] having Pred[?] P[?] being Yes", Sz(A), XP, P)
+End Function
+
+Function AyFstPredXABYes(Ay, XAB$, A, B)
+Dim X
+For Each X In AyNz(Ay)
+    If Run(XAB, X, A, B) Then Asg X, AyFstPredXABYes: Exit Function
+Next
 End Function
 Function AyabAdd(A, B, Optional Sep$) As String()
 Dim O$(), J&, U&
@@ -7555,6 +7536,7 @@ End Sub
 Sub DbttAddPfx(A As Database, TT, Pfx)
 AyDoAXB CvTT(TT), "DbtAddPfx", A, Pfx
 End Sub
+
 Sub AyDoAXB(Ay, AXB$, A, B)
 If Sz(Ay) = 0 Then Exit Sub
 Dim X
@@ -7562,10 +7544,321 @@ For Each X In Ay
     Run AXB, A, X, B
 Next
 End Sub
+
+Sub FtConstBrw(A, VarNm)
+AyBrw FtConstLy(A, VarNm)
+End Sub
+Function FtConstLy(A, VarNm) As String()
+FtConstLy = LyConstLy(FtLy(A), VarNm)
+End Function
+Function LSLy1() As String()
+'The Target LSFt1 should be like this:
+'    Require these 'fun' to be able to "Run":
+'    What the 'fun' is needed is from LSFt
+'    with LSFt + 'fun'->Run->Val, LSFt1 is created
+'    Then, with LSFt1 + 'Dta' (Fx+Fb), WFb is created, or ErMsg is Thw
+'    Here is just to create LSFt1 which will have --- lines, meaning there is error
+'    Whenever there is error in LSFt1, please, edit LSFt & import until no error in LSFt1
+'    'DoCrtLnk1' will return true if there is error
+'LSFt has these lines in front:
+    '*Tbl Sw        Tbl  Lnk   Fil  Ws
+    '*Tbl .         MB52 .     MB51
+    '*Tbl .         Uom  .     Uom
+    '*Tbl &IsFstYM  8701 ZHT1  ZHT1 8701
+    '*Tbl &IsFstYM  8601 ZHT1  ZHT1 8601
+    '*Tbl !&IsFstYM InvD .     ShpRate
+    '*Tbl !&IsFstYM InvH .     ShpRate
+'First line of *Tbl is always a header telling each field of *Tbl
+'   each line of following *tbl will always have same # of fields
+'   Field-Tbl: >* will be created in WFb
+'   Field-Sw : it can be &xxx or .
+'              when . it means this table is always created
+'              when &xxx  it means this table is create when &xxx is true
+'              when !&xxx it means this table will not created when &xxx is true
+'   Field-Lnk: . mean same as Field-Tbl.  It must be found in LSFt-Tny
+'   Field-F? : it means the field value must be &IFx or &IFb
+'                & is a substitude memonic.  &IF? + Fil become a &IFxx or &IFxx
+'                they are be used to run '&IFbXXX' or '&IFxXXX' to get subsitute values
+'   Field-Fil: If F?=Fb, it can be empty
+'                  if empty, the value is CurrentDb.Name
+'                  if non empty, the value is Run(IFb{Fil}) must be an existing file
+'                  if the table-name of a Fb, should be same as {Tbl} or ^{Tbl} depends of IsDev
+'              If F?=Fx
+'                  Run(IFx{Fil}) must be an existing file
+'   Field-Ws:  it means that it is linking to a Ws in Fx, if omited, it is Sheet1.  If F? is Fb, it should be empty
+'   *Note on F?=Fb: the src-tbl-in-Fb is always same name when it is Prod, else it will be ^xxx in Dev
+'Format of LnkFt
+    '*Tbl Sw        Tbl  Lnk   &IF? Fil  Ws
+    '*Tbl .         MB52 .     &IFx MB51
+    '*Tbl .         Uom  .     &IFx Uom
+    '*Tbl &IsFstYM  8701 ZHT1  &IFx ZHT1 8701
+    '*Tbl &IsFstYM  8601 ZHT1  &IFx ZHT1 8601
+    '*Tbl !&IsFstYM InvD .     &IFb ShpRate
+    '*Tbl !&IsFstYM InvH .     &IFb ShpRate
+    '
+    'Uom *Wh Material Like 'A%'
+    'Uom Sku    Txt Material
+    'Uom Whs    Txt Plant
+    'Uom Des    Txt Material Description
+    'Uom Sc_U   Txt SC
+    'Uom StkUom Txt Base Unit of Measure
+    'Uom ProdH  Txt Product hierarchy
+    '
+    'MB52  Sku    Txt Material
+    'MB52  Whs    Txt Plant
+    'MB52  QInsp  Dbl In Quality Insp#
+    'MB52  QUnRes Dbl UnRestricted
+    'MB52  QBlk   Dbl Blocked
+    '
+    'ZHT1  ZHT1   Txt Brand
+    'ZHT1  RateSc Dbl Amount
+    'ZHT1  VdtFm  Txt Valid From  -- dd.mm.yyyy format
+    'ZHT1  VdtTo  Txt Valid to    -- dd.mm.yyyy format
+    '
+    'InvD VndShtNm Txt
+    'InvD InvNo    Txt
+    'InvD Sku      Txt
+    'InvD Sc       Dbl;Txt
+    'InvD Amt      Dbl
+    '
+    'InvH VndShtNm Txt
+    'InvH InvNo    Txt
+    'InvH Dte      Dte InvDte
+    'InvH Whs      Txt Plant
+    'InvH Sc       Dbl
+    'InvH Amt      Cur
+'Format of LnkFt1
+    'Uom *Lnk Fx [Sheet1]@[Fx]
+    'Uom *Wh Material Like 'A%'
+    'Uom Sku    Txt Material
+    'Uom Whs    Txt Plant
+    'Uom Des    Txt Material Description
+    'Uom Sc_U   Txt SC
+    'Uom StkUom Txt Base Unit of Measure
+    'Uom ProdH  Txt Product hierarchy
+    'MB52 *Lnk Fx [Sheet1]@[Fx]
+    'MB52  Sku    Txt Material
+    'MB52  Whs    Txt Plant
+    'MB52  QInsp  Dbl In Quality Insp#
+    'MB52  QUnRes Dbl UnRestricted
+    'MB52  QBlk   Dbl Blocked
+    '8601  *Lnk Fx [8601]@[Fx]
+    '8601  ZHT1   Txt Brand
+    '8601  RateSc Dbl Amount
+    '8601  VdtFm  Txt Valid From
+    '8601  VdtTo  Txt Valid to
+    '8701  *Lnk Fx [8701]@[Fx]
+    '8701  ZHT1   Txt Brand
+    '8701  RateSc Dbl Amount
+    '8701  VdtFm  Txt Valid From
+    '8701  VdtTo  Txt Valid to
+    'InvD *Lnk Fb [^InvD]@[..localFb..]  or [InvD]@[..ProdFb..]
+    'InvD VndShtNm Txt
+    'InvD InvNo    Txt
+    'InvD Sku      Txt
+    'InvD Sc       Dbl;Txt
+    'InvD Amt      Dbl
+    'InvD *Lnk Fb [^InvH]@[..localFb..]  or [InvD]@[..ProdFb..]
+    'InvH VndShtNm Txt
+    'InvH InvNo    Txt
+    'InvH Dte      Dte InvDte
+    'InvH Whs      Txt Plant
+    'InvH Sc       Dbl
+    'InvH Amt      Cur
+'Lgc:
+'   use LSClnLy
+'   get *Tbl
+'   read all &xxx
+'   get list of switch-on-table
+'   build lnk-lin
+'   build LsFt1
+AyBrwThw LSChk
+LSLy1 = AyAdd(LSFt1Ly_zLnkFxLy, LSFt1Ly_zColLnkLy)
+End Function
+
+Function LSChk() As String()
+'Stop
+End Function
+
+Function LSStarWsLy() As String()
+LSStarWsLy = AyRmvT1(AyWhT1(LSCln, "*Ws"))
+End Function
+
+Function LSActiveStarWs2AdjLy() As String()
+Dim A$(), O$(), X, T1$, T2$, T3$, Rest$
+A = LSActiveStarWs2Ly
+Push O, A(0)
+For Each X In AyRmvFstEle(A)
+    GoSub Adj
+    Push O, X
+Next
+LSActiveStarWs2AdjLy = O
+Exit Function
+Adj:
+    LinT3RstAsg X, T1, T2, T3, Rest
+    If T2 = "." Then T2 = T1
+    If Rest = "" Then
+        Rest = T1
+    End If
+    X = T1 & " " & T2 & " " & T3 & " " & Rest
+    Return
+End Function
+
+Function LSActiveStarWs2Ly() As String()
+'Note StarWs2 is StarWsLin with first 2 terms removed
+Dim Sw, X, O$(), A$()
+A = LSStarWsLy
+Push O, LinRmvT1(A(0))
+For Each X In AyMid(A, 1)
+    Sw = LinShiftT1(X)
+    Select Case True
+    Case Sw = ".": Push O, X
+    Case Left(Sw, 2) = "!&": If Not Run(Mid(Sw, 3)) Then Push O, X
+    Case Left(Sw, 1) = "&":  If Run(Mid(Sw, 2)) Then Push O, X
+    Case Else
+        FunEr "LSActiveStarLy", "[Sw] should be '.' or '!&...' or '&...'", Sw
+    End Select
+Next
+LSActiveStarWs2Ly = O
+End Function
+Function ItmAddAy(Itm, Ay)
+ItmAddAy = AyIns(Ay, Itm)
+End Function
+Function AyRplT1(A, T1$) As String()
+AyRplT1 = AyAddPfx(AyRmvT1(A), T1 & " ")
+End Function
+Function LSFt1Ly_zColLnkLy_zOne(A$) As String()
+'Input:         <---- A -------------->
+'Input     Hdr: Tbl  Lnk  F? Fil Ws
+'          Lin: MB52 .    Fx MB52
+'          Lin: Uom  .    Fx Uom
+'          Lin: 8701 ZHT1 Fx ZHT1 8701
+'StarWs2 means StarWsLin with 2 terms removed
+'Lnk1     is the ColLnkLy-of-current-table in LSFt1
+Dim ITbl$, ILnk$, B$
+B = A
+ITbl = LinShiftT1(B)
+ILnk = LinShiftT1(B): If ILnk = "." Then ILnk = ITbl
+Dim C$()
+    C = AyWhT1(LSCln, ILnk)
+LSFt1Ly_zColLnkLy_zOne = AyRplT1(C, ITbl)
+End Function
+
+Function LSFt1Ly_zLnkFxLy_zOne$(A$)
+'Input:         <---- A -------------->
+'Input     Hdr: Tbl  Lnk  F? Fil Ws
+'          Lin: MB52 .    Fx MB52
+'          Lin: Uom  .    Fx Uom
+'          Lin: 8701 ZHT1 Fx ZHT1 8701
+'          Lnk: 8601 ZHT1 Fx ZHT1 8601
+
+'          Hdr: Tbl  *Lnk F? [Ws|Tbl]@[Fx|Fb]
+'Return    Lin: *TblLnkWsFx 8601 [8601]@[Fx]
+'Return    Lin: InvD *Lnk Fb [^InvD]@[..localFb..]  or [InvD]@[..ProdFb..]
+Dim XTbl$, ILnk$, XFxFb$, IFil$, IWs$, B$
+B = A
+XTbl = LinShiftT1(B)
+ILnk = LinShiftT1(B): If ILnk = "." Then ILnk = XTbl
+XFxFb = LinShiftT1(B)
+IFil = LinShiftT1(B)
+IWs = B
+
+Dim OWs$, OFx$, OFbTbl$, OFb$
+Select Case XFxFb
+Case "Fx"
+    OFx = Run("IFx" & IFil)
+    OWs = StrDft(IWs, "Sheet1")
+Case "Fb"
+    OFb = Run("IFb" & IFil)
+    OFbTbl = IIf(IsDev, "^", "") & XTbl
+Case Else
+    FunEr "LSStarWs2_Lnk1P1Lin", "[StarWs-Lin] of 'Tbl Lnk F? Fil Ws' has invalid [F?], which should Fx or Fb", A, XFxFb
+End Select
+
+
+Dim O$
+Const C$ = "*TblWsFx ? [?]@[?]"
+O = FmtQQ(C, XTbl, OWs, OFx)
+LSFt1Ly_zLnkFxLy_zOne = O
+End Function
+
+Sub LSKillFt1()
+FfnDltIfExist LSFt1
+End Sub
+Sub LSKill()
+SpnmKill "Lnk"
+End Sub
+Sub LSImp()
+SpnmImp "Lnk"
+End Sub
+
+Function LSFt1$()
+LSFt1 = FfnAddFnSfx(LSFt, "1")
+End Function
+
+Function LSFt$()
+LSFt = SpnmFt("Lnk")
+End Function
+
+Sub LSExp()
+SpnmExp "Lnk"
+End Sub
+
+Sub LSEdt()
+SpnmEdt "Lnk"
+End Sub
+
+Function LSFbNy() As String()
+LSFbNy = AyT1Ay(LSFbTblLy)
+End Function
+
+Function LSFbTblLy() As String()
+LSFbTblLy = AyRmvT1(AyWhT1(LSCln, "*FbTbl"))
+End Function
+
+Function LSFxNy() As String()
+LSFxNy = AyDist(AyT3Ay(AyRmvFstEle(LSActiveStarWs2Ly)))
+End Function
+
+Sub LSBrw()
+SpnmBrw "Lnk"
+End Sub
+
+Function ColLnkSpecLy_Fny(A) As String()
+ColLnkSpecLy_Fny = AyT1Ay(A)
+End Function
+
+Function ColLnkSpecLy_ExtNy(A) As String()
+ColLnkSpecLy_ExtNy = AyMapSy(A, "ColLnkLin_ExtNm")
+End Function
+
+Function ColLnkLin_ExtNm$(ByVal A$)
+Dim N$
+N = LinShiftT1(A)
+A = LinRmvT1(A)
+ColLnkLin_ExtNm = RmvSqBkt(StrDft(A, N))
+End Function
+Function LinRmvTT$(A)
+LinRmvTT = LinRmvT1(LinRmvT1(A))
+End Function
+
+Function TakBefDDD$(A)
+TakBefDDD = RTrim(TakBefOrAll(A, "---"))
+End Function
+
+Function TakBefDD$(A)
+TakBefDD = RTrim(TakBefOrAll(A, "--"))
+End Function
+
 Sub TTAddPfx(TT, Pfx$)
 DbttAddPfx CurrentDb, TT, Pfx
 End Sub
-
+Function FstTwoChr$(A)
+FstTwoChr = Left(A, 2)
+End Function
+Function LinIsDDLin(A) As Boolean
+LinIsDDLin = FstTwoChr(LTrim(A)) = "--"
+End Function
 Function AyWhPredFalse(A, Pred$)
 Dim O, X
 O = AyCln(A)
@@ -7747,9 +8040,7 @@ End Sub
 
 Function DbtSk(A As Database, T) As String()
 'Sk is Fny of a table with same name as Table name and with Unique
-Dim I As dao.Index:
-Set I = DbtSkIdx(A, T): If IsNothing(I) Then Exit Function
-DbtSk = ItrNy(I.Fields)
+DbtSk = IdxFny(DbtSkIdx(A, T))
 End Function
 
 Function ItrXPPredFst(A, XP$, P)
@@ -7780,6 +8071,12 @@ Function FtLines$(A)
 If FfnSz(A) <= 0 Then Exit Function
 FtLines = Fso.GetFile(A).OpenAsTextStream.ReadAll
 End Function
+
+Function FtLy(A) As String()
+Dim B$: B = FtLines(A): If B = "" Then Exit Function
+FtLy = SplitCrLf(B)
+End Function
+
 Function AyRmvT1(A) As String()
 AyRmvT1 = AyMapSy(A, "LinRmvT1")
 End Function
@@ -7787,6 +8084,12 @@ Function FfnPing(A) As Boolean
 If Not FfnIsExist(A) Then Debug.Print "[" & A & "] not found": FfnPing = True
 End Function
 
+Sub DbRunSqy(A As Database, Sqy)
+Dim X
+For Each X In Sqy
+    A.Execute X
+Next
+End Sub
 Sub DbRun(A As Database, Sql)
 A.Execute Sql
 End Sub
@@ -7880,7 +8183,7 @@ Asg A(0), AySng
 End Function
 
 Function AyT1Chd(A, T1) As String()
-AyT1Chd = AyRmvT1(AyWhT1EqV(A, T1))
+AyT1Chd = AyRmvT1(AyWhT1(A, T1))
 End Function
 
 Property Get CurCdPne() As VBIDE.CodePane
@@ -7911,7 +8214,7 @@ Function T1LikLikSslAy_T1$(A$(), T2, T3)
 Dim L, T$, Lik$, LikSsl$
 If Sz(A) = 0 Then Exit Function
 For Each L In A
-    LinTTRstAsg L, T, Lik, LikSsl
+    LinT2RstAsg L, T, Lik, LikSsl
     If T2 Like Lik Then
         If StrMatchLikSsl(T3, L) Then
             T1LikLikSslAy_T1 = T
@@ -7925,7 +8228,7 @@ Function T1LikLikSslAy_FstT2T3Eq$(A$(), T2, T3)
 Dim L, T$, Lik$, LikSsl$
 If Sz(A) = 0 Then Exit Function
 For Each L In A
-    LinTTRstAsg L, T, Lik, LikSsl
+    LinT2RstAsg L, T, Lik, LikSsl
     If T2 Like Lik Then
         If StrMatchLikSsl(T3, LikSsl) Then
             T1LikLikSslAy_FstT2T3Eq = L
@@ -7944,12 +8247,6 @@ For Each L In T1LikSslAy
         T1LikSslAy_T1 = T1
         Exit Function
     End If
-Next
-End Function
-Function ItrFstPrpEqV(A, P, V)
-Dim X
-For Each X In A
-    If ObjPrp(X, P) = V Then Asg X, ItrFstPrpEqV: Exit Function
 Next
 End Function
 Function OyHas(A, Obj) As Boolean
@@ -8143,6 +8440,9 @@ GetSts:
 StsDo:
 StsRpt:
 End Sub
+Function ABXAyAAy(A, BAy$()) As String()
+
+End Function
 
 Sub DbImpSpec(A As Database, Spnm)
 Const CSub$ = "DbImpSpec"
@@ -8200,7 +8500,7 @@ Dim Dr()
 Dr = Array(Spnm, Ft, FtLines(Ft), CurT, CurS, Now)
 Select Case True
 Case NoCur, SamTim:
-Case NoLas: DrAddRs Dr, Rs
+Case NoLas: DrInsRs Dr, Rs
 Case DifFt, CurNew: DrUpdRs Dr, Rs
 Case Else: Stop
 End Select
@@ -8233,6 +8533,38 @@ Sub SpnmKill(A)
 Kill SpnmFt(A)
 End Sub
 
+Function TkIsExist(T, ParamArray K()) As Boolean
+Dim K0(): K0 = K
+TkIsExist = Dbtk0IsExist(CurrentDb, T, K0)
+End Function
+Sub Dbtk0Ins(A As Database, T, K0)
+DrInsRs DbtRs(A, T), CvK0(K0)
+End Sub
+Sub TkIns(T, ParamArray K())
+Dim K0(): K0 = K
+Dbtk0Ins CurrentDb, T, K0
+End Sub
+
+Function Dbtk0Rs(A As Database, T, K0) As dao.Recordset
+Dim W$, Sk$()
+Sk = DbtSk(A, T)
+W = KyK0_BExpr(Sk, K0)
+Q = FmtQQ("Select * from [?] where ?", T, W)
+Set Dbtk0Rs = A.OpenRecordset(Q)
+End Function
+
+Function Dbtk0IsExist(A As Database, T, K0) As Boolean
+Dbtk0IsExist = Not RsIsNoRec(Dbtk0Rs(A, T, K0))
+End Function
+
+Sub SpnmEnsRec(A)
+If TkIsExist("Spec", A) Then Exit Sub
+TkIns "Spec", A
+End Sub
+
+Sub SpnmExpIfFtNotExist(A)
+If Not FfnIsExist(SpnmFt(A)) Then SpnmExp A
+End Sub
 Sub SpnmExp(A, Optional OvrWrt As Boolean)
 StrWrt SpnmLines(A), SpnmFt(A), Not OvrWrt
 End Sub
@@ -8252,6 +8584,12 @@ End Function
 Function SpnmV(A, ValNm$)
 SpnmV = TfkV("Spec", ValNm, A)
 End Function
+
+Sub SpnmEdt(A)
+SpnmEnsRec A
+SpnmExpIfFtNotExist A
+SpnmBrw A
+End Sub
 
 Sub SpnmBrw(A)
 FtBrw SpnmFt(A)
@@ -8364,8 +8702,9 @@ O = A
 Push O, Itm
 AyAddItm = O
 End Function
-Function AyMid(A, Fm&, Sz&)
+Function AyMid(A, Fm&, Optional ByVal Sz&)
 Dim O, J&
+If Sz = 0 Then Sz = UB(A)
 O = AyCln(A)
 For J = Fm To Min(Fm + Sz - 1, UB(A))
     Push O, A(J)
@@ -8461,7 +8800,7 @@ Dim J%, O(), Ly$(), Nm$, Colr&
 Ly = ColrLy
 ReDim O(1 To Sz(Ly), 1 To 2)
 For J = 1 To Sz(Ly)
-    LinT1RestAsg Ly(J - 1), Nm, Colr
+    LinTRstAsg Ly(J - 1), Nm, Colr
     O(J, 1) = Nm
     O(J, 2) = Colr
 Next

@@ -1,10 +1,19 @@
 Option Compare Database
 Option Explicit
 Private Sub Main()
+'Outline
+'   Directly using Lvl#
+'   Set SummaryLevel At Left / At Top
+'   Set Lvl=2 for Row
+
+
+
+
 SetColr_ToDo
 PtFmt
 HowToEnsFirstTime_FmtSpec
 Addition_API_forMsgLy
+
 End Sub
 
 Private Sub PtFmt()

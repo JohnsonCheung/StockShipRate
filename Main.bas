@@ -1,6 +1,36 @@
 Option Compare Database
 Option Explicit
-Public LnkColStr As New LnkColStr
+Private Const A_1$ = "Uom Sku    Txt Material " & _
+vbCrLf & "Uom Whs    Txt Plant " & _
+vbCrLf & "Uom Des    Txt Material Description" & _
+vbCrLf & "Uom Sc_U   Txt SC " & _
+vbCrLf & "Uom StkUom Txt Base Unit of Measure" & _
+vbCrLf & "Uom ProdH  Txt Product hierarchy" & _
+vbCrLf & "" & _
+vbCrLf & "MB52  Sku    Txt Material " & _
+vbCrLf & "MB52  Whs    Txt Plant    " & _
+vbCrLf & "MB52  QInsp  Dbl In Quality Insp#" & _
+vbCrLf & "MB52  QUnRes Dbl UnRestricted" & _
+vbCrLf & "MB52  QBlk   Dbl Blocked" & _
+vbCrLf & "" & _
+vbCrLf & "ZHT1  ZHT1   Txt Brand  " & _
+vbCrLf & "ZHT1  RateSc Dbl Amount " & _
+vbCrLf & "ZHT1  VdtFm  Txt Valid From" & _
+vbCrLf & "ZHT1  VdtTo  Txt Valid to" & _
+vbCrLf & "" & _
+vbCrLf & "InvD VndShtNm Txt " & _
+vbCrLf & "InvD InvNo    Txt"
+Private Const A_2$ = "InvD Sku      Txt " & _
+vbCrLf & "InvD Sc       Dbl;Txt " & _
+vbCrLf & "InvD Amt      Dbl" & _
+vbCrLf & "" & _
+vbCrLf & "InvH VndShtNm Txt " & _
+vbCrLf & "InvH InvNo    Txt " & _
+vbCrLf & "InvH Dte      Dte InvDte" & _
+vbCrLf & "InvH Whs      Txt Plant  " & _
+vbCrLf & "InvH Sc       Dbl " & _
+vbCrLf & "InvH Amt      Cur"
+Private Const ColLnk_Lines$ = A_1 & vbCrLf & A_2
 
 Function OupFunSsl_Run(A)
 Dim IQ, Q$
@@ -21,34 +51,45 @@ Sub MsgRunQry(A$)
 MsgSet "Running query (" & A & ") ..."
 End Sub
 
-Function IFxChk() As String()
-IFxChk = AyAddAp(IFxChk_zMB52, IFxChk_zUom, BoolRunTFFun(IsFstYM, "IFxChk_zRate IFxChk_zInv"))
+Function IFxWsChk() As String()
+IFxWsChk = AyAddAp(IFxWsChk_zMB52, IFxWsChk_zUom, BoolRunTFFun(IsFstYM, "IFxWsChk_zRate IFxWsChk_zInv"))
 End Function
 
-Function IFxChk_zRate() As String()
+Function IFxWsChk_zRate() As String()
 If Not FfnIsExist(IFxRate) Then
-    IFxChk_zRate = MsgAp_Ly("It is first record of Year/Month, [rate file (ZHT1)] is needed.|It is not found in [folder]", _
+    IFxWsChk_zRate = MsgLy("It is first record of Year/Month, [rate file (ZHT1)] is needed.|It is not found in [folder]", _
     FfnFn(IFxRate), FfnPth(IFxRate))
     Exit Function
 End If
-IFxChk_zRate = FxChk(IFxRate, "Rate file (ZHT1)", "8701 8601")
+IFxWsChk_zRate = FxWsChk(IFxRate, "Rate file (ZHT1)", "8701 8601")
 End Function
 
-Function IFxChk_zMB52() As String()
-IFxChk_zMB52 = FxChk(IFxMB52, MB52FnSpec)
+Function IFxWsChk_zMB52() As String()
+IFxWsChk_zMB52 = FxWsChk(IFxMB52, MB52FnSpec)
 End Function
 
-Function IFxChk_zInv() As String()
-IFxChk_zInv = FxChk(IFxInv, "Invoice file", "Invoices Detail")
+Function LSFxWsChk() As String()
+Dim A(), FxNy$()
+FxNy = LSFxNy
+A = AyMap(FxNy, "LSFxNm_WsChk")
+LSFxWsChk = AyOfAy_Ay(A)
 End Function
 
-Function IFxChk_zUom() As String()
-IFxChk_zUom = FxChk(IFxUom, "Sales text file")
+Function LSFxNm_WsChk(FxNm$) As String()
+
+End Function
+
+Function IFxWsChk_zInv() As String()
+IFxWsChk_zInv = FxWsChk(IFxInv, "Invoice file", "Invoices Detail")
+End Function
+
+Function IFxWsChk_zUom() As String()
+IFxWsChk_zUom = FxWsChk(IFxUom, "Sales text file")
 End Function
 
 Property Get Lnk() As String()
-Lnk = IFxChk
-If Sz(Lnk) = 0 Then Exit Property
+Lnk = IFxWsChk
+If Sz(Lnk) > 0 Then Exit Property
 
 WtLnkFx ">InvH", IFxInv, "Invoices"
 WtLnkFx ">InvD", IFxInv, "Detail"
@@ -65,32 +106,65 @@ If IsDev Then
 End If
 WttLnkFb TT, IFbStkShpRate, Fbtt
 
-Lnk = LnkColChk
+Lnk = ColLnk_Chk
 End Property
 
-Function LnkColChk() As String()
-Dim A$(), B$(), C$(), D$(), E$(), F$()
-A = WtChkCol(">MB52", LnkColStr.MB52)
-B = WtChkCol(">Uom", LnkColStr.Uom)
+Function ColLnk_Chk() As String()
+Dim A$(), B$(), C$()
+A = WttColChk(">MB52 >Uom")
 If IsFstYM Then
-    C = WtChkCol(">ZHT18601", LnkColStr.ZHT1)
-    D = WtChkCol(">ZHT18701", LnkColStr.ZHT1)
+    B = WttColChk(">ZHT18601 >ZHT18701")
 Else
-    E = WtChkCol(">InvD", LnkColStr.InvD)
-    F = WtChkCol(">InvH", LnkColStr.InvH)
+    C = WttColChk(">InvD >InvH")
 End If
-LnkColChk = AyAddAp(A, C, B, D, E, F)
+ColLnk_Chk = AyAddAp(A, B, C)
+End Function
+Function SwFxFbLy() As String()
+Dim O$()
+
+SwFxFbLy = O
+End Function
+Function ColLnk_Ly() As String()
+ColLnk_Ly = SplitCrLf(ColLnk_Lines)
+End Function
+
+Function ColLnk_XXX(XXX$) As String()
+ColLnk_XXX = AyRmvT1(AyWhT1(ColLnk_ClnLy, XXX))
+End Function
+
+Function ColLnk_ClnLy() As String()
+ColLnk_ClnLy = LyCln(ColLnk_Ly)
+End Function
+
+Function ColLnk_MB52() As String()
+ColLnk_MB52 = ColLnk_XXX("MB52")
+End Function
+
+Function ColLnk_Uom() As String()
+ColLnk_Uom = ColLnk_XXX("Uom")
+End Function
+
+Function ColLnk_ZHT1() As String()
+ColLnk_ZHT1 = ColLnk_XXX("ZHT1")
+End Function
+
+Function ColLnk_InvH() As String()
+ColLnk_InvH = ColLnk_XXX("InvH")
+End Function
+
+Function ColLnk_InvD() As String()
+ColLnk_InvD = ColLnk_XXX("InvD")
 End Function
 
 Sub Import()
-WImp ">MB52", LnkColStr.MB52
-WImp ">Uom", LnkColStr.Uom
+WtImp ">MB52", ColLnk_MB52
+WtImp ">Uom", ColLnk_Uom
 If IsFstYM Then
-    WImp ">ZHT18601", LnkColStr.ZHT1
-    WImp ">ZHT18701", LnkColStr.ZHT1
+    WtImp ">ZHT18601", ColLnk_ZHT1
+    WtImp ">ZHT18701", ColLnk_ZHT1
 Else
-    WImp ">InvH", LnkColStr.InvH
-    WImp ">InvD", LnkColStr.InvD
+    WtImp ">InvH", ColLnk_InvH
+    WtImp ">InvD", ColLnk_InvD
 End If
 End Sub
 
@@ -297,10 +371,6 @@ Gen
 WCls
 End Sub
 
-Private Function BB()
-BB = 2
-End Function
-
 Sub LdDta(Optional IsForceLd As Boolean)
 Lg "LdDta", "Start with [IsForceLd]", IsForceLd
 LdMB52 IsForceLd
@@ -432,6 +502,8 @@ W.Execute "Update [@Main] set SellAmt = Nz(SellSc,0) * Nz(BegRateSc,0)"
 W.Execute "Update [@Main] set BegAmt = Nz(BegOHSc,0) * Nz(BegRateSc,0)"
 W.Execute "Update [@Main] set EndAmt = Nz(BegAmt,0) + Nz(IRAmt,0) - Nz(SellAmt,0)"
 W.Execute "Update [@Main] set EndRateSc = IIf(Nz(EndOHSc,0)=0,Nz(BegRateSc,0),Nz(EndAMt,0)/EndOHSc)"
+
+DbtReSeq W, "@Main", "Sku Des"
 
 'Stream ProdH F2 M32 M35 M38 Topaz ZHT1 RateSc Z2 Z5 Z8
 'ProdH Topaz

@@ -315,7 +315,7 @@ Function DLyTFDesLy(DLy$(), Tny$()) As String()
 End Function
 
 Function TFLin$(T, TFLy$())
-TFLin = AySng(AyWhT1EqV(TFLy, T), "Schm.TFLin.PrpEr")
+TFLin = AySng(AyWhT1(TFLy, T), "Schm.TFLin.PrpEr")
 End Function
 
 Function TFLyFny(TFLy$(), T) As String()
