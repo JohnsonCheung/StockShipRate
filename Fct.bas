@@ -1351,7 +1351,7 @@ Function DbtfVal(A As Database, T, F)
 DbtfVal = A.TableDefs(T).OpenRecordset.Fields(F).Value
 End Function
 
-Property Let dbtfk0V(A As Database, T, F, K0, V)
+Property Let Dbtfk0V(A As Database, T, F, K0, V)
 Dim W$, Sk$(), Rs As dao.Recordset
 Sk = DbtSk(A, T)
 W = KyK0_BExpr(Sk, K0)
@@ -1364,14 +1364,17 @@ Else
 End If
 End Property
 
-Property Get dbtfk0V(A As Database, T, F, K0)
+Property Get Dbtfk0V(A As Database, T, F, K0)
 Dim W$, Sk$(), Rs As dao.Recordset
 Sk = DbtSk(A, T)
+If Sz(Sk) <> Sz(K0) Then
+    FunEr "Dbtfk0V", "In [Db], [T] with [Sk] of [Sk-Sz] is given a [K0] of [K0-Sz] to value of [F], but the sz don't match", DbNm(A), T, JnSpc(Sk), Sz(Sk), K0, Sz(K0), F
+End If
 W = KyK0_BExpr(Sk, K0)
 Q = FmtQQ("Select ? from [?] where ?", F, T, W)
 Set Rs = A.OpenRecordset(Q)
 If RsIsNoRec(Rs) Then Exit Property
-dbtfk0V = Nz(RsV(Rs, F), Empty)
+Dbtfk0V = Nz(RsV(Rs, F), Empty)
 End Property
 Function CvK0(K0)
 Select Case True
@@ -2371,15 +2374,15 @@ End Function
 
 Function TfkV(T, F, ParamArray K())
 Dim K0(): K0 = K
-TfkV = dbtfk0V(CurrentDb, T, F, K0)
+TfkV = Dbtfk0V(CurrentDb, T, F, K0)
 End Function
 
 Property Let Tfk0V(T, F, K0, V)
-dbtfk0V(CurrentDb, T, F, K0) = V
+Dbtfk0V(CurrentDb, T, F, K0) = V
 End Property
 
 Property Get Tfk0V(T, F, K0)
-Tfk0V = dbtfk0V(CurrentDb, T, F, K0)
+Tfk0V = Dbtfk0V(CurrentDb, T, F, K0)
 End Property
 
 Property Let RsV(A As dao.Recordset, Optional F = 0, V)
@@ -4604,9 +4607,11 @@ For Each Lo In A.ListObjects
     End If
 Next
 End Function
+
 Function TblPk(T) As String()
 TblPk = DbtPk(CurrentDb, T)
 End Function
+
 Function TblSk(T) As String()
 'Sk is secondary key.  Same name as the table and is unique
 'Thw if there is key with same name as T, but not primary key.
@@ -5843,7 +5848,7 @@ Function ItrFstPrpEqV(A, P, V)
 'Return first element in Itr-A with its PrpNm is eq to V
 Dim X
 For Each X In A
-    If ObjPrp(A, P) = V Then Set ItrFstPrpEqV = X: Exit Function
+    If ObjPrp(X, P) = V Then Set ItrFstPrpEqV = X: Exit Function
 Next
 Set ItrFstPrpEqV = Nothing
 End Function
@@ -8017,16 +8022,32 @@ If A.Name <> T Then Exit Function
 IdxIsSk = A.Unique
 End Function
 
-Function DbtSkIdx(A As Database, T) As dao.Index
-Dim O
-Asg ItrXPPredFst(A.TableDefs(T).Indexes, "IdxIsSk", T), O
-If Not IsEmpty(O) Then
-    Set DbtSkIdx = O
-End If
+Function ItrFstNm(A, Nm)
+Dim X
+For Each X In A
+    If ObjNm(X) = Nm Then Set ItrFstNm = X: Exit Function
+Next
+Set ItrFstNm = Nothing
 End Function
 
-Sub DbtCrtSk(A As Database, T, SKey, FF)
-Q = FmtQQ("Create Unique Index ? on ? (?)", SKey, T, JnComma(CvFF(FF))): A.Execute Q
+Function DbtSkIdx(A As Database, T) As dao.Index
+Dim O As dao.Index
+Set O = ItrFstNm(A.TableDefs(T).Indexes, "SecondaryKey")
+If IsNothing(O) Then
+    Dim I As dao.Index
+    Set I = ItrFstPrpEqV(A.TableDefs(T).Indexes, "Unique", True)
+    If Not IsNothing(I) Then
+        FunMsgBrw "DbtSkIdx", "[T] of [Db] does not have Idx-SecondaryKey, but it has [Idx] with unique.  This 'Idx' should be named as 'SecondaryKey'", T, DbNm(A), I.Name
+        Exit Function
+    End If
+    Exit Function
+End If
+If Not O.Unique Then FunMsgBrw "DbtSkIdx", "IdxNm-SecondaryKey of [T] of [Db] should unique"
+Set DbtSkIdx = O
+End Function
+
+Sub DbtCrtSk(A As Database, T, Fny0)
+Q = FmtQQ("Create Unique Index SecondaryKey on ? (?)", T, JnComma(CvNy(Fny0))): A.Execute Q
 End Sub
 
 Function FtLines$(A)

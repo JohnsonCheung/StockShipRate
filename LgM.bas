@@ -119,7 +119,7 @@ TdAddLngTxt T, "Val"
 Db.TableDefs.Append T
 
 DbttCrtPk Db, "Sess Msg Lg LgV"
-DbtCrtSk Db, "Msg", "Msg", "Fun MsgTxt"
+DbtCrtSk Db, "Msg", "Fun MsgTxt"
 End Sub
 
 Private Sub EnsSess()
