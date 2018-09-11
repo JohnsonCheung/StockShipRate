@@ -50,6 +50,9 @@ End Function
 Sub MsgRunQry(A$)
 MsgSet "Running query (" & A & ") ..."
 End Sub
+Function LSLines$()
+LSLines = SpnmLines("Lnk")
+End Function
 
 Function IFxWsChk() As String()
 IFxWsChk = AyAddAp(IFxWsChk_zMB52, IFxWsChk_zUom, BoolRunTFFun(IsFstYM, "IFxWsChk_zRate IFxWsChk_zInv"))
@@ -63,20 +66,25 @@ If Not FfnIsExist(IFxRate) Then
 End If
 IFxWsChk_zRate = FxWsChk(IFxRate, "Rate file (ZHT1)", "8701 8601")
 End Function
+Sub LNKPrmLinesSet()
+LNKPrmLines = CurLNKPrmLines
+End Sub
+Function CurLNKPrmLines$()
+CurLNKPrmLines = SpnmLines("LnkPrm")
+End Function
+Function CurLNKPrmLy() As String()
+Dim O$()
+Push O, "0-Fx MB52    " & IFxMB52
+Push O, "0-Fx Inv     " & IFxInv
+Push O, "0-Fx GR      " & IFxGR
+Push O, "0-Fx Rate    " & IFxRate
+Push O, "0-Fb ShpRate " & IFbStkShpRate
+Push O, "0-Sw IsFstYM " & IsFstYM
+CurLNKPrmLy = O
+End Function
 
 Function IFxWsChk_zMB52() As String()
 IFxWsChk_zMB52 = FxWsChk(IFxMB52, MB52FnSpec)
-End Function
-
-Function LSFxWsChk() As String()
-Dim A(), FxNy$()
-FxNy = LSFxNy
-A = AyMap(FxNy, "LSFxNm_WsChk")
-LSFxWsChk = AyOfAy_Ay(A)
-End Function
-
-Function LSFxNm_WsChk(FxNm$) As String()
-
 End Function
 
 Function IFxWsChk_zInv() As String()
@@ -118,11 +126,6 @@ Else
     C = WttColChk(">InvD >InvH")
 End If
 ColLnk_Chk = AyAddAp(A, B, C)
-End Function
-Function SwFxFbLy() As String()
-Dim O$()
-
-SwFxFbLy = O
 End Function
 Function ColLnk_Ly() As String()
 ColLnk_Ly = SplitCrLf(ColLnk_Lines)
@@ -264,6 +267,20 @@ End Property
 
 Property Get InvPth$()
 InvPth = PthEns(InvHom & YYYY & "\")
+End Property
+
+Property Get IFxGR$()
+Dim Hom$
+    If IsDev Then
+        Hom = CDbPth & "Sample\"
+    Else
+        Hom = PthEns(AppHom & "Import GR\")
+    End If
+Dim Pth$
+    Pth = PthEns(Hom & YYYY & "\")
+Dim Fn$
+    Fn = FmtQQ("MB51 ?.xlsx", YYYYxMM)
+IFxGR = Pth & Fn
 End Property
 
 Sub InvPthBrw()

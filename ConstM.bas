@@ -31,14 +31,6 @@ Public Const StdETFLines$ = _
 "ETF Mem * Lines *Ft *Fx"
 Public Const SpecSchmLines$ = "TF Spec * SpecNm | Lines Ft Sz Tim LdTim CrtTim " & vbCrLf & StdETFLines & vbCrLf & StdEleLines
 Public Const C_Des$ = "Description"
-Public Const Z_ReSeqSpec$ = _
-"Flg RecTy Amt Key Uom MovTy Qty BchRateUX RateTy Bch Las GL |" & _
-" Flg IsAlert IsWithSku |" & _
-" Key Sku PstMth PstDte |" & _
-" Bch BchNo BchPermitDate BchPermit |" & _
-" Las LasBchNo LasPermitDate LasPermit |" & _
-" GL GLDocNo GLDocDte GLAsg GLDocTy GLLin GLPstKy GLPc GLAc GLBusA GLRef |" & _
-" Uom Des StkUom Ac_U"
 Private Const ColrLines_1$ = "ActiveBorder -4934476" & _
 vbCrLf & "ActiveCaption -6703919" & _
 vbCrLf & "ActiveCaptionText -16777216" & _
