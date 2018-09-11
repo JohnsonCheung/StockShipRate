@@ -66,11 +66,12 @@ If Not FfnIsExist(IFxRate) Then
 End If
 IFxWsChk_zRate = FxWsChk(IFxRate, "Rate file (ZHT1)", "8701 8601")
 End Function
-Sub LNKPrmLinesSet()
-LNKPrmLines = CurLNKPrmLines
+Sub CurLNKPmLinesSet()
+LNKPmLines = CurLNKPmLines
 End Sub
-Function CurLNKPrmLines$()
-CurLNKPrmLines = SpnmLines("LnkPrm")
+
+Function CurLNKPmLines$()
+CurLNKPmLines = SpnmLines("LnkPm")
 End Function
 Function CurLNKPrmLy() As String()
 Dim O$()

@@ -265,6 +265,11 @@ Dim Av(): Av = Ap
 ApLin = JnSpc(AyRmvEmp(Av))
 End Function
 
+Function ApLines$(ParamArray Ap())
+Dim Av(): Av = Ap
+ApLines = JnCrLf(AyRmvEmp(Av))
+End Function
+
 Private Sub Z_ApScl()
 Actual = ApScl(" ", "")
 Expect = ""
@@ -291,8 +296,9 @@ LinHasT1 = LinT1(A) = T1
 End Function
 
 Function LinHasTT(ByVal A, T1, T2) As Boolean
-If T1 <> LinShiftTerm(A) Then Exit Function
-If T2 <> LinShiftTerm(A) Then Exit Function
+Dim O$()
+O = LinShiftTerm(A):    If O(0) <> T1 Then Exit Function
+O = LinShiftTerm(O(1)): If O(0) <> T2 Then Exit Function
 LinHasTT = True
 End Function
 
@@ -308,10 +314,20 @@ Function LinT3$(A)
 LinT3 = LinT1(LinRmvTT(A))
 End Function
 
-Function LinInT1Ay(A, T1Ay$())
-LinInT1Ay = AyHas(T1Ay, LinT1(A))
+Function AyabMapSy(A, B, FunAB$) As String()
+AyabMapSy = AyabMapInto(A, B, FunAB, EmpSy)
 End Function
 
+Function AyabMapInto(A, B, FunAB$, OInto)
+Dim J&, U&, O
+O = OInto
+U = Min(UB(A), UB(B))
+If U >= 0 Then ReDim O(U)
+For J = 0 To U
+    O(J) = Run(FunAB, A(J), B(J))
+Next
+AyabMapInto = O
+End Function
 Function NewFd_zId(F) As dao.Field2
 Dim O As New dao.Field
 With O
@@ -329,12 +345,6 @@ With O
     .Type = dbLong
 End With
 Set NewFd_zFk = O
-End Function
-
-Function LinRmvT1$(A)
-Dim O$: O = A
-LinShiftTerm O
-LinRmvT1 = O
 End Function
 
 Function AyWhT1(A, V) As String()
@@ -424,19 +434,6 @@ For Each L In A
     BrkAsg L, " ", O(J)
     J = J + 1
 Next
-End Function
-Function AyabMapInto(A, B, MapAB$, OInto)
-Dim J&, U&, O
-O = OInto: Erase O
-U = UB(A)
-If U <> UB(B) Then Stop
-For J = 0 To U
-    Push O, Run(MapAB, A(J), B(J))
-Next
-AyabMapInto = O
-End Function
-Function AyabMapSy(A, B, MapAB$) As String()
-AyabMapSy = AyabMapInto(A, B, MapAB, EmpSy)
 End Function
 
 Function TnPkSql$(A)
@@ -668,7 +665,7 @@ End Function
 Function TTXAyFst(Ay, A, B)
 Dim X, T1$, T2$, Rst$
 For Each X In AyNz(Ay)
-    LinT2RstAsg X, T1, T2, Rst
+    Lin2TAsg X, T1, T2, Rst
     If T1 = A Then
         If T2 = B Then
             TTXAyFst = X
@@ -891,7 +888,7 @@ Function FmtSpecLy_Tit$(A$(), T$, F$)
 Dim J%, O$, L, TT$, FF$, Tit$
 For Each L In A
     If LinShiftT1(L) = "Tit" Then
-        LinT2RstAsg L, TT, FF, Tit
+        Lin2TAsg L, TT, FF, Tit
         If TT = T Then
             If FF = F Then
                 FmtSpecLy_Tit = Tit
@@ -906,7 +903,7 @@ Function FmtSpecLy_NTitRow(A$(), T$) As Byte
 Dim J%, O As Byte, L, TT$, FF$, Tit$
 For Each L In A
     If LinShiftT1(L) = "Tit" Then
-        LinT2RstAsg L, TT, FF, Tit
+        Lin2TAsg L, TT, FF, Tit
         If TT = T Then
             O = Max(O, Sz(SplitSC(Tit)))
         End If
@@ -1050,7 +1047,7 @@ TT = LcLoNm(A)
 FF = A.Name
 For Each L In FmtSpecLy
     If LinShiftT1(L) = Itm Then
-        LinT2RstAsg L, V, T, F1
+        Lin2TAsg L, V, T, F1
         If T = TT Then
             If SslHas(F1, FF) Then
                 LcV_zXTF1 = V
@@ -1072,7 +1069,7 @@ T = LcLoNm(A)
 F = A.Name
 For Each L In FmtSpecLy
     If LinShiftT1(L) = Itm Then
-        LinT2RstAsg L, V, LikT, LikFSsl
+        Lin2TAsg L, V, LikT, LikFSsl
         If T Like LikT Then
             If StrMatchLikSsl(F, LikFSsl) Then
                 LcV_zXT0F2 = V
@@ -1091,7 +1088,7 @@ F = A.Name
 
 For Each L In FmtSpecLy
     If LinShiftT1(L) = Itm Then
-        LinT2RstAsg L, LikT, LikF, V
+        Lin2TAsg L, LikT, LikF, V
         If T Like LikT Then
             If F Like LikF Then
                 LcV_zT0F2X = V
@@ -1354,14 +1351,27 @@ Function DbtfVal(A As Database, T, F)
 DbtfVal = A.TableDefs(T).OpenRecordset.Fields(F).Value
 End Function
 
-Property Get Dbtfk0V(A As Database, T, F, K0)
+Property Let dbtfk0V(A As Database, T, F, K0, V)
+Dim W$, Sk$(), Rs As dao.Recordset
+Sk = DbtSk(A, T)
+W = KyK0_BExpr(Sk, K0)
+Q = FmtQQ("Select ? from [?] where ?", F, T, W)
+Set Rs = A.OpenRecordset(Q)
+If RsIsNoRec(Rs) Then
+    DrInsRs K0, Rs
+Else
+    DrUpdRs K0, Rs
+End If
+End Property
+
+Property Get dbtfk0V(A As Database, T, F, K0)
 Dim W$, Sk$(), Rs As dao.Recordset
 Sk = DbtSk(A, T)
 W = KyK0_BExpr(Sk, K0)
 Q = FmtQQ("Select ? from [?] where ?", F, T, W)
 Set Rs = A.OpenRecordset(Q)
 If RsIsNoRec(Rs) Then Exit Property
-Dbtfk0V = Nz(RsV(Rs, F), Empty)
+dbtfk0V = Nz(RsV(Rs, F), Empty)
 End Property
 Function CvK0(K0)
 Select Case True
@@ -2361,15 +2371,15 @@ End Function
 
 Function TfkV(T, F, ParamArray K())
 Dim K0(): K0 = K
-TfkV = Dbtfk0V(CurrentDb, T, F, K0)
+TfkV = dbtfk0V(CurrentDb, T, F, K0)
 End Function
 
 Property Let Tfk0V(T, F, K0, V)
-Dbtfk0V(CurrentDb, T, F, K0) = V
+dbtfk0V(CurrentDb, T, F, K0) = V
 End Property
 
 Property Get Tfk0V(T, F, K0)
-Tfk0V = Dbtfk0V(CurrentDb, T, F, K0)
+Tfk0V = dbtfk0V(CurrentDb, T, F, K0)
 End Property
 
 Property Let RsV(A As dao.Recordset, Optional F = 0, V)
@@ -3871,49 +3881,47 @@ Else
 End If
 End Sub
 
-Function LinShiftTerm$(O)
-Dim A$, P%
-A = LTrim(O)
-P = InStr(A, " ")
-If P = 0 Then
-    LinShiftTerm = A
-    O = ""
-    Exit Function
-End If
-LinShiftTerm = Left(A, P - 1)
-O = LTrim(Mid(A, P + 1))
-End Function
+Property Get LinShiftTerm(A) As String()
+LinShiftTerm = Sy(LinT1(A), LinRmvT1(A))
+End Property
 
-Function LinRmvSqBktTerm$(A)
-
-End Function
-
-Private Sub Z_LinN_SqBktTermAy()
+Private Sub Z_LinNTermAy()
 Dim A$
 A = "  [ksldfj ]":  Expect = "ksldfj ": GoSub Tst
 A = "  [ ksldfj ]": Expect = " ksldf ": GoSub Tst
 A = "  [ksldfj]":  Expect = "ksldf": GoSub Tst
 Exit Sub
 Tst:
-    Actual = LinT1_zSqBkt(A)
+    Actual = LinT1(A)
     C
     Return
 End Sub
 
-Function LinT1_zSqBkt$(A)
+Function LinT1$(A)
 Dim P%, B$
 B = LTrim(A)
 P = InStr(B, " ")
 Select Case True
 Case P = 0
-    LinT1_zSqBkt = RmvSqBkt(A)
+    LinT1 = RmvSqBkt(RTrim(B))
 Case FstChr(B) = "["
     P = InStr(B, "]")
-    LinT1_zSqBkt = Mid(B, 2, P - 2)
+    LinT1 = Mid(B, 2, P - 2)
 Case Else
-    LinT1_zSqBkt = Left(B, P - 1)
+    LinT1 = Left(B, P - 1)
 End Select
 End Function
+
+Function LinRmvT1$(A)
+Dim T$
+T = LinT1(A)
+If T = "" Then
+    LinRmvT1 = A
+Else
+    LinRmvT1 = LTrim(RmvPfx(A, T))
+End If
+End Function
+
 Sub Z_CdLines_Run()
 CdLines_Run ZZCdLines
 End Sub
@@ -3947,45 +3955,19 @@ End Sub
 Sub MdAppLines(A As CodeModule, Lines$)
 A.InsertLines A.CountOfLines + 1, Lines
 End Sub
-Function LinShiftSqBktTerm(A) As String()
-LinShiftSqBktTerm = Sy(LinT1_zSqBkt(A), LinRmvSqBktTerm(A))
+Function Lin2TAy(A) As String()
+Lin2TAy = LinNTermAy(A, 2)
 End Function
-
-Sub LinT2RstAsg(A, OT1$, OT2$, ORst$)
-Dim Ay$()
-Ay = LinTermAy(A, 2)
-OT1 = Ay(0)
-OT2 = Ay(1)
-ORst = Ay(2)
+Sub Lin2TAsg(A, O1, O2, ORst)
+AyAsg Lin2TAy(A), O1, O2, ORst
 End Sub
 
 Sub LinT3Asg(A, OT1, OT2, OT3, ORst)
-AyAsg LinTermAy3(A), OT1, OT2, OT3, ORst
+AyAsg Lin3TAy(A), OT1, OT2, OT3, ORst
 End Sub
 
-Function LinTermAy(ByVal A, N%) As String()
-Dim O$(), J%
-For J = 1 To N
-    GoSub X
-Next
-Push O, A
-LinTermAy = O
-Exit Function
-X:
-    Push O, LinShiftTerm(A)
-    Return
-End Function
-
-Function LinTermAy2(A) As String()
-LinTermAy2 = LinTermAy(A, 2)
-End Function
-
-Function LinTermAy1(A) As String()
-LinTermAy1 = LinTermAy(A, 1)
-End Function
-
-Function LinTermAy3(A) As String()
-LinTermAy3 = LinTermAy(A, 3)
+Function Lin3TAy(A) As String()
+Lin3TAy = LinNTermAy(A, 3)
 End Function
 
 Function AyMinus(A, B)
@@ -6111,10 +6093,6 @@ With DbtRs(A, T)
 End With
 End Sub
 
-Function LinT1$(A)
-LinT1 = LinShiftTerm(CStr(A))
-End Function
-
 Function TmpHom$()
 Static X$
 If X = "" Then
@@ -6787,54 +6765,53 @@ Tst:
     C
     Return
 End Sub
-Function LinShiftTerm_zSqBkt(A) As String()
 
-End Function
-Function LinTermAy_zSqBkt(ByVal A, N%) As String()
-Dim O$(), J%
-For J = 1 To N
-    GoSub X
-Next
-Push O, A
-LinTermAy_zSqBkt = O
-Exit Function
-X:
-    Dim T$
-    AyAsg LinShiftTerm_zSqBkt(A), T, A
-    Push O, T
-    Return
-End Function
-Function LinWdtAy_Align$(A, W%())
-Dim Ay$(), N%, J%
+Function LinAlignNTerm$(A, W%())
+Dim Ay$(), J%, N%, O$()
 N = Sz(W)
-Ay = LinTermAy_zSqBkt(A, N)
+Ay = LinNTermAy(A, N)
 If Sz(Ay) <> N + 1 Then Stop
+O = AyabMapSy(Ay, W, "AlignL")
+Push O, AyLasEle(Ay)
+LinAlignNTerm = JnSpc(O)
+End Function
+
+Function EmpIntAy() As Integer()
+End Function
+
+Function LinNTermWdt(A, N%) As Integer()
+Dim Ay$(), O%(), J%
+Ay = LinNTermAy(A, N)
+ReDim O(N - 1)
 For J = 0 To N - 1
-    Ay(J) = AlignL(Ay(J), W(J))
+    O(J) = Len(Ay(J))
 Next
-LinWdtAy_Align = Join(Ay, "")
-End Function
-Function LyNTerm_WdtAy(A$(), NTerm%) As Integer()
-Stop '
-End Function
-Function LyNTerm_Align(A$(), NTerm%) As String()
-Dim W%()
-W = LyNTerm_WdtAy(A, NTerm)
-LyNTerm_Align = AyMapXPSy(A, "LinWdtAy_Align", W)
+LinNTermWdt = O
 End Function
 
-Function LyT3Rst_Align(A$()) As String()
-LyT3Rst_Align = LyNTerm_Align(A, 3)
+Function LyNTermWdt(A, NTerm%) As Integer()
+If Sz(A) = 0 Then Exit Function
+Dim O%(), W%(), J%, I%, L, U%
+U = NTerm - 1
+ReDim O(U)
+For Each L In A
+    W = LinNTermWdt(L, NTerm)
+    For I = 0 To U
+        O(I) = Max(O(I), W(I))
+    Next
+Next
+LyNTermWdt = O
 End Function
 
-Function LyT2Rst_Align(A$()) As String()
-LyT2Rst_Align = LyNTerm_Align(A, 2)
+Function LyAlign3T(A$()) As String()
+LyAlign3T = LyAlignNTerm(A, 3)
 End Function
-Function FilLin_Msg$(ByVal A$)
-Dim F$
-F = LinShiftTerm(A)
-If FfnIsExist(A) Then Exit Function
-FilLin_Msg = "[" & F & "] file not found [" & A & "]"
+
+Function FilLin_Msg$(A$)
+Dim FilNm$, Ffn$
+LinShiftTermAsg A, FilNm, Ffn
+If FfnIsExist(Ffn) Then Exit Function
+FilLin_Msg = FmtQQ("[?] file not found [?]", FilNm, Ffn)
 End Function
 Function ItrMap(A, Map$) As Variant()
 ItrMap = ItrMapInto(A, Map, EmpAy)
@@ -6850,8 +6827,16 @@ End Function
 Function LyCln(A) As String()
 LyCln = AyMapSy(AyRmvDDLin(AyRmvEmp(A)), "TakBefDD")
 End Function
+Property Get LNKPmLines$()
+LNKPmLines = SpnmLines("LnkPm")
+End Property
+
+Property Let LNKPmLines(Lines$)
+SpnmLines("LnkPm") = Lines
+End Property
+
 Function LNKCln() As String()
-LNKCln = LyCln(AyAdd(LNKLy, LNKPrmLy))
+LNKCln = LyCln(SplitCrLf(LNKAllLines))
 End Function
 Function LNKTny() As String()
 LNKTny = AySrt(AyDistT1Ay(LNKCln))
@@ -6978,9 +6963,9 @@ AyQuoteSqBktCsv = JnComma(AyQuoteSqBkt(A))
 End Function
 
 Function LinRmvTerm$(ByVal A$)
-LinShiftTerm A
-LinRmvTerm = A
+LinRmvTerm = LinShiftTerm(A)(1)
 End Function
+
 Sub AppExp()
 PthClr SrcPth
 SpecExp
@@ -7083,15 +7068,12 @@ Private Sub Z_ReSeqSpec_OutLinL1Ay()
 D ReSeqSpec_OLinFldAy(Z_ReSeqSpec)
 End Sub
 
-Function Lin3TAy(A) As String()
-Lin3TAy = LinNTermAy(A, 3)
-End Function
 Function LinNTermAy(A, N%) As String()
 Dim L$, T$, O$(), J%
 L = A
 For J = 1 To N
     LinShiftTermAsg L, T, L
-    Push O, L
+    Push O, T
 Next
 Push O, L
 LinNTermAy = O
@@ -7794,13 +7776,9 @@ Property Get LNKPrmLines$()
 LNKPrmLines = SpnmLines("LnkPrm")
 End Property
 
-Property Let LNKPrmLines(Lines$)
-SpnmLines("LnkPrm") = Lines
-End Property
-
 Function LNKLinIsPrm(A) As Boolean
 Select Case LinT1(A)
-Case "0-Fx", "0-Fb", "0-Sw": LNKLinIsPrm = True
+Case "PmFx", "PmFb", "PmSw": LNKLinIsPrm = True
 End Select
 End Function
 
@@ -7810,9 +7788,7 @@ End Sub
 Sub LNKPrmEdt()
 SpnmEdt "LnkPrm"
 End Sub
-Function LNKPrmLy() As String()
-LNKPrmLy = AyWhPred(SplitCrLf(LNKPrmLines), "LNKLinIsPrm")
-End Function
+
 Function LNKFxLy() As String()
 LNKFxLy = AyWhRmvT1(LNKCln, "0-Fx")
 End Function
@@ -8200,7 +8176,7 @@ Function T1LikLikSslAy_T1$(A$(), T2, T3)
 Dim L, T$, Lik$, LikSsl$
 If Sz(A) = 0 Then Exit Function
 For Each L In A
-    LinT2RstAsg L, T, Lik, LikSsl
+    Lin2TAsg L, T, Lik, LikSsl
     If T2 Like Lik Then
         If StrMatchLikSsl(T3, L) Then
             T1LikLikSslAy_T1 = T
@@ -8214,7 +8190,7 @@ Function T1LikLikSslAy_FstT2T3Eq$(A$(), T2, T3)
 Dim L, T$, Lik$, LikSsl$
 If Sz(A) = 0 Then Exit Function
 For Each L In A
-    LinT2RstAsg L, T, Lik, LikSsl
+    Lin2TAsg L, T, Lik, LikSsl
     If T2 Like Lik Then
         If StrMatchLikSsl(T3, LikSsl) Then
             T1LikLikSslAy_FstT2T3Eq = L
@@ -8823,6 +8799,9 @@ End Function
 Function LNKInpFldSsl$(A$)
 LNKInpFldSsl = LinRmvT1(AyFstT1(LNKLyFld, A))
 End Function
+Property Get LNKAllLines$()
+LNKAllLines = ApLines(LNKLines, LNKPmLines)
+End Property
 Property Get LNKLines$()
 LNKLines = SpnmLines("Lnk")
 End Property
@@ -8843,8 +8822,29 @@ Function LNKInpy() As String()
 LNKInpy = LSClnInpy(LNKCln)
 End Function
 
-Function LyAlign1T(A$()) As String()
+Function LyAlign1T(A) As String()
+LyAlign1T = LyAlignNTerm(A, 1)
+End Function
 
+Sub AAAA()
+Z_LyAlign2T
+End Sub
+
+Private Sub Z_LyAlign2T()
+Dim Ly$()
+Ly = Sy("AAA B C", "A BBB CCC")
+Expect = Sy("AAA B   C", _
+            "A   BBB CCC")
+GoSub Tst
+Exit Sub
+Tst:
+    Actual = LyAlign2T(Ly)
+    C
+    Return
+End Sub
+
+Function LyAlign2T(A) As String()
+LyAlign2T = LyAlignNTerm(A, 2)
 End Function
 
 Function ZZLNKSwFxFbLy() As String()
@@ -8857,9 +8857,13 @@ Push O, "0-Fb ShpRate " & IFbStkShpRate
 Push O, "0-Sw IsFstYM " & IsFstYM
 ZZLNKSwFxFbLy = O
 End Function
-Function LyAlignT1(A) As String()
 
+Function LyAlignNTerm(A, N%) As String()
+Dim W%()
+W = LyNTermWdt(A, N)
+LyAlignNTerm = AyMapXPSy(A, "LinAlignNTerm", W)
 End Function
+
 Sub Z_LNKDbImp()
 LNKDbImp WDb
 End Sub
