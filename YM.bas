@@ -26,6 +26,7 @@ M = SqlV("Select M from CurYM")
 End Property
 Property Let M(V As Byte)
 RsV(TblRs("CurYM"), "M") = V
+RptPmSet
 End Property
 Property Let Y(V As Byte)
 RsV(TblRs("CurYM"), "Y") = V

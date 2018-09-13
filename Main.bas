@@ -66,22 +66,23 @@ If Not FfnIsExist(IFxRate) Then
 End If
 IFxWsChk_zRate = FxWsChk(IFxRate, "Rate file (ZHT1)", "8701 8601")
 End Function
-Sub CurLNKPmLinesSet()
-LNKPmLines = CurLNKPmLines
+Sub RptPmSet()
+LNKPmLines = RptPmLines
 End Sub
 
-Function CurLNKPmLines$()
-CurLNKPmLines = SpnmLines("LnkPm")
+Function RptPmLines$()
+RptPmLines = JnCrLf(RptPmLy)
 End Function
-Function CurLNKPrmLy() As String()
+
+Function RptPmLy() As String()
 Dim O$()
-Push O, "0-Fx MB52    " & IFxMB52
-Push O, "0-Fx Inv     " & IFxInv
-Push O, "0-Fx GR      " & IFxGR
-Push O, "0-Fx Rate    " & IFxRate
-Push O, "0-Fb ShpRate " & IFbStkShpRate
-Push O, "0-Sw IsFstYM " & IsFstYM
-CurLNKPrmLy = O
+Push O, "0 PmFx MB52     " & IFxMB52
+Push O, "0 PmFx Inv      " & IFxInv
+Push O, "0 PmFx GR       " & IFxGR
+Push O, "0 PmFx Rate     " & IFxRate
+Push O, "0 PmFb ShpRate  " & IFbStkShpRate
+Push O, "0 PmSw &IsFstYM " & IIf(IsFstYM, "T", "F")
+RptPmLy = O
 End Function
 
 Function IFxWsChk_zMB52() As String()
@@ -366,6 +367,9 @@ Q = FmtQQ("Insert into [YMOH] (Y,M,Sku,Whs,EndOH) select ?,?,Sku,Whs,EndOH from 
 Q = FmtQQ("Select EndOH_Fx, EndOH_FxSz, EndOH_FxTim, EndOH_LdDte from YM where Y=? and M=?", Y, M)
 DrUpdRs FfnStampDr(IFxMB52), W.OpenRecordset(Q)
 WDrp "#OH"
+End Sub
+Sub IFxMB52Opn()
+FxOpn IFxMB52
 End Sub
 Property Get IFxMB52$()
 IFxMB52 = AyMax(MB52y)

@@ -68,7 +68,7 @@ Function LSxChkFst(LSAll$()) As String()
 Dim Fx$(), Fb$()
 Fx = LSxActFxWnyLy(LSAll)
 Fb = LSxActFbTnyLy(LSAll)
-LSxChkFst = LyAlign1T(AyAdd(FxWnyLy_Chk(Fx), FbTnyLy_Chk(Fb)))
+LSxChkFst = AyAlign1T(AyAdd(FxWnyLy_Chk(Fx), FbTnyLy_Chk(Fb)))
 End Function
 Function FxWnyLin_Chk(A$) As String()
 

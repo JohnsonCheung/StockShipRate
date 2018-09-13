@@ -4,8 +4,9 @@ Const C_ETF$ = "ETF"
 Const C_E$ = "E"
 Const C_TF$ = "TF"
 Const C_D$ = "D"
-Private ZAF$
-Private ZAT$
+Private ZZF$
+Private ZZT$
+
 Function TF_E$(T, F, ETFLy$())
 TF_E = LinT1(TF_ETFLin(T, F, ETFLy))
 End Function
@@ -15,27 +16,29 @@ ELyEAy = AyT1Ay(ELy)
 End Function
 
 Private Sub Z_ETFLin()
-ZAT = "Msg"
-ZAF = "MsgTxt"
-ChkEq "Txt * Fun *Txt", ZBETFLin
+ZZT = "Msg"
+ZZF = "MsgTxt"
+ChkEq "Txt * Fun *Txt", ZZETFLin
 End Sub
-Private Property Get ZBETFLin$()
-ZBETFLin = TF_ETFLin(ZAF, ZAT, ZBETFLy)
+
+Private Property Get ZZETFLin$()
+ZZETFLin = TF_ETFLin(ZZF, ZZT, ZZETFLy)
 End Property
+
 Function TF_ETFLin$(T, F, ETFLy$())
 TF_ETFLin = T1LikLikSslAy_FstT2T3Eq(ETFLy, T, F)
 End Function
 
-Private Property Get ZBELy() As String()
-ZBELy = ELy(ZASchmy)
+Private Property Get ZZELy() As String()
+ZZELy = ELy(ZZSchmy)
 End Property
 
-Private Property Get ZASchmy() As String()
-ZASchmy = LgIniSchmy
+Private Property Get ZZSchmy() As String()
+ZZSchmy = LgIniSchmy
 End Property
 
-Property Get ZBQTFELy() As String()
-ZBQTFELy = SchmyQTFELy(ZASchmy)
+Private Property Get ZZQTFELy() As String()
+ZZQTFELy = SchmyQTFELy(ZZSchmy)
 End Property
 
 Function SchmyQTFELy(A$()) As String()
@@ -84,36 +87,36 @@ Z_ETFLin
 Z_DbCrtSchm
 End Sub
 
-Sub ZZ_FdAy()
-ZAT = "Sess"
-Actual = ZBFdAy
+Private Sub ZZ_FdAy()
+ZZT = "Sess"
+Actual = ZZFdAy
 Stop
 End Sub
 
-Private Property Get ZBETFLy() As String()
-ZBETFLy = ETFLy(ZASchmy)
+Private Property Get ZZETFLy() As String()
+ZZETFLy = ETFLy(ZZSchmy)
 End Property
 
-Private Function ZBFdAy() As dao.Field()
-ZBFdAy = FdAy(ZAT, ZBTFLy, ZBETFLy, ZBELy)
+Private Function ZZFdAy() As dao.Field()
+ZZFdAy = FdAy(ZZT, ZZTny, ZZTFLy, ZZETFLy, ZZELy)
 End Function
 
-Private Property Get ZBTny() As String()
-ZBTny = TFLyTny(ZBTFLy)
+Private Property Get ZZTny() As String()
+ZZTny = TFLyTny(ZZTFLy)
 End Property
 
 Private Sub Z_Tny()
-ChkEq ZBTny, SslSy("Sess Msg Lg LgV")
+ChkEq ZZTny, SslSy("Sess Msg Lg LgV")
 End Sub
 
 Private Sub ZZ_Tny()
 Dim T, Tny$(), TFLy$()
-TFLy = ZBTFLy
-Tny = ZBTny
+TFLy = ZZTFLy
+Tny = ZZTny
 GoSub Sep
 D "Tny"
 D "---"
-D ZBTny
+D ZZTny
 GoSub Sep
 For Each T In Tny
     GoSub Prt
@@ -156,22 +159,22 @@ Case Else:
 End Select
 End Function
 
-Function Td(T, TFLy$(), ETFLy$(), ELy$()) As dao.TableDef
-Set Td = NewTd(T, FdAy(T, TFLy, ETFLy, ELy))
+Function Td(T, Tny$(), TFLy$(), ETFLy$(), ELy$()) As dao.TableDef
+Set Td = NewTd(T, FdAy(T, Tny, TFLy, ETFLy, ELy))
 End Function
 
 Function TFLyTny(TFLy$()) As String()
 TFLyTny = AyMapSy(TFLy, "LinT1")
 End Function
 
-Function TdAy(TFLy$(), ETFLy$(), ELy$()) As dao.TableDef()
-TdAy = AyMapXABCInto(TFLyTny(TFLy), "Td", TFLy, ETFLy, ELy, TdAy)
+
+Function TdAy(Tny$(), TFLy$(), ETFLy$(), ELy$()) As dao.TableDef()
+TdAy = AyMapXABCDInto(TFLyTny(TFLy), "Td", Tny, TFLy, ETFLy, ELy, TdAy)
 End Function
 
 Function TFLy_PkSqy(TFLy$()) As String()
 TFLy_PkSqy = AyMapSy(PkTny(TFLy), "TnPkSql")
 End Function
-
 Function SkSslAy(TFLy$()) As String()
 Dim A$(), O$(), L
 A = TFLy
@@ -193,12 +196,12 @@ Function PkTFLy(TFLy$()) As String()
 PkTFLy = AyWhPred(TFLy, "TFLinHasPk")
 End Function
 
-Private Property Get ZBSkSqy() As String()
-ZBSkSqy = TFLy_SkSqy(ZBTFLy)
+Private Property Get ZZSkSqy() As String()
+ZZSkSqy = TFLy_SkSqy(ZZTFLy)
 End Property
 
-Private Property Get ZBTFLy() As String()
-ZBTFLy = TFLy(ZASchmy)
+Private Property Get ZZTFLy() As String()
+ZZTFLy = TFLy(ZZSchmy)
 End Property
 
 Function TFLy_SkSqy(TFLy$()) As String()
@@ -208,11 +211,11 @@ End Function
 Private Sub Z_DbCrtSchm()
 Dim Fb$
 Fb = TmpFb
-DbCrtSchm FbCrt(Fb), ZASchmy
+DbCrtSchm FbCrt(Fb), ZZSchmy
 Kill Fb
 End Sub
 
-Function TfEtfED_Er(TF$(), ETF$(), ELy$(), D$()) As String()
+Function XEr(TF$(), ETF$(), ELy$(), D$()) As String()
 Dim Tny1$(), EAy1$(), A1$(), A2$(), A3$(), A4$(), A5$(), A6$()
 EAy1 = ELyEAy(ELy)
 Tny1 = TFLyTny(TF)
@@ -222,7 +225,7 @@ A3 = ErDupT(Tny1)
 A4 = ErE(EAy1)
 A5 = ErFldHasNoEle(Tny1, TF, ETF)
 A6 = ErETFEle_NotIn_EAy(ETF, EAy1)
-TfEtfED_Er = AyAddAp(A1, A2, A3, A4, A5, A6)
+XEr = AyAddAp(A1, A2, A3, A4, A5, A6)
 End Function
 Function ErDupT(Tny$()) As String()
 ErDupT = AyDupChk(Tny, "These T[?] is duplicated in TFld-lines")
@@ -283,27 +286,29 @@ Dim Ny$(), Er$()
     Ny = Sy(C_TF, C_ETF, C_E, C_D)
     AyAsg LyBrk1(A, Ny), OTF, OETF, OE, OD, OEr
 End Sub
+Sub DbCrtSchm_z1(A As Database, Er$(), TdAyFun$, PkSqyFun$, SkSqyFun$, DLyTDesLyFun$, DLyTFDesLyFun$)
 
+End Sub
 Sub DbCrtSchm(A As Database, Schmy$())
 Dim Er1$(), TF$(), EF$(), E$(), D$()
     SchmyAsg Schmy, Er1, TF, EF, E, D
 Dim Er$()
-    Er = AyAdd(TfEtfED_Er(TF, EF, E, D), Er1)
-    Er = AyAdd_zIf_B_IsNonEmp(Schmy, Er)
+    Er = AyAdd(XEr(TF, EF, E, D), Er1)
+    If Sz(Er) > 0 Then Er = AyAdd(Schmy, Er)
 AyBrwThw Er
-Dim Tny1$()
-    Tny1 = TFLyTny(TF)
-AyDoPX TdAy(TF, EF, E), "DbAppTd", A
+Dim Tny$()
+    Tny = TFLyTny(TF)
+AyDoPX TdAy(Tny, TF, EF, E), "DbAppTd", A
 AyDoPX TFLy_PkSqy(TF), "DbRun", A
 AyDoPX TFLy_SkSqy(TF), "DbRun", A
 AyDoPX DLyTDesLy(D), "DbSetTblDes", A
-AyDoPX DLyTFDesLy(D, Tny1), "DbSetTFDes", A
+AyDoPX DLyTFDesLy(D, Tny), "DbSetTFDes", A
 End Sub
 
 Function SchmyEr(A) As String()
 Dim Er1$(), TF$(), ETF$(), E$(), D$(), Tny$()
 SchmyAsg A, Er1, TF, ETF, E, D
-SchmyEr = AyAdd(TfEtfED_Er(TF, ETF, E, D), Er1)
+SchmyEr = AyAdd(XEr(TF, ETF, E, D), Er1)
 End Function
 
 Function DLyTDesLy(DLy$()) As String()
@@ -326,9 +331,8 @@ B = Replace(A, "*", T)
 TFLyFny = AyRmvEle(SslSy(B), "|")
 End Function
 
-Function FdAy(T, TFLy$(), ETFLy$(), ELy$()) As dao.Field()
-Dim Fny$(), Tny$()
-Tny = TFLyTny(TFLy)
+Function FdAy(T, Tny$(), TFLy$(), ETFLy$(), ELy$()) As dao.Field()
+Dim Fny$()
 Fny = TFLyFny(TFLy, T)
 FdAy = AyMapXABCDInto(Fny, "Fd", T, Tny, ETFLy, ELy, FdAy)
 End Function

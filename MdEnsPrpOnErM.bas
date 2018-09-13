@@ -2,58 +2,57 @@ Option Compare Database
 Option Explicit
 Const Trc As Boolean = True
 Private Sub Z_MdRmvPrpOnEr()
-MdRmvPrpOnEr ZBMd
+MdRmvPrpOnEr ZZMd
 End Sub
 Private Sub Z_MdEnsPrpOnEr()
-MdEnsPrpOnEr ZBMd
+MdEnsPrpOnEr ZZMd
 End Sub
 Sub MdRmvPrpOnEr(A As CodeModule)
 If A.Parent.Type <> vbext_ct_ClassModule Then Exit Sub
-Dim J%, L&(), Nm$
+Dim J%, L&()
 L = MdPrpLnoAy(A)
-Nm = MdNm(A)
 If Not AyIsSrt(L) Then Stop
 For J = UB(L) To 0 Step -1
-    MdPrpLno_RmvPrpOnEr A, L(J)
+    MdPrpRmvOnEr A, L(J)
 Next
 End Sub
 
 Sub MdEnsPrpOnEr(A As CodeModule)
 If A.Parent.Type <> vbext_ct_ClassModule Then Exit Sub
-Dim J%, L&(), Nm$
+Dim J%, L&()
 L = MdPrpLnoAy(A)
-Nm = MdNm(A)
 If Not AyIsSrt(L) Then Stop
 For J = UB(L) To 0 Step -1
-    MdPrpLno_EnsPrpOnEr A, L(J)
+    MdPrpEnsOnEr A, L(J)
 Next
 End Sub
 
-Function MdPrpLno_LblXLin$(A As CodeModule, PrpLno)
-Dim Nm$
-Nm = MdPrpLno_PrpNm(A, PrpLno)
+Function MdPrpLblXLin$(A As CodeModule, PrpLno)
+Dim Nm$, Lin$
+Lin = A.Lines(PrpLno, 1)
+Nm = LinPrpNm(Lin)
 If Nm = "" Then Stop
-MdPrpLno_LblXLin = FmtQQ("X: Debug.Print ""?.?.PrpEr...", MdNm(A), Nm)
+MdPrpLblXLin = FmtQQ("X: Debug.Print ""?.?.PrpEr...", MdNm(A), Nm)
 End Function
 
-Private Sub MdPrpLno_EnsPrpOnEr(A As CodeModule, PrpLno&)
+Private Sub MdPrpEnsOnEr(A As CodeModule, PrpLno&)
 If HasSubStr(A.Lines(PrpLno, 1), "End Property") Then
     Exit Sub
 End If
-MdPrpLno_EnsLblXLin A, PrpLno
-MdPrpLno_EnsExitPrpLin A, PrpLno
-MdPrpLno_EnsOnErLin A, PrpLno
+MdPrpEnsLblXLin A, PrpLno
+MdPrpEnsExitPrpLin A, PrpLno
+MdPrpEnsOnErLin A, PrpLno
 End Sub
 
-Private Sub MdPrpLno_EnsLblXLin(A As CodeModule, PrpLno&)
-Const CSub$ = "MdPrpLno_EnsLblXLin"
+Private Sub MdPrpEnsLblXLin(A As CodeModule, PrpLno&)
+Const CSub$ = "MdPrpEnsLblXLin"
 Dim E$, L%, ActLblXLin$, EndPrpLno&
-E = MdPrpLno_LblXLin(A, PrpLno)
-L = MdPrpLno_LblXLno(A, PrpLno)
+E = MdPrpLblXLin(A, PrpLno)
+L = MdPrpLblXLno(A, PrpLno)
 If L <> 0 Then ActLblXLin = A.Lines(L, 1)
 If E <> ActLblXLin Then
     If L = 0 Then
-        EndPrpLno = MdPrpLno_EndPrpLno(A, PrpLno)
+        EndPrpLno = MdPrpEndPrpLno(A, PrpLno)
         If EndPrpLno = 0 Then Stop
         A.InsertLines EndPrpLno, E
         If Trc Then FunMsgDmp CSub, "Inserted [at] with [line]", EndPrpLno, E
@@ -64,28 +63,28 @@ If E <> ActLblXLin Then
 End If
 End Sub
 
-Private Sub MdPrpLno_EnsExitPrpLin(A As CodeModule, PrpLno&)
-Const CSub$ = "MdPrpLno_EnsExitPrpLin"
+Private Sub MdPrpEnsExitPrpLin(A As CodeModule, PrpLno&)
+Const CSub$ = "MdPrpEnsExitPrpLin"
 Dim L&
-L = MdPrpLno_InsExitPrpLno(A, PrpLno)
+L = MdPrpInsExitPrpLno(A, PrpLno)
 If L = 0 Then Exit Sub
 A.InsertLines L, "Exit Property"
 If Trc Then FunMsgDmp CSub, "Exit Property is inserted [at]", L
 End Sub
 
-Private Sub MdPrpLno_EnsOnErLin(A As CodeModule, PrpLno&)
-Const CSub$ = "MdPrpLno_EnsOnErLin"
+Private Sub MdPrpEnsOnErLin(A As CodeModule, PrpLno&)
+Const CSub$ = "MdPrpEnsOnErLin"
 Dim L&
-L = MdPrpLno_OnErLno(A, PrpLno)
+L = MdPrpOnErLno(A, PrpLno)
 If L <> 0 Then Exit Sub
 A.InsertLines PrpLno + 1, "On Error Goto X"
 If Trc Then FunMsgDmp CSub, "Exit Property is inserted [at]", L
 End Sub
 
-Private Sub MdPrpLno_RmvPrpOnEr(A As CodeModule, PrpLno&)
-MdLno_Rmv A, MdPrpLno_ExitPrpLno(A, PrpLno)
-MdLno_Rmv A, MdPrpLno_OnErLno(A, PrpLno)
-MdLno_Rmv A, MdPrpLno_LblXLno(A, PrpLno)
+Private Sub MdPrpRmvOnEr(A As CodeModule, PrpLno&)
+MdLno_Rmv A, MdPrpExitPrpLno(A, PrpLno)
+MdLno_Rmv A, MdPrpOnErLno(A, PrpLno)
+MdLno_Rmv A, MdPrpLblXLno(A, PrpLno)
 End Sub
 
 Function MdLno_Rmv(A As CodeModule, Lno)
@@ -94,19 +93,19 @@ MsgDmp "MdLno_Rmv: [Md]-[Lno]-[Lin] is removed", MdNm(A), Lno, A.Lines(Lno, 1)
 A.DeleteLines Lno, 1
 End Function
 
-Function MdPrpLno_InsExitPrpLno&(A As CodeModule, PrpLno)
-If MdPrpLno_ExitPrpLno(A, PrpLno) <> 0 Then Exit Function
+Function MdPrpInsExitPrpLno&(A As CodeModule, PrpLno)
+If MdPrpExitPrpLno(A, PrpLno) <> 0 Then Exit Function
 Dim L%
-L = MdPrpLno_LblXLno(A, PrpLno)
+L = MdPrpLblXLno(A, PrpLno)
 If L = 0 Then Stop
-MdPrpLno_InsExitPrpLno = L
+MdPrpInsExitPrpLno = L
 End Function
 
-Function MdPrpLno_LblXLno&(A As CodeModule, PrpLno)
+Function MdPrpLblXLno&(A As CodeModule, PrpLno)
 Dim J&, L$
 For J = PrpLno + 1 To A.CountOfLines
     L = A.Lines(J, 1)
-    If HasPfx(L, "X: Debug.Print") Then MdPrpLno_LblXLno = J: Exit Function
+    If HasPfx(L, "X: Debug.Print") Then MdPrpLblXLno = J: Exit Function
     If HasPfx(L, "End Property") Then Exit Function
 Next
 Stop
@@ -135,6 +134,6 @@ For Lno = 1 To A.CountOfLines
 Next
 MdPrpLnoAy = O
 End Function
-Private Function ZBMd() As CodeModule
-Set ZBMd = CurVbe.VBProjects("StockShipRate").VBComponents("Schm").CodeModule
+Private Function ZZMd() As CodeModule
+Set ZZMd = CurVbe.VBProjects("StockShipRate").VBComponents("Schm").CodeModule
 End Function

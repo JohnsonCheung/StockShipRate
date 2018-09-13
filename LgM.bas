@@ -286,11 +286,11 @@ SessNLg = DbqV(L, "Select Count(*) from Lg where Sess=" & A)
 End Function
 Sub Z()
 Stop
-ZZZ_Lg
+Z_Lg
 Stop
 End Sub
 
-Private Sub ZZZ_Lg()
+Private Sub Z_Lg()
 LgKill
 Debug.Assert Dir(LgFb) = ""
 LgBeg
