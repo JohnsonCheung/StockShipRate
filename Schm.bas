@@ -238,7 +238,7 @@ Exit Property
 X: Debug.Print "Schm.No_T.PrpEr..."
 End Property
 
-Property Get Fd() As dao.Field
+Property Get Fd() As DAO.Field
 On Error GoTo X
 If No_F Then Exit Property
 Select Case True
@@ -250,7 +250,7 @@ Exit Property
 X: Debug.Print "Schm.Fd.PrpEr..."
 End Property
 
-Function Td() As dao.TableDef
+Function Td() As DAO.TableDef
 If No_T Then Exit Function
 Set Td = NewTd(T, FdAy)
 End Function
@@ -262,8 +262,8 @@ Exit Property
 X: Debug.Print "Schm.Tny.PrpEr..."
 End Property
 
-Function TdAy() As dao.TableDef()
-Dim O() As dao.TableDef
+Function TdAy() As DAO.TableDef()
+Dim O() As DAO.TableDef
 For Each T In Tny
     PushObj O, Td
 Next
@@ -353,8 +353,8 @@ Exit Property
 X: Debug.Print "Schm.Fny.PrpEr..."
 End Property
 
-Function FdAy() As dao.Field()
-Dim O() As dao.Field
+Function FdAy() As DAO.Field()
+Dim O() As DAO.Field
 For Each F In Fny
     PushObj O, Fd
 Next

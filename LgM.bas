@@ -86,16 +86,16 @@ End Sub
 
 Sub LgCrt()
 FbCrt LgFb
-Dim Db As Database, T As dao.TableDef
+Dim Db As Database, T As DAO.TableDef
 Set Db = FbDb(LgFb)
 '
-Set T = New dao.TableDef
+Set T = New DAO.TableDef
 T.Name = "Sess"
 TdAddId T
 TdAddStamp T, "Dte"
 Db.TableDefs.Append T
 '
-Set T = New dao.TableDef
+Set T = New DAO.TableDef
 T.Name = "Msg"
 TdAddId T
 TdAddTxtFld T, "Fun"
@@ -103,7 +103,7 @@ TdAddTxtFld T, "MsgTxt"
 TdAddStamp T, "Dte"
 Db.TableDefs.Append T
 '
-Set T = New dao.TableDef
+Set T = New DAO.TableDef
 T.Name = "Lg"
 TdAddId T
 TdAddLngFld T, "Sess"
@@ -111,7 +111,7 @@ TdAddLngFld T, "Msg"
 TdAddStamp T, "Dte"
 Db.TableDefs.Append T
 '
-Set T = New dao.TableDef
+Set T = New DAO.TableDef
 T.Name = "LgV"
 TdAddId T
 TdAddLngFld T, "Lg"
@@ -249,7 +249,7 @@ Q = FmtQQ("Select Lines from LgV where Lg = ? order by LgV", A)
 LgLinesAy = RsAy(L.OpenRecordset(Q))
 End Function
 
-Function CurLgRs(Optional Top% = 50) As dao.Recordset
+Function CurLgRs(Optional Top% = 50) As DAO.Recordset
 Set CurLgRs = L.OpenRecordset(FmtQQ("Select Top ? x.*,Fun,MsgTxt from Lg x left join Msg a on x.Msg=a.Msg order by Sess desc,Lg", Top))
 End Function
 
@@ -277,7 +277,7 @@ Function CurSessLy(Optional Sep$, Optional Top% = 50) As String()
 CurSessLy = RsLy(CurSessRs(Top), Sep)
 End Function
 
-Function CurSessRs(Optional Top% = 50) As dao.Recordset
+Function CurSessRs(Optional Top% = 50) As DAO.Recordset
 Set CurSessRs = L.OpenRecordset(FmtQQ("Select Top ? * from sess order by Sess desc", Top))
 End Function
 

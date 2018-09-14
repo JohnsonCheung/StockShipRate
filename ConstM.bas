@@ -1,7 +1,7 @@
 Option Compare Database
 Type AttRs
-    TblRs As dao.Recordset
-    AttRs As dao.Recordset
+    TblRs As DAO.Recordset
+    AttRs As DAO.Recordset
 End Type
 Enum EApp
     EDuty = 1

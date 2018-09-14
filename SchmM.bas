@@ -97,7 +97,7 @@ Private Property Get ZZETFLy() As String()
 ZZETFLy = ETFLy(ZZSchmy)
 End Property
 
-Private Function ZZFdAy() As dao.Field()
+Private Function ZZFdAy() As DAO.Field()
 ZZFdAy = FdAy(ZZT, ZZTny, ZZTFLy, ZZETFLy, ZZELy)
 End Function
 
@@ -147,7 +147,7 @@ Function FE_FdScl$(F, E, ELy$())
 FE_FdScl = F & ";" & E_EScl(E, ELy)
 End Function
 
-Function Fd(F, T, Tny$(), ETFLy$(), ELy$()) As dao.Field
+Function Fd(F, T, Tny$(), ETFLy$(), ELy$()) As DAO.Field
 Select Case True
 Case IsId(T, F):   Set Fd = NewFd_zId(F)
 Case IsFk(F, Tny): Set Fd = NewFd_zFk(F)
@@ -159,7 +159,7 @@ Case Else:
 End Select
 End Function
 
-Function Td(T, Tny$(), TFLy$(), ETFLy$(), ELy$()) As dao.TableDef
+Function Td(T, Tny$(), TFLy$(), ETFLy$(), ELy$()) As DAO.TableDef
 Set Td = NewTd(T, FdAy(T, Tny, TFLy, ETFLy, ELy))
 End Function
 
@@ -168,7 +168,7 @@ TFLyTny = AyMapSy(TFLy, "LinT1")
 End Function
 
 
-Function TdAy(Tny$(), TFLy$(), ETFLy$(), ELy$()) As dao.TableDef()
+Function TdAy(Tny$(), TFLy$(), ETFLy$(), ELy$()) As DAO.TableDef()
 TdAy = AyMapXABCDInto(TFLyTny(TFLy), "Td", Tny, TFLy, ETFLy, ELy, TdAy)
 End Function
 
@@ -331,7 +331,7 @@ B = Replace(A, "*", T)
 TFLyFny = AyRmvEle(SslSy(B), "|")
 End Function
 
-Function FdAy(T, Tny$(), TFLy$(), ETFLy$(), ELy$()) As dao.Field()
+Function FdAy(T, Tny$(), TFLy$(), ETFLy$(), ELy$()) As DAO.Field()
 Dim Fny$()
 Fny = TFLyFny(TFLy, T)
 FdAy = AyMapXABCDInto(Fny, "Fd", T, Tny, ETFLy, ELy, FdAy)

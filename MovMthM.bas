@@ -1,8 +1,10 @@
 Option Compare Database
 Option Explicit
-
-Function MdMthNy_zPfxEpt(A As CodeModule, MthPfx$, Optional EptMthPfx$) As String()
-MdMthNy_zPfxEpt = AyWhPfxEpt(MdMthNy(A), MthPfx, EptMthPfx)
+Sub Z_MovMth()
+MovMth "Fct", "LNK", "LnkM", "LnkCCM"
+End Sub
+Function MdMthNy_zPfxEpt(A As CodeModule, MthTy$, Optional EptMthTy$) As String()
+MdMthNy_zPfxEpt = AyWhPfxEpt(MdMthNy(A), MthTy, EptMthTy)
 End Function
 
 Function SrcyMthLno%(A, M)
@@ -13,6 +15,7 @@ For Each L In A
 Next
 Stop
 End Function
+
 Function MdMthLines$(A As CodeModule, M)
 Dim L%(), O$(), J%
 L = MdMthLnoAy(A, M)
@@ -27,9 +30,7 @@ MdMthLnoLines = A.Lines(MthLno, MdMthLinCnt(A, MthLno))
 End Function
 
 Function LinIsPrp(A) As Boolean
-Dim B$
-B = LinRmvMdy(A)
-LinIsPrp = HasPfx(B, "Property")
+LinIsPrp = HasPfx(LinRmvMdy(A), "Property ")
 End Function
 
 Function MdMthLnoAy(A As CodeModule, M) As Integer()
@@ -56,12 +57,12 @@ Next
 MdMthNy = AyDist(O)
 End Function
 
-Sub MovMth(FmMd$, MthPfx$, ToMd$, Optional EptMthPfx$)
+Sub MovMth(FmMd$, MthNmPfx$, ToMd$, Optional EptMthNmPfx$)
 Dim Fm As CodeModule
 Dim Ny$()
 Set Fm = Md(FmMd)
-Ny = MdMthNy_zPfxEpt(Fm, MthPfx, EptMthPfx)
-AyDoAXB Ny, "MdMthMov", Fm, Md(ToMd)
+Ny = MdMthNy_zPfxEpt(Fm, MthNmPfx, EptMthNmPfx)
+AyDoAXB Ny, "MdMovMth", Fm, Md(ToMd)
 End Sub
 
 Sub MdRmvMth(A As CodeModule, M)
@@ -72,47 +73,56 @@ For J = UB(L) To 0 Step -1
     A.DeleteLines L(J), Cnt
 Next
 End Sub
-Function MthKdAy() As String()
-Static O$()
-If Sz(O) = 0 Then
+
+Function MthKdAy()
+Static O$(), Y As Boolean
+If Not Y Then
+    Y = True
     Push O, "Function"
     Push O, "Sub"
     Push O, "Property"
 End If
 MthKdAy = O
 End Function
+Function MthTyAy()
+Static O$(), Y As Boolean
+If Not Y Then
+    Y = True
+    Push O, "Function"
+    Push O, "Sub"
+    Push O, "Property Get"
+    Push O, "Property Set"
+    Push O, "Property Let"
+End If
+MthTyAy = O
+End Function
+
+Function AyFstEqV(A, V)
+If AyHas(A, V) Then AyFstEqV = V
+End Function
+
 Function LinMthKd$(A)
-Dim O
-Const C1$ = "Function"
-Const C2$ = "Sub"
-Const C3$ = "Property"
-O = LinT1(LinRmvMdy(A))
-If AyHas(MthKdAy, O) Then LinMthKd = O
+LinMthKd = AyFstEqV(MthKdAy, LinT1(LinRmvMdy(A)))
 End Function
 
 Sub AAAAA()
 Z_MdMthLinCnt
 End Sub
-Sub A6()
-Z_MdMthLno
-End Sub
-Sub A7()
-Z_SrcyMthLno
-End Sub
-Private Sub Z_MdMthLno()
+
+Private Sub ZZ_MdMthLno()
 Dim O$()
     Dim Lno, L%(), M, A As CodeModule, Ny$(), J%
     Set A = Md("Fct")
     Ny = MdMthNy(A)
     For Each M In Ny
+        DoEvents
         J = J + 1
         Push L, MdMthLno(A, M)
-        If J Mod 50 = 0 Then
+        If J Mod 150 = 0 Then
             Debug.Print J, Sz(Ny), "Z_MdMthLno"
         End If
-        
     Next
-    
+
     For Each Lno In L
         Push O, Lno & " " & A.Lines(Lno, 1)
     Next
@@ -126,14 +136,14 @@ Dim O$()
     Ny = MdMthNy(A)
     Srcy = MdLy(A)
     For Each M In Ny
-        J = J + 1
-        If J Mod 10 = 0 Then
-            Debug.Print J, Sz(Ny), "Z_SrcyMthLno"
-            Stop
-        End If
+        DoEvents
+'        J = J + 1
+'        If J > 500 Then
+'            Debug.Print J, Sz(Ny), "Z_SrcyMthLno"
+'        End If
         Push L, SrcyMthLno(Srcy, M)
     Next
-    
+   
     For Each Lno In L
         Push O, Lno & " " & A.Lines(Lno, 1)
     Next
@@ -146,10 +156,11 @@ Dim O$()
     Set A = Md("Fct")
     Ny = MdMthNy(A)
     For Each M In Ny
+        DoEvents
         L = MdMthLno(A, M)
-        E = MdMthLinCnt(A, L)
-        Push O, Format("### ", L) & A.Lines(L, 1)
-        Push O, Format("### ", E) & A.Lines(E, 1)
+        E = MdMthLinCnt(A, L) + L - 1
+        Push O, Format(L, "0000 ") & A.Lines(L, 1)
+        Push O, Format(E, "0000 ") & A.Lines(E, 1)
     Next
 AyBrw O
 End Sub

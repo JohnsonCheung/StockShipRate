@@ -30,7 +30,7 @@ vbCrLf & "InvH Dte      Dte InvDte" & _
 vbCrLf & "InvH Whs      Txt Plant  " & _
 vbCrLf & "InvH Sc       Dbl " & _
 vbCrLf & "InvH Amt      Cur"
-Private Const ColLnk_Lines$ = A_1 & vbCrLf & A_2
+Public Const ColLnk_Lines$ = A_1 & vbCrLf & A_2
 
 Function OupFunSsl_Run(A)
 Dim IQ, Q$
@@ -120,14 +120,17 @@ Lnk = ColLnk_Chk
 End Property
 
 Function ColLnk_Chk() As String()
-Dim A$(), B$(), C$()
-A = WttColChk(">MB52 >Uom")
+Dim A$(), B$(), C$(), D$()
+A = WtColChk(">MB52", ColLnk_MB52)
+B = WtColChk(">Uom", ColLnk_Uom)
 If IsFstYM Then
-    B = WttColChk(">ZHT18601 >ZHT18701")
+    C = WtColChk(">ZHT18601", ColLnk_ZHT1)
+    D = WtColChk(">ZHT18701", ColLnk_ZHT1)
 Else
-    C = WttColChk(">InvD >InvH")
+    C = WtColChk(">InvD", ColLnk_InvD)
+    D = WtColChk(">InvH", ColLnk_InvH)
 End If
-ColLnk_Chk = AyAddAp(A, B, C)
+ColLnk_Chk = AyAddAp(A, B, C, D)
 End Function
 Function ColLnk_Ly() As String()
 ColLnk_Ly = SplitCrLf(ColLnk_Lines)
