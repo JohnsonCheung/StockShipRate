@@ -240,3 +240,57 @@ vbCrLf & "InvH Whs      Txt Plant  " & _
 vbCrLf & "InvH Sc       Dbl " & _
 vbCrLf & "InvH Amt      Cur"
 Public Const LSLines$ = A_1 & vbCrLf & A_2
+
+Private Const SampleLnkSpec_1$ = "0 PmFx MB52     C:\Users\user\Desktop\MHD\SAPAccessReports\TaxRateAlert\TaxRateAlert\Sample\2018\MB52 2018-01-30.xls" & _
+vbCrLf & "0 PmFx Inv      C:\Users\user\Desktop\MHD\SAPAccessReports\StockShipRate\StockShipRate\Sample\2018\Invoices 2018-01.xlsx" & _
+vbCrLf & "0 PmFx GR       C:\Users\user\Desktop\MHD\SAPAccessReports\StockShipRate\StockShipRate\Sample\2018\MB51 2018-01.xlsx" & _
+vbCrLf & "0 PmFx Rate     C:\Users\user\Desktop\MHD\SAPAccessReports\StockShipRate\StockShipRate\Sample\ZHT1.XLSX" & _
+vbCrLf & "0 PmFb ShpRate  C:\Users\user\Desktop\MHD\SAPAccessReports\StockShipRate\StockShipRate\StockShipRate (ver 1.0).accdb" & _
+vbCrLf & "0 PmSw &IsFstYM T" & _
+vbCrLf & "a /Fb             | .Fb" & _
+vbCrLf & "a /Fx             | .Fx" & _
+vbCrLf & "a /Inp            | .Inp" & _
+vbCrLf & "a /Sw Sw      .TF | .Inp " & _
+vbCrLf & "a Fb              | StkShpRate" & _
+vbCrLf & "a Fx              | MB52 Uom GR Inv Rate" & _
+vbCrLf & "a Inp             | MB52 Uom GR 8701 8601 InvH InvD" & _
+vbCrLf & "a Sw  &IsFstYM F  | InvH InvD" & _
+vbCrLf & "a Sw  &IsFstYM T  | 8701 8601" & _
+vbCrLf & "b /FbInp .Fb            | .Inp" & _
+vbCrLf & "b /FxInp .Fx            | .Inp" & _
+vbCrLf & "b /S1Inp                | .Inp" & _
+vbCrLf & "b /WsInp .Fx        .Ws | .Inp" & _
+vbCrLf & "b FbInp  StkShpRate     | YM YMOH"
+Private Const SampleLnkSpec_2$ = "b FxInp  Inv            | InvH InvD" & _
+vbCrLf & "b FxInp  Rate           | 8701 8601" & _
+vbCrLf & "b S1Inp                 | MB52 Uom GR" & _
+vbCrLf & "c /StuInp .Stu  | .Inp" & _
+vbCrLf & "c /Wh     .Stu  | .BExpr" & _
+vbCrLf & "c StuInp  ZHT1  | 8701 8601" & _
+vbCrLf & "c Wh      Uom   | Material Like 'A%'" & _
+vbCrLf & "d /Ele .Ele .Inp   | .Fld" & _
+vbCrLf & "d /Ext .Inp .Fld   | .Ext " & _
+vbCrLf & "d /Fld .Stu        | .Fld" & _
+vbCrLf & "d Ele  Dbl  *      | *Amt *Sc" & _
+vbCrLf & "d Ele  Dte  *      | *Dte" & _
+vbCrLf & "d Ele  Txt  *      | InvNo *Sc" & _
+vbCrLf & "d Ext  *    ProdH  | Product hierarchy" & _
+vbCrLf & "d Ext  *    QBlk   | Blocked" & _
+vbCrLf & "d Ext  *    QInsp  | In Quality Insp#" & _
+vbCrLf & "d Ext  *    QUnRes | UnRestricted" & _
+vbCrLf & "d Ext  *    Sc_U   | SC" & _
+vbCrLf & "d Ext  *    Sku    | Material" & _
+vbCrLf & "d Ext  *    StkUom | Base Unit of Measure"
+Private Const SampleLnkSpec_3$ = "d Ext  *    VdtFm  | Valid From -- dd.mm.yyyy format" & _
+vbCrLf & "d Ext  *    VdtTo  | Valid To   -- dd.mm.yyyy format" & _
+vbCrLf & "d Ext  *    Whs    | Plant" & _
+vbCrLf & "d Ext  ZHT1 RateSc | Amount" & _
+vbCrLf & "d Ext  ZHT1 ZHT1   | Brand" & _
+vbCrLf & "d Fld  InvD        | VndShtNm InvNo Sku Sc Amt" & _
+vbCrLf & "d Fld  InvH        | VndShtNm InvNo Whs Dte Amt Sc" & _
+vbCrLf & "d Fld  MB52        | Sku Whs QBlk QInsp QUnRes" & _
+vbCrLf & "d Fld  Uom         | Sku Des StkUom Whs ProdH Sc_U" & _
+vbCrLf & "d Fld  YM          | Y M" & _
+vbCrLf & "d Fld  YMOH        | Y M BegOHSc" & _
+vbCrLf & "d Fld  ZHT1        | ZHT1 RateSc VdtFm VdtTo"
+Public Const SampleLnkSpec$ = SampleLnkSpec_1 & vbCrLf & SampleLnkSpec_2 & vbCrLf & SampleLnkSpec_3

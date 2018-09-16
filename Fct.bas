@@ -15,8 +15,8 @@ Private Const Z_ReSeqSpec$ = _
 " GL GLDocNo GLDocDte GLAsg GLDocTy GLLin GLPstKy GLPc GLAc GLBusA GLRef |" & _
 " Uom Des StkUom Ac_U"
 
-Sub WImp()
-LNKDbImp W
+Sub WImp(LnkSpec$)
+LNKDbImp W, LnkSpec
 End Sub
 Function SclShift$(OA)
 BrkS1Asg OA, ";", SclShift, OA
@@ -1759,11 +1759,11 @@ End Function
 Sub WtImp(T$, ColLnk$())
 DbtImp W, T, ColLnk
 End Sub
-Function SqlzSelInto$(Fm, Into, Ny$(), Ey$(), Optional WhBExpr$)
+Function ToSql_by_Fm_Into_xx$(Fm, Into, Ny$(), Ey$(), Optional WhBExpr$)
 Dim Sel$, Wh$
 Sel = SqpzSel(Ny, Ey)
 Wh = SqpWh(WhBExpr)
-SqlzSelInto = RplVBar(FmtQQ("Select |?|  Into [?]|  From [?]?;|", Sel, Into, Fm, Wh))
+ToSql_by_Fm_Into_xx = RplVBar(FmtQQ("Select |?|  Into [?]|  From [?]?;|", Sel, Into, Fm, Wh))
 End Function
 Function ColLnk_ImpSql$(A$(), Fm)
 'data ColLnk = F T E
@@ -1772,7 +1772,7 @@ If FstChr(Fm) <> ">" Then Stop
 Into = "#I" & Mid(Fm, 2)
 Ny = AyT1Ay(A)
 Ey = AyMapSy(A, "LinRmvTT")
-ColLnk_ImpSql = SqlzSelInto(Fm, Into, Ny, Ey)
+ColLnk_ImpSql = ToSql_by_Fm_Into_xx(Fm, Into, Ny, Ey)
 End Function
 Sub DbtImp(A As Database, T, ColLnk$())
 DbDrpTbl A, "#I" & Mid(T, 2)
@@ -3201,6 +3201,7 @@ For Each X In A
 Next
 AyRmvEle = O
 End Function
+
 Function AyRmvEleAt(A, Optional At&)
 Dim O, J&, U&
 U = UB(A)
@@ -3243,6 +3244,9 @@ Debug.Assert AbIsEq(Exp, Act)
 Debug.Assert AyIsEq(Ay, ExpAyAft)
 Return
 End Sub
+Function AyT1Rst(A)
+AyT1Rst = Array(A(0), AyRmvEleAt(A))
+End Function
 Function AyShift(Ay)
 AyShift = Ay(0)
 Ay = AyRmvEleAt(Ay)
@@ -4111,13 +4115,27 @@ End Function
 Sub Lin2TAsg(A, O1, O2, ORst)
 AyAsg Lin2TAy(A), O1, O2, ORst
 End Sub
-
+Function OyWhPrpEqV(A, P, V)
+Dim X
+If Sz(A) > 0 Then
+    For Each X In A
+        If ObjPrp(X, P) = V Then
+            Set OyWhPrpEqV = X: Exit Function
+        End If
+    Next
+End If
+Set OyWhPrpEqV = Nothing
+End Function
 Sub LinT3Asg(A, OT1, OT2, OT3, ORst)
 AyAsg Lin3TAy(A), OT1, OT2, OT3, ORst
 End Sub
 
 Function Lin3TAy(A) As String()
 Lin3TAy = LinNTermAy(A, 3)
+End Function
+
+Function Lin4TAy(A) As String()
+Lin4TAy = LinNTermAy(A, 4)
 End Function
 
 Function AyMinus(A, B)
@@ -7736,6 +7754,12 @@ A.Application.WindowState = xlMaximized
 Set WbMax = A
 End Function
 
+Function NewChkTbl(A As LnkSpec) As ChkTbl()
+Dim O() As ChkTbl, Ffn$
+'A.TblNy
+NewChkTbl = A
+End Function
+
 Sub Done()
 MsgBox "Done"
 End Sub
@@ -9237,11 +9261,16 @@ Function AyTAyRstAy(A) As Variant()
 AyTAyRstAy = Array(AyT1Ay(A), AyTRstAy(A))
 End Function
 
+Function ToSql_by_SqlSelInto$(A As SqlSelInto)
+With A
+    ToSql_by_SqlSelInto = ToSql_by_Fm_Into_xx(.Fm, .Into, .Ny, .Ey, .Wh)
+End With
+End Function
 
-Sub FilLinAyAss(A)
-Stop '
-End Sub
-
-Private Sub Z_LNKDbImp()
-LNKDbImp WDb
-End Sub
+Function ToSqy_by_SqlSelIntoAy(A() As SqlSelInto) As String()
+Dim J%, O$()
+For J = 0 To UBound(A)
+    Push O, ToSql_by_SqlSelInto(A(J))
+Next
+ToSqy_by_SqlSelIntoAy = O
+End Function
