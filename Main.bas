@@ -76,12 +76,12 @@ End Function
 
 Function RptPmLy() As String()
 Dim O$()
-Push O, "0 PmFx MB52     " & IFxMB52
-Push O, "0 PmFx Inv      " & IFxInv
-Push O, "0 PmFx GR       " & IFxGR
-Push O, "0 PmFx Rate     " & IFxRate
-Push O, "0 PmFb ShpRate  " & IFbStkShpRate
-Push O, "0 PmSw &IsFstYM " & IIf(IsFstYM, "T", "F")
+Push O, "PmFx MB52     " & IFxMB52
+Push O, "PmFx Inv      " & IFxInv
+Push O, "PmFx GR       " & IFxGR
+Push O, "PmFx Rate     " & IFxRate
+Push O, "PmFb ShpRate  " & IFbStkShpRate
+Push O, "PmSw &IsFstYM " & IIf(IsFstYM, "T", "F")
 RptPmLy = O
 End Function
 

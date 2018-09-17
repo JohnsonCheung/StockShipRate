@@ -6,6 +6,24 @@ Dryz_Db_T_Fb_Fbt() As Variant
 Dryz_Db_T_Fx_Ws() As Variant
 Sqy() As String
 End Type
+Type LnkSpec
+    AFb() As AFil
+    AFx() As AFil
+    ASw() As ASw
+    FmFb() As FmFil
+    FmFx() As FmFil
+    FmIp() As String
+    FmStu() As FmStu
+    FmSw() As FmSw
+    FmWh() As FmWh
+    IpFb() As IpFil
+    IpFx() As IpFil
+    IpS1() As String
+    IpWs() As IpWs
+    StEle() As StEle
+    StExt() As StExt
+    StFld() As StFld
+End Type
 Type FR: Er() As String: OkFilKind() As String: End Type ' FilRslt
 Type Wr: Er() As String: OkWny() As String:  End Type ' WnyRslt
 Type TR: Er() As String: OkTny() As String:  End Type ' TnyRslt
@@ -13,8 +31,9 @@ Type CR: Er() As String:                     End Type ' ColRslt
 Sub AA()
 Z_LNKDbImp
 End Sub
+
 Private Sub Z_LNKDbImp()
-LNKDbImp WDb, SampleLnkSpec
+LNKDbImp WDb, LNKAllLines
 End Sub
 
 Sub LNKDbImp(Db As Database, LnkSpec$)
@@ -27,19 +46,22 @@ End With
 End Sub
 Private Function A1(Db As Database, LnkSpec$) As A1
 Dim A As LnkSpec
-    Set A = NewLnkSpec(LnkSpec)
+    A = NewLnkSpec(LnkSpec)
 A1.Er = A2Er(A)
 If Sz(A1.Er) > 0 Then Exit Function
 A1.Dryz_Db_T_Fx_Ws = Dry_Db_T_Fx_Ws(Db)
 A1.Dryz_Db_T_Fb_Fbt = Dry_Db_T_Fb_Fbt(Db)
-Dim ActInpy$(): Stop '
-Dim B() As SqlSelInto:    B = SelIntoAy(ActInpy, A)
-A1.Sqy = AyMapSy(B, "ToSql_by_SqlSelInto")
+
+Dim InAct1$():     InAct1 = InActInpy(A.ASw, A.FmSw)
+Dim ActInpy1$(): ActInpy1 = ActInpy(A.FmIp, InAct1)
+Dim B() As SqlSelInto:  B = SelIntoAy(ActInpy1, A)
+                   A1.Sqy = AyMapSy(B, "ToSql_by_SqlSelInto")
+End Function
+Function ActInpy(FmIp$(), InAct$()) As String()
+Dim Inpy$():   Inpy = SslSy(AyWhRmvTT(NoT1, "Inp", "|")(0))
+ActInpy = AyMinus(Inpy, InAct)
 End Function
 Private Function A2Er(A As LnkSpec) As String()
-Dim Inpy$():   Inpy = SslSy(AyWhRmvTT(NoT1, "Inp", "|")(0))
-Dim InAct$(): InAct = InActInpy(NoT1)
-Dim Act$():     Act = AyMinus(Inpy, InAct)       'ActInpy
 Dim F() As ChkFil
 Dim T() As ChkTbl
 Dim C() As ChkCol
@@ -61,55 +83,85 @@ For Each I In ActInpy
     Set O(J) = New SqlSelInto
     With O(J)
         Inp = I
-        .Ny = InpNy(Inp, A.StInp, A.StFld)
+'        .Ny = InpNy(Inp, A.StInp, A.StFld)
         .Ey = NyEy(.Ny, A.StEle)
         .Fm = ">" & Inp
         .Into = "#I" & Inp
-        .Wh = InpWhBExpr(Inp, A.IpWh)
+        .Wh = InpWhBExpr(Inp, A.FmWh)
     End With
     J = J + 1
 Next
 SelIntoAy = O
 End Function
-Function ZZCln() As String()
-ZZCln = LyCln(SplitCrLf(SampleLnkSpec))
+Function InpWhBExpr$(Inp$, FmWh() As FmWh)
+
 End Function
-Function ZZNoT1() As String()
-ZZNoT1 = AyWhNotPfx(AyRmvT1(ZZCln), "/")
+Function ZZCln() As String()
+ZZCln = LyCln(SplitCrLf(LNKAllLines))
 End Function
 Private Function NewLnkSpec(LnkSpec$) As LnkSpec
-Dim NoT1$():   NoT1 = AyWhNotPfx(AyRmvT1(LyCln(SplitCrLf(LnkSpec))), "/")
-Dim PmFx() As PmFil
-Dim PmFb() As PmFil
-Dim PmSw() As PmSw
+Dim Cln$():   Cln = LyCln(SplitCrLf(LnkSpec))
+Dim AFx() As AFil
+Dim AFb() As AFil
+Dim ASw() As ASw
 
-Dim Inp() As String
-Dim IpSw() As IpSw
+Dim FmFx() As FmFil
+Dim FmFb() As FmFil
+Dim FmIp() As String
+Dim FmSw() As FmSw
+Dim FmWh() As FmWh
+Dim FmStu() As FmStu
+
 Dim IpFx() As IpFil
 Dim IpFb() As IpFil
 Dim IpS1() As String
 Dim IpWs() As IpWs
-Dim IpWh() As IpWh
 
-Dim StInp() As StInp
 Dim StEle() As StEle
 Dim StExt() As StExt
 Dim StFld() As StFld
     
-    Inp = SslSy(AyWhRmvTT(NoT1, "Inp", "|")(0))
-    IpSw = NewIpSw(AyWhRmvT1(NoT1, "IpSw"))
-    IpFx = NewIpFil(AyWhRmvTT(NoT1, "IpFx", "|"))
-    IpFb = NewIpFil(AyWhRmvTT(NoT1, "IpFb", "|"))
-    IpS1 = AyWhRmvTT(NoT1, "IpS1", "|")
-    IpWs = NewIpWs(AyWhRmvTT(NoT1, "IpWs", "|"))
+    FmIp = SslSy(AyWhRmvTT(Cln, "FmIp", "|")(0))
+    FmSw = NewFmSw(AyWhRmvT1(Cln, "IpSw"))
+    FmFx = NewFmFil(AyWhRmvTT(Cln, "IpFx", "|"))
+    FmFb = NewFmFil(AyWhRmvTT(Cln, "IpFb", "|"))
+    FmWh = NewFmWh(AyWhRmvT1(Cln, "FmWh"))
+    IpS1 = AyWhRmvTT(Cln, "IpS1", "|")
+    IpWs = NewIpWs(AyWhRmvTT(Cln, "IpWs", "|"))
 Stop
 
-Dim O As New LnkSpec
-Set NewLnkSpec = O.Init(PmFx, PmFb, PmSw, Inp, IpSw, IpFx, IpFb, IpS1, IpWs, IpWh, StInp, StEle, StExt, StFld)
+With NewLnkSpec
+    .AFx = AFx
+    .AFb = AFb
+    .ASw = ASw
+    .FmFx = FmFx
+    .FmFb = FmFb
+    .FmIp = FmIp
+    .FmSw = FmSw
+    .FmStu = FmStu
+    .FmWh = FmWh
+    .IpFx = IpFx
+    .IpFb = IpFb
+    .IpS1 = IpS1
+    .IpWs = IpWs
+    .StEle = StEle
+    .StExt = StExt
+    .StFld = StFld
+End With
 End Function
-Function NewIpSw(Ly$()) As IpSw()
+Function NewFmWh(Ly$())
 
 End Function
+
+Function NewFmSw(Ly$())
+
+End Function
+Function NewFmFil(Ly$())
+
+End Function
+Sub SrtDcl()
+MdSrtDclDim Md("LnkM")
+End Sub
 Function NewIpWs(Ly$()) As IpWs()
 
 End Function
@@ -137,11 +189,6 @@ End Function
 Private Function NyEy(Ny$(), A() As StEle) As String()
 
 End Function
-Private Function InpFldAy(ActInp$(), NoT1$()) As InpFld()
-Dim StuInpLy$(), FldLy$()
-
-
-End Function
 
 Private Function NewStFld(Lin) As StFld
 Dim O As New StFld, A$
@@ -153,13 +200,6 @@ Set NewStFld = O
 End Function
 Private Function InpExt(Inp$, A As LnkSpec) As String()
 
-End Function
-Private Function InpNy(Inp$, StInp() As StInp, StFld() As StFld) As String()
-'InpNy = ObjPrp(OyWhPrpEqV(B, "Inp", Inp), "Fny")
-End Function
-
-Private Function InpWhBExpr$(Inp$, IpWh() As IpWh)
-Stop '
 End Function
 Private Function NewChkFil(A As LnkSpec) As ChkFil()
 Dim O() As ChkFil
@@ -235,11 +275,11 @@ End Function
 Private Function LyFb() As String()
 LyFb = AyRmvT1(AyWhT1(Cln, "0-Fb"))
 End Function
-Private Sub PmImp()
-SpnmImp "Pm"
+Private Sub AImp()
+SpnmImp "A"
 End Sub
-Private Sub PmEdt()
-SpnmEdt "Pm"
+Private Sub AEdt()
+SpnmEdt "A"
 End Sub
 Private Function FxNy() As String()
 FxNy = AyT1Ay(FxLy)
@@ -248,7 +288,7 @@ Private Function Fxy() As String()
 Fxy = AyRmvT1(FxLy)
 End Function
 Private Function FxLy() As String()
-FxLy = AyWhRmv3T(Cln, "0", "Pm", "Fx")
+FxLy = AyWhRmv3T(Cln, "0", "A", "Fx")
 End Function
 Private Function NoT1() As String()
 NoT1 = AyWhNotPfx(AyRmvT1(Cln), "/")
@@ -280,31 +320,27 @@ End Sub
 Private Sub AssCol()
 Stop '
 End Sub
-Private Function InActInpy__zSel(L, SwNy$(), T_or_F_Ay$()) As Boolean
-Dim Sw$, T_or_F$, Ix%
-LinTTAsg L, Sw, T_or_F
-If T_or_F <> "T" And T_or_F <> "F" Then Stop
-Ix = AyIx(SwNy, Sw)
-InActInpy__zSel = T_or_F_Ay(Ix) <> T_or_F
+Private Function InActInpy__zSel(SwNm$, TF As Boolean, ASw() As ASw) As Boolean
+Dim IA As ASw, I
+For Each I In ASw
+    Set IA = I
+    If SwNm = IA.SwNm Then
+        InActInpy__zSel = IA.TF = TF
+        Exit Function
+    End If
+Next
+Stop
 End Function
-Private Function InActInpy(NoT1$()) As String()
-Dim PmSwLy$(): PmSwLy = AyWhRmvT1(NoT1, "PmSw") '
-Dim SwLy$():     SwLy = AyWhRmvT1(NoT1, "Sw")
-Dim L, O$()
-If Sz(PmSwLy) = 0 Then Exit Function
+Private Function InActInpy(ASw() As ASw, FmSw() As FmSw) As String()
+Dim O$(), I, IFm As FmSw, SwNm$, TF As Boolean
+If Sz(ASw) = 0 Then Exit Function
 
-Dim SwNy$(), T_or_F_Ay$()
-    Dim T_or_F
-    AyTAyRstAyAsg PmSwLy, SwNy, T_or_F_Ay
-    For Each T_or_F In T_or_F_Ay
-        Select Case T_or_F
-        Case "T", "F"
-        Case Else: Stop
-        End Select
-    Next
-For Each L In SwLy
-    If InActInpy__zSel(L, SwNy, T_or_F_Ay) Then
-        PushAy O, SslSy(LinRmv3T(L))
+For Each I In FmSw
+    Set IFm = I
+    SwNm = IFm.SwNm
+    TF = IFm.TF
+    If Not InActInpy__zSel(SwNm, TF, ASw) Then
+        PushAy O, SslSy(LinRmv3T(IFm.Inpy))
     End If
 Next
 InActInpy = O

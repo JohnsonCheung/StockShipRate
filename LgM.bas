@@ -238,10 +238,10 @@ ODTim = DteDTim(D)
 End Sub
 
 Function LgLy(A&) As String()
-Dim Fun$, MsgTxt$, DTim$, Sess&, Sfx$
+Dim Fun$, MsgTxt$, DTim$, Sess&, SFx$
 LgAsg A, Sess, DTim, Fun, MsgTxt
-Sfx = FmtQQ(" @? Sess(?) Lg(?)", DTim, Sess, A)
-LgLy = FunMsgLy(Fun & Sfx, MsgTxt, LgLinesAy(A))
+SFx = FmtQQ(" @? Sess(?) Lg(?)", DTim, Sess, A)
+LgLy = FunMsgLy(Fun & SFx, MsgTxt, LgLinesAy(A))
 End Function
 
 Function LgLinesAy(A&) As Variant()

@@ -1,12 +1,23 @@
 Option Compare Database
 Option Explicit
 Const Trc As Boolean = True
+
+Sub EnsPrpOnEr()
+MdEnsPrpOnEr CurMd
+End Sub
+
+Sub RmvPrpOnEr()
+MdRmvPrpOnEr CurMd
+End Sub
+
 Private Sub Z_MdRmvPrpOnEr()
 MdRmvPrpOnEr ZZMd
 End Sub
+
 Private Sub Z_MdEnsPrpOnEr()
 MdEnsPrpOnEr ZZMd
 End Sub
+
 Sub MdRmvPrpOnEr(A As CodeModule)
 If A.Parent.Type <> vbext_ct_ClassModule Then Exit Sub
 Dim J%, L&()
@@ -32,7 +43,7 @@ Dim Nm$, Lin$
 Lin = A.Lines(PrpLno, 1)
 Nm = LinPrpNm(Lin)
 If Nm = "" Then Stop
-MdPrpLblXLin = FmtQQ("X: Debug.Print ""?.?.PrpEr...", MdNm(A), Nm)
+MdPrpLblXLin = FmtQQ("X: Debug.Print ""?.?.PrpEr...[""; Err.Description; ""]""", MdNm(A), Nm)
 End Function
 
 Private Sub MdPrpEnsOnEr(A As CodeModule, PrpLno&)
@@ -49,7 +60,9 @@ Const CSub$ = "MdPrpEnsLblXLin"
 Dim E$, L%, ActLblXLin$, EndPrpLno&
 E = MdPrpLblXLin(A, PrpLno)
 L = MdPrpLblXLno(A, PrpLno)
-If L <> 0 Then ActLblXLin = A.Lines(L, 1)
+If L <> 0 Then
+    ActLblXLin = A.Lines(L, 1)
+End If
 If E <> ActLblXLin Then
     If L = 0 Then
         EndPrpLno = MdPrpEndPrpLno(A, PrpLno)

@@ -2,9 +2,6 @@ Option Compare Database
 Option Explicit
 Public Q$
 Public Actual, Expect
-Public Schm As New Schm
-Public Fso As New Scripting.FileSystemObject
-Public Fcmd As New Fcmd
 Private X_W As Database
 Private Const Z_ReSeqSpec$ = _
 "Flg RecTy Amt Key Uom MovTy Qty BchRateUX RateTy Bch Las GL |" & _
@@ -145,17 +142,21 @@ End Function
 Function DbScly(A As Database) As String()
 DbScly = AySy(AyOfAy_Ay(AyMap(ItrMap(A.TableDefs, "TdScly"), "TdScly_AddPfx")))
 End Function
+
 Function TdScly(A As DAO.TableDef) As String()
 TdScly = AyAdd(Sy(TdScl(A)), TdFdScly(A))
 End Function
+
 Function TdScl$(A As DAO.TableDef)
 TdScl = ApScl(A.Name, AddLbl(A.OpenRecordset.RecordCount, "NRec"), AddLbl(A.DateCreated, "CrtDte"), AddLbl(A.LastUpdated, "UpdDte"))
 End Function
+
 Function TdFdScly(A As DAO.TableDef) As String()
 Dim N$
 N = A.Name & ";"
 TdFdScly = AyAddPfx(ItrMapSy(A.Fields, "FdScl1"), N)
 End Function
+
 Function ItrMapInto(A, Map$, OInto)
 Dim O: O = OInto
 Erase O
@@ -165,6 +166,26 @@ For Each X In A
 Next
 ItrMapInto = O
 End Function
+
+Function AyMapObjFunXInto(A, Obj, FunX$, OInto)
+Dim O, X
+O = OInto
+Erase O
+If Sz(A) > 0 Then
+    For Each X In A
+        Push O, CallByName(Obj, FunX, VbMethod, X)
+    Next
+End If
+AyMapObjFunXInto = O
+End Function
+
+Function CvFz(A) As SchmF
+Set CvFz = A
+End Function
+Function CvTz(A) As SchmT
+Set CvTz = A
+End Function
+
 Function ItrMapSy(A, Map$) As String()
 ItrMapSy = ItrMapInto(A, Map, EmpSy)
 End Function
@@ -1912,9 +1933,9 @@ Function EnsSfxSC$(A)
 EnsSfxSC = EnsSfx(A, ";")
 End Function
 
-Function EnsSfx$(A, Sfx$)
-If HasSfx(A, Sfx) Then EnsSfx = A: Exit Function
-EnsSfx = A & Sfx
+Function EnsSfx$(A, SFx$)
+If HasSfx(A, SFx) Then EnsSfx = A: Exit Function
+EnsSfx = A & SFx
 End Function
 Function NmV_Ly(Nm$, V) As String()
 Dim O$(), S$, J%
@@ -3126,28 +3147,28 @@ Return
 End Sub
 
 Private Sub ZZ_AyAddSfx()
-Dim A, Act$(), Sfx$, Exp$()
+Dim A, Act$(), SFx$, Exp$()
 A = Array(1, 2, 3, 4)
-Sfx = "#"
+SFx = "#"
 Exp = ApSy("1#", "2#", "3#", "4#")
 GoSub Tst
 Exit Sub
 Tst:
-Act = AyAddSfx(A, Sfx)
+Act = AyAddSfx(A, SFx)
 Debug.Assert AyIsEq(Act, Exp)
 Return
 End Sub
 
 Private Sub ZZ_AyAddPfxSfx()
-Dim A, Act$(), Sfx$, Pfx$, Exp$()
+Dim A, Act$(), SFx$, Pfx$, Exp$()
 A = Array(1, 2, 3, 4)
 Pfx = "* "
-Sfx = "#"
+SFx = "#"
 Exp = ApSy("* 1#", "* 2#", "* 3#", "* 4#")
 GoSub Tst
 Exit Sub
 Tst:
-Act = AyAddPfxSfx(A, Pfx, Sfx)
+Act = AyAddPfxSfx(A, Pfx, SFx)
 Debug.Assert AyIsEq(Act, Exp)
 Return
 End Sub
@@ -3156,27 +3177,27 @@ Function AyAddPfx(A, Pfx$) As String()
 AyAddPfx = AyMapXPSy(A, "AddPfx", Pfx)
 End Function
 
-Function AyAddSfx(A, Sfx$) As String()
-AyAddSfx = AyMapXPSy(A, "AddSfx", Sfx)
+Function AyAddSfx(A, SFx$) As String()
+AyAddSfx = AyMapXPSy(A, "AddSfx", SFx)
 End Function
 
 Function AddPfx$(A$, Pfx$)
 AddPfx = Pfx & A
 End Function
 
-Function AddSfx$(A$, Sfx$)
-AddSfx = A & Sfx
+Function AddSfx$(A$, SFx$)
+AddSfx = A & SFx
 End Function
 
-Function AyAddPfxSfx(A, Pfx$, Sfx$) As String()
-AyAddPfxSfx = AyMapXABSy(A, "AddPfxSfx", Pfx, Sfx)
+Function AyAddPfxSfx(A, Pfx$, SFx$) As String()
+AyAddPfxSfx = AyMapXABSy(A, "AddPfxSfx", Pfx, SFx)
 End Function
 
 Function AyMapXABSy(Ay, XAB$, A, B) As String()
 AyMapXABSy = AyMapXABInto(Ay, XAB, A, B, EmpSy)
 End Function
-Function AddPfxSfx$(A$, Pfx$, Sfx$)
-AddPfxSfx = Pfx & A & Sfx
+Function AddPfxSfx$(A$, Pfx$, SFx$)
+AddPfxSfx = Pfx & A & SFx
 End Function
 Function AyMapXABInto(Ay, XAB$, A, B, OInto)
 Dim O, X, J&, U&
@@ -3647,6 +3668,7 @@ For Each I In A
 Next
 ItrNy = O
 End Function
+
 Sub Push(O, M)
 Dim N&
 N = Sz(O)
@@ -4264,8 +4286,8 @@ End Function
 Function HasPfx(A, Pfx) As Boolean
 HasPfx = Left(A, Len(Pfx)) = Pfx
 End Function
-Function HasSfx(A, Sfx) As Boolean
-HasSfx = Right(A, Len(Sfx)) = Sfx
+Function HasSfx(A, SFx) As Boolean
+HasSfx = Right(A, Len(SFx)) = SFx
 End Function
 Function Pop(A)
 Pop = AyLasEle(A)
@@ -4531,6 +4553,7 @@ OyPrpSy = ItrPrpSy(A, PrpNm)
 End Function
 Function OyPrpInto(A, PrpNm$, OInto)
 If Sz(A) = 0 Then Exit Function
+Stop
 OyPrpInto = ItrPrpInto(A, PrpNm, OInto)
 End Function
 
@@ -5094,24 +5117,24 @@ End Function
 Property Get LgIniSchmy() As String()
 Static O$()
 If Sz(O) > 0 Then LgIniSchmy = O: Exit Property
-Push O, "E Mem   Mem;Req;AlwZLen"
-Push O, "E Txt   Txt;Req"
-Push O, "E Crt   Dte;Req;Dft=Now;"
-Push O, "E Crt   Dte;Req;Dft=Now;"
-Push O, "E Dte   Dte"
-Push O, "EF Amt * *Amt"
-Push O, "EF Crt * CrtDte"
-Push O, "EF Dte * *Dte"
-Push O, "EF Txt * Fun * Txt"
-Push O, "EF Mem * Lines"
-Push O, "TF Sess * CrtDte"
-Push O, "TF Msg  * Fun *Txt | CrtDte"
-Push O, "TF Lg   * Sess Msg CrtDte"
-Push O, "TF LgV  * Lg Lines"
-Push O, "D . Fun Function name that call the log"
-Push O, "D . Fun Function name that call the log"
-Push O, "D . Msg it will a new record when Lg-function is first time using the Fun+MsgTxt"
-Push O, "D . Msg ..."
+Push O, "E Mem | Mem Req AlwZLen"
+Push O, "E Txt | Txt Req"
+Push O, "E Crt | Dte Req Dft=Now"
+Push O, "E Crt | Dte Req Dft=Now"
+Push O, "E Dte | Dte"
+Push O, "F Amt * | *Amt"
+Push O, "F Crt * | CrtDte"
+Push O, "F Dte * | *Dte"
+Push O, "F Txt * | Fun * Txt"
+Push O, "F Mem * | Lines"
+Push O, "T Sess | * CrtDte"
+Push O, "T Msg  | * Fun *Txt | CrtDte"
+Push O, "T Lg   | * Sess Msg CrtDte"
+Push O, "T LgV  | * Lg Lines"
+Push O, "D . Fun | Function name that call the log"
+Push O, "D . Fun | Function name that call the log"
+Push O, "D . Msg | it will a new record when Lg-function is first time using the Fun+MsgTxt"
+Push O, "D . Msg | ..."
 LgIniSchmy = O
 End Property
 
@@ -5498,6 +5521,18 @@ Function DbDesy(A As Database) As String()
 Dim T$(), D$()
 T = DbTny(A)
 DbDesy = AyRmvEmp(AyMapPXSy(T, "DbtTblDes", A))
+End Function
+Function LinIsDotLin(A) As Boolean
+LinIsDotLin = FstChr(A) = "."
+End Function
+Function LinIsOneTermLin(A) As Boolean
+LinIsOneTermLin = InStr(A, " ") = 0
+End Function
+Function AyRmvOneTermLin(A) As String()
+AyRmvOneTermLin = AyWhPredFalse(A, "LinIsOneTermLin")
+End Function
+Function AyRmvDotLin(A) As String()
+AyRmvDotLin = AyWhPredFalse(A, "LinIsDotLin")
 End Function
 Function AyRmvEmp(A)
 Dim O: O = AyCln(A)
@@ -6116,8 +6151,8 @@ End Function
 Function RmvPfx$(A, Pfx)
 If HasPfx(A, Pfx) Then RmvPfx = Mid(A, Len(Pfx) + 1) Else RmvPfx = A
 End Function
-Function RmvSfx$(A, Sfx)
-If HasSfx(A, Sfx) Then RmvSfx = Left(A, Len(A) - Len(Sfx)) Else RmvSfx = A
+Function RmvSfx$(A, SFx)
+If HasSfx(A, SFx) Then RmvSfx = Left(A, Len(A) - Len(SFx)) Else RmvSfx = A
 End Function
 Sub TTLnkFb(TT, Fb$, Optional Fbtt)
 DbttLnkFb CurrentDb, TT, Fb, Fbtt
@@ -6756,9 +6791,11 @@ While P > 0
 Wend
 SubStrCnt = O
 End Function
+
 Function RgCC(A As Range, C1, C2) As Range
 Set RgCC = RgRCRC(A, 1, C1, A.Rows.Count, C2)
 End Function
+
 Function RgC(A As Range, C) As Range
 Set RgC = RgCC(A, C, C)
 End Function
@@ -6766,6 +6803,7 @@ End Function
 Private Sub ZZ_FmtQQAv()
 Debug.Print FmtQQ("klsdf?sdf?dsklf", 2, 1)
 End Sub
+
 Function FmtQQAv$(QQVbl, Av())
 Dim O$, I, Cnt
 O = Replace(QQVbl, "|", vbCrLf)
@@ -6775,11 +6813,17 @@ If Cnt <> Sz(Av) Then
     Stop
     Exit Function
 End If
+Dim P&
+P = 1
 For Each I In Av
-    O = Replace(O, "?", I, Count:=1)
+    P = InStr(P, O, "?")
+    If P = 0 Then Stop
+    O = Left(O, P - 1) & Replace(O, "?", I, Start:=P, Count:=1)
+    P = P + Len(I)
 Next
 FmtQQAv = O
 End Function
+
 Sub PushAy(O, A)
 If Sz(A) = 0 Then Exit Sub
 Dim I
@@ -6810,15 +6854,15 @@ Next
 Stop
 End Function
 
-Function FfnAddFnSfx$(A, Sfx$)
-FfnAddFnSfx = FfnPth(A) & FfnFnn(A) & Sfx & FfnExt(A)
+Function FfnAddFnSfx$(A, SFx$)
+FfnAddFnSfx = FfnPth(A) & FfnFnn(A) & SFx & FfnExt(A)
 End Function
 
 Function FfnNxtN$(A, N%)
 If 1 > N Or N > 99 Then Stop
-Dim Sfx$
-Sfx = "(" & Format(N, "00") & ")"
-FfnNxtN = FfnAddFnSfx(A, Sfx)
+Dim SFx$
+SFx = "(" & Format(N, "00") & ")"
+FfnNxtN = FfnAddFnSfx(A, SFx)
 End Function
 
 Function PthSel$(A, Optional Tit$ = "Select a Path", Optional BtnNm$ = "Use this path")
@@ -6918,15 +6962,25 @@ End If
 ChDir A
 CD = PthEnsSfx(A)
 End Function
-Function TmpFdrAy(Optional Spec$ = "*") As String()
 
+Function TmpFdrAy(Optional Spec$ = "*") As String()
 End Function
+
 Function CurFdrAy(Optional Spec$ = "*") As String()
 CurFdrAy = PthFdrAy(CurDir)
 End Function
+
 Function CurFnAy(Optional Spec$ = "*") As String()
 CurFnAy = PthFnAy(CurDir, Spec)
 End Function
+
+Function CvPth$(ByVal A)
+If IsEmp(A) Then
+    A = CurDir
+End If
+CvPth = PthEnsSfx(A)
+End Function
+
 Function PthFnAy(A, Optional Spec$ = "*") As String()
 Dim O$(), B$, P$
 P = PthEnsSfx(A)
@@ -7253,7 +7307,7 @@ AyRmvDDLin = AyWhPredFalse(A, "LinIsDDLin")
 End Function
 
 Function LyCln(A) As String()
-LyCln = AyMapSy(AyRmvDDLin(AyRmvEmp(A)), "TakBefDD")
+LyCln = AyMapSy(AyRmvDDLin(AyRmvOneTermLin(AyRmvDotLin(AyRmvEmp(A)))), "TakBefDD")
 End Function
 
 Property Get LNKPmLines$()
@@ -7757,7 +7811,6 @@ End Function
 Function NewChkTbl(A As LnkSpec) As ChkTbl()
 Dim O() As ChkTbl, Ffn$
 'A.TblNy
-NewChkTbl = A
 End Function
 
 Sub Done()
@@ -7994,7 +8047,16 @@ End Sub
 Function AyFstRmvT1$(A, T1)
 AyFstRmvT1 = LinRmvT1(AyFstT1(A, T1))
 End Function
+Function LinHasLikItm(A, Lik$, Itm$) As Boolean
+Dim L$, I$
+AyAsg LinTT(A), L, I
+If Not Lik Like L Then Exit Function
+LinHasLikItm = I = Itm
+End Function
 
+Function AyFstLikItm(A, Lik, Itm)
+AyFstLikItm = AyFstPredXABYes(A, "LinHasLikItm", Lik, Itm)
+End Function
 Function AyFstT1$(A, T1)
 AyFstT1 = AyFstPredXPYes(A, "LinHasT1", T1)
 End Function
@@ -8512,7 +8574,12 @@ Function AySng(A, Optional Msg$ = "AySng")
 If Sz(A) <> 1 Then Debug.Print "AySng.Er: [" & Msg & "]": Exit Function
 Asg A(0), AySng
 End Function
-
+Function DLyDes_zTF$(A$(), T, F)
+DLyDes_zTF = LinRmvTT(AyFstLikItm(A, T, F))
+End Function
+Function DLyDes_zT$(A$(), T)
+DLyDes_zT = LinRmvTT(AyFstT1(A, T))
+End Function
 Function AyT1Chd(A, T1) As String()
 AyT1Chd = AyRmvT1(AyWhT1(A, T1))
 End Function
@@ -9240,7 +9307,33 @@ End Sub
 Sub LnkEdt()
 SpnmEdt "Lnk"
 End Sub
-
+Sub SrtDclDim()
+MdSrtDclDim CurMd
+End Sub
+Sub MdSrtDclDim(A As CodeModule)
+Dim B$(), C$()
+B = MdDclWoDimLy(A)
+C = AySrt(MdDclOfDimLy(A))
+MdRplDclLy A, CvSy(AyAdd(B, C))
+End Sub
+Function MdDclWoDimLy(A As CodeModule) As String()
+MdDclWoDimLy = AyWhNotPfx(MdDclLy(A), "Dim")
+End Function
+Function MdDclOfDimLy(A As CodeModule) As String()
+MdDclOfDimLy = AyWhPfx(MdDclLy(A), "Dim")
+End Function
+Function MdDclLy(A As CodeModule) As String()
+If A.CountOfDeclarationLines = 0 Then Exit Function
+MdDclLy = SplitCrLf(A.Lines(1, A.CountOfDeclarationLines))
+End Function
+Sub MdRmvDcl(A As CodeModule)
+If A.CountOfDeclarationLines = 0 Then Exit Sub
+A.DeleteLines 1, A.CountOfDeclarationLines
+End Sub
+Sub MdRplDclLy(A As CodeModule, DclLy$())
+MdRmvDcl A
+A.InsertLines 1, JnCrLf(DclLy)
+End Sub
 Function LinTT(A) As String()
 Dim T1$, T2$, B$
 LinTRstAsg A, T1, B
