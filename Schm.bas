@@ -57,9 +57,14 @@ TFEF1Ly = O
 Exit Property
 X: Debug.Print "Schm.TFEF1Ly.PrpEr...["; Err.Description; "]"
 End Property
-
+Property Get Cln() As String()
+Static Y%
+Y = Y + 1
+Debug.Print Y; "<--Schm.Cln"
+Cln = LyCln(Ly)
+End Property
 Private Function ItmLy(A) As String()
-ItmLy = AyT1Chd(Ly, A)
+ItmLy = AyT1Chd(Cln, A)
 End Function
 
 Property Get ErPfx() As String()
@@ -68,7 +73,7 @@ If Sz(X_Schmy) = 0 Then
     ErPfx = Sy("no Ly is given")
     Exit Property
 End If
-ErPfx = AyWhPredXPNot(Ly, "LinIsInT1Ay", Sy(C_E, C_D, C_F, C_T))
+ErPfx = AyWhPredXPNot(Cln, "LinIsInT1Ay", Sy(C_E, C_D, C_F, C_T))
 Exit Property
 X: Debug.Print "Schm.ErPfx.PrpEr...["; Err.Description; "]"
 End Property
@@ -96,13 +101,13 @@ End Property
 
 Private Sub Z_ErDupE()
 Dim Ly$()
-Ly = Sy("Ele AA", "Ele BB", "Ele AA")
-Expect = Sy("These Ele[AA] are duplicated in Ele-lines")
+Ly = Sy("E AA", "E BB", "E AA")
+Ept = Sy("These Ele[AA] are duplicated in Ele-lines")
 GoSub Tst
 Exit Sub
 Tst:
     SetLy Ly
-    Actual = ErDupE
+    Act = ErDupE
     C
     Return
 End Sub
@@ -117,26 +122,25 @@ End Property
 Private Sub Z_ErDupF()
 Dim Ly$()
 Ly = Sy("T AA BB BB")
-Expect = Sy("These F[BB] are duplicated in T[AA]")
+Ept = Sy("These F[BB] are duplicated in T[AA]")
 GoSub Tst
 Exit Sub
 Tst:
     SetLy Ly
-    Actual = ErDupF
+    Act = ErDupF
     C
-    Stop
     Return
 End Sub
 
 Private Sub Z_ErDupT()
 Dim Ly$()
 Ly = Sy("T AA BB BB", "T AA DD")
-Expect = Sy("These T[AA] is duplicated in TFld-lines")
+Ept = Sy("These T[AA] is duplicated in TFld-lines")
 GoSub Tst
 Exit Sub
 Tst:
     SetLy Ly
-    Actual = ErDupT
+    Act = ErDupT
     C
     Return
 End Sub
@@ -147,7 +151,6 @@ Dim T, Fny$(), O$(), M$
 For Each T In AyNz(Tzy)
     With CvTz(T)
         M = FmtQQ("These F[?] are duplicated in T[?]", "?", .T)
-        Stop
         PushAy O, AyDupChk(.Fny, M)
     End With
 Next
@@ -179,6 +182,9 @@ Exit Property
 X: Debug.Print "Schm.ErFldHasNoEle.PrpEr...["; Err.Description; "]"
 End Property
 
+Sub Edt()
+AyBrw X_Schmy
+End Sub
 Property Get Er() As String()
 On Error GoTo X
 Er = AyAddAp(ErPfx, ErNoTFld, ErDupT, ErDupF, ErDupE, ErEle, ErFldHasNoEle)
@@ -186,17 +192,24 @@ Exit Property
 X: Debug.Print "Schm.Er.PrpEr...["; Err.Description; "]"
 End Property
 
-Property Get FLy() As String():     FLy = ItmLy(C_F): End Property
-Property Get TLy() As String():     TLy = ItmLy(C_T): End Property
-Property Get ELy() As String():     ELy = ItmLy(C_E):   End Property
-Property Get DLy() As String():     DLy = ItmLy(C_D): End Property
-
+Property Get FLy() As String(): FLy = ItmLy(C_F): End Property
+Property Get TLy() As String(): TLy = ItmLy(C_T): End Property
+Property Get ELy() As String(): ELy = ItmLy(C_E): End Property
+Property Get DLy() As String(): DLy = ItmLy(C_D): End Property
+Sub A()
+Stop
+End Sub
+Sub Dmp()
+D X_Schmy
+D "-----------------------"
+D Er
+D "-----------------------"
+End Sub
 Sub Z()
 Z_ErDupT
 Z_ErDupF
 Z_ErDupE
 Z_Tny
-Exit Sub
 Z_DbCrtSchm
 End Sub
 
@@ -206,8 +219,8 @@ End Sub
 
 Sub Z_Tny()
 Z_Ini
-Expect = SslSy("Sess Msg Lg LgV")
-Actual = Tny
+Ept = SslSy("Sess Msg Lg LgV")
+Act = Tny
 C
 End Sub
 
@@ -245,7 +258,11 @@ End Property
 
 Property Get TdAy() As DAO.TableDef()
 On Error GoTo X
-TdAy = OyPrpInto(Tzy, "Td", TdAy)
+Dim T, O() As DAO.TableDef
+For Each T In AyNz(Tzy)
+    PushObj O, CvTz(T).Td
+Next
+TdAy = O
 Exit Property
 X: Debug.Print "Schm.TdAy.PrpEr...["; Err.Description; "]"
 End Property
@@ -272,6 +289,7 @@ X: Debug.Print "Schm.SkSqy.PrpEr...["; Err.Description; "]"
 End Property
 
 Sub Z_DbCrtSchm()
+Init LgSchmLines
 Dim Fb$
 Fb = TmpFb
 FbCrt Fb
@@ -299,12 +317,12 @@ End Property
 
 Sub Z_ErPfx()
 Dim Ly$()
-Expect = Sy("No Ly is given")
+Ept = Sy("No Ly is given")
 GoSub Tst
 Exit Sub
 Tst:
     SetLy Ly
-    Actual = ErPfx
+    Act = ErPfx
     C
     Return
 End Sub

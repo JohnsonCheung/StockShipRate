@@ -3,14 +3,11 @@ Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = True
 Option Compare Database
-Public FilKind$, Ffn$, T$
-Public Enum AA12
-    BB = 1
-End Enum
-Private X_F() As EptFldTy
-Property Get F() As EptFldTy()
-F = X_F
+Public T$
+Private X_Fny$()
+Property Get Fny() As String()
+Fny = X_Fny
 End Property
-Property Let F(V() As EptFldTy)
-X_F = V
+Property Let Fny(V$())
+X_Fny = V
 End Property

@@ -6,31 +6,52 @@ Const C_T$ = "T"
 Const C_D$ = "D"
 Private ZZF$
 Private ZZT$
+Private Type Des
+    F() As FDes
+    T() As TDes
+End Type
+Private Type Rslt
+    Er() As String
+    FDes() As FDes
+    TDes() As TDes
+    Sk() As String
+    Pk() As String
+    Td() As DAO.TableDef
+End Type
+Private Type Dta
+    Tny() As String
+    T() As String
+    F() As String
+    E() As String
+    D() As String
+End Type
+Private Type Brk
+    Dta As Dta
+    Er() As String
+End Type
 
-Function TF_E$(T, F, FLy$())
-TF_E = LinT1(TF_FLin(T, F, FLy))
+Private Function FLyTF_E$(A$(), T, F)
+FLyTF_E = LinT1(FLyTF_FLin(A, T, F))
 End Function
 
-Function ELy_EAy(ELy$()) As String()
-ELy_EAy = AyT1Ay(ELy)
-End Function
-
-Private Sub Z_FLin()
+Private Sub Z_FLyTF_FLin()
 ZZT = "Msg"
 ZZF = "MsgTxt"
-ChkEq "Txt * Fun *Txt", ZZFLin
+Ept = "Txt * | Fun * Txt"
+Act = ZZFLin
+C
 End Sub
 
 Private Property Get ZZFLin$()
-ZZFLin = TF_FLin(ZZF, ZZT, ZZFLy)
+ZZFLin = FLyTF_FLin(ZZFLy, ZZT, ZZF)
 End Property
 
-Function TF_FLin$(T, F, FLy$())
-TF_FLin = T1LikLikSslAy_FstT2T3Eq(FLy, T, F)
+Private Function FLyTF_FLin$(A$(), T, F)
+FLyTF_FLin = T1LikLikSslAy_FstT2T3Eq(A, T, F)
 End Function
 
 Private Property Get ZZELy() As String()
-ZZELy = ToELy(ZZSchmy)
+ZZELy = ClnELy(ZZCln)
 End Property
 
 Private Property Get ZZSchmy() As String()
@@ -42,64 +63,70 @@ ZZQTFELy = SchmyQTFELy(ZZSchmy)
 End Property
 
 Function SchmyQTFELy(A$()) As String()
-SchmyQTFELy = QTFELy(ToTLy(A), ToFLy(A))
+Dim Cln$()
+Cln = LyCln(A)
+SchmyQTFELy = QTFELy(ClnTLy(Cln), ClnFLy(Cln))
 End Function
 
 Function QTFELy(TLy$(), FLy$()) As String()
-Dim O$(), T, F, Tny1$(), E1$
-Tny1 = TLyTny(TLy)
-For Each T In Tny1
-    For Each F In TLyFny(TLy, T)
-        E1 = TF_E(T, F, FLy)
-        Push O, ApLin(T, F, E1)
+Dim O$(), T, F, E$
+For Each T In AyNz(AyT1Ay(TLy))
+    For Each F In AyNz(TLyT_Fny(TLy, T))
+        E = FLyTF_E(FLy, T, F)
+        Push O, ApLin(T, F, E)
     Next
 Next
 QTFELy = O
 End Function
 
-Function ToTFEFdLy(TLy$(), FLy$(), ELy$()) As String()
-Dim O$(), T, F, E$, Tny$()
-Tny = TLyTny(TLy)
-For Each T In Tny
-    For Each F In TLyFny(FLy, T)
-        E = TF_E(T, F, ELy)
-        Push O, ApLin(T, F, E, FE_FdScl(F, E, ELy))
+Function DtaTFEFdLy(A As Dta) As String()
+Dim O$(), T, F, E$
+For Each T In AyNz(A.Tny)
+    For Each F In TLyT_Fny(A.F, T)
+        E = FLyTF_E(A.F, T, F)
+        Push O, ApLin(T, F, E, ELyFE_FdScl(A.E, F, E))
     Next
 Next
-ToTFEFdLy = O
+DtaTFEFdLy = O
 End Function
 
-Function ToFLy(Schmy$()) As String(): ToFLy = AyT1Chd(Schmy, C_F): End Function
-Function ToTLy(Schmy$()) As String(): ToTLy = AyT1Chd(Schmy, C_T): End Function
-Function ToELy(Schmy$()) As String(): ToELy = AyT1Chd(Schmy, C_E):   End Function
-Function ToDLy(Schmy$()) As String(): ToDLy = AyT1Chd(Schmy, C_D):   End Function
+Function ClnFLy(A$()) As String(): ClnFLy = AyT1Chd(A, C_F): End Function
+Function ClnTLy(A$()) As String(): ClnTLy = AyT1Chd(A, C_T): End Function
+Function ClnELy(A$()) As String(): ClnELy = AyT1Chd(A, C_E): End Function
+Function ClnDLy(A$()) As String(): ClnDLy = AyT1Chd(A, C_D): End Function
 
-Function PkTny(TLy$()) As String()
-PkTny = AyT1Ay(PkTLy(TLy))
+Function TLyPkTny(A$()) As String()
+TLyPkTny = AyT1Ay(AyWhPred(A, "TLinHasPk"))
 End Function
 
 Sub Z()
 Z_Tny
-Z_FLin
+Z_FLyTF_FLin
 Z_DbCrtSchm
 End Sub
 
 Private Sub ZZ_FdAy()
 ZZT = "Sess"
-Actual = ZZFdAy
+Act = ZZFdAy
 Stop
 End Sub
 
 Private Property Get ZZFLy() As String()
-ZZFLy = ToFLy(ZZSchmy)
+ZZFLy = ClnFLy(ZZSchmy)
 End Property
+Private Function ZZDta() As Dta
+
+End Function
+Private Function ZZBrk() As Brk
+
+End Function
 
 Private Function ZZFdAy() As DAO.Field()
-ZZFdAy = FdAy(ZZT, ZZTny, ZZTLy, ZZFLy, ZZELy)
+ZZFdAy = DtaT_FdAy(ZZDta, ZZT)
 End Function
 
 Private Property Get ZZTny() As String()
-ZZTny = TLyTny(ZZTLy)
+ZZTny = AyT1Ay(ZZTLy)
 End Property
 
 Private Sub Z_Tny()
@@ -118,13 +145,13 @@ GoSub Sep
 For Each T In Tny
     GoSub Prt
 Next
-D TLy_SkSqy(TLy)
-D TLy_PkSqy(TLy)
+D TLySkSqy(TLy)
+D TLyPkSqy(TLy)
 Exit Sub
 Prt:
     D T
     D UnderLin(T)
-    D TLyFny(TLy, T)
+    D TLyT_Fny(TLy, T)
     GoSub Sep
     Return
 Sep:
@@ -132,77 +159,71 @@ Sep:
     Return
 End Sub
 
-Function E_ELin$(E, ELy$())
-E_ELin = AyFstT1(ELy, E)
+Function ELyE_ELin$(A$(), E)
+ELyE_ELin = AyFstT1(A, E)
 End Function
 
-Function E_EScl$(E, ELy$())
-E_EScl = LinRmvT1(E_ELin(E, ELy))
+Function ELyE_EScl$(A$(), E)
+ELyE_EScl = LinRmvT1(ELyE_ELin(A, E))
 End Function
 
-Function FE_FdScl$(F, E, ELy$())
-FE_FdScl = F & ";" & E_EScl(E, ELy)
+Function ELyFE_FdScl$(A$(), F, E)
+ELyFE_FdScl = F & ";" & ELyE_EScl(A, E)
 End Function
 
-Function Fd(F, T, Tny$(), FLy$(), ELy$()) As DAO.Field
+Private Function Fd(F, T, Tny$(), FLy$(), ELy$()) As DAO.Field
 Select Case True
-Case IsId(T, F):   Set Fd = NewFd_zId(F)
-Case IsFk(F, Tny): Set Fd = NewFd_zFk(F)
+Case T = F: Set Fd = NewFd_zId(F)
+Case AyHas(Tny, F): Set Fd = NewFd_zFk(F)
 Case Else:
     Dim E$, FdScl$
-    E = TF_E(T, F, FLy)
-    FdScl = FE_FdScl(F, E, ELy)
+    E = FLyTF_E(FLy, T, F)
+    FdScl = ELyFE_FdScl(ELy, F, E)
     Set Fd = NewFd_zFdScl(FdScl)
 End Select
 End Function
 
-Function Td(T, Tny$(), TLy$(), FLy$(), ELy$()) As DAO.TableDef
-Set Td = NewTd(T, FdAy(T, Tny, TLy, FLy, ELy))
+Private Function DtaT_Td(A As Dta, T) As DAO.TableDef
+Set DtaT_Td = NewTd(T, DtaT_FdAy(A, T))
 End Function
 
-Function TLyTny(FLy$()) As String()
-TLyTny = AyT1Ay(FLy)
+Private Function DtaTdAy(A As Dta) As DAO.TableDef()
+Dim O() As DAO.TableDef, T
+For Each T In A.Tny
+    PushObj O, DtaT_Td(A, T)
+Next
+DtaTdAy = O
 End Function
 
-
-Function TdAy(Tny$(), TLy$(), FLy$(), ELy$()) As DAO.TableDef()
-TdAy = AyMapXABCDInto(TLyTny(TLy), "Td", Tny, TLy, FLy, ELy, TdAy)
+Function TLyPkSqy(A$()) As String()
+TLyPkSqy = AyMapSy(TLyPkTny(A), "TnPkSql")
 End Function
-
-Function TLy_PkSqy(TLy$()) As String()
-TLy_PkSqy = AyMapSy(PkTny(TLy), "TnPkSql")
-End Function
-Function SkSslAy(TLy$()) As String()
-Dim A$(), O$(), L
-A = TLy
+Function TLySkSslAy(A$()) As String()
+Dim O$(), L
 If Sz(A) = 0 Then Exit Function
 For Each L In A
-    PushNonEmp O, TFLin_SkSsl(L)
+    PushNonEmp O, TLinSkSsl(L)
 Next
-SkSslAy = O
+TLySkSslAy = O
 End Function
 
-Function TFLin_SkSsl$(A)
+Function TLinSkSsl$(A)
 Dim B$, C$
 B = Trim(TakBef(A, "|")): If B = "" Then Exit Function
 C = Replace(B, " * ", " ")
-TFLin_SkSsl = Replace(C, "*", LinT1(A))
-End Function
-
-Function PkTLy(TLy$()) As String()
-PkTLy = AyWhPred(TLy, "TFLinHasPk")
+TLinSkSsl = Replace(C, "*", LinT1(A))
 End Function
 
 Private Property Get ZZSkSqy() As String()
-ZZSkSqy = TLy_SkSqy(ZZTLy)
+ZZSkSqy = TLySkSqy(ZZTLy)
 End Property
 
 Private Property Get ZZTLy() As String()
-ZZTLy = ToTLy(ZZSchmy)
+ZZTLy = ClnTLy(ZZSchmy)
 End Property
 
-Function TLy_SkSqy(TLy$()) As String()
-TLy_SkSqy = AyMapSy(SkSslAy(TLy), "TnSkSsl_SkSql")
+Function TLySkSqy(A$()) As String()
+TLySkSqy = AyMapSy(AyRmvEmp(TLySkSslAy(A)), "TnSkSsl_SkSql")
 End Function
 
 Private Sub Z_DbCrtSchm()
@@ -212,17 +233,18 @@ DbCrtSchm FbCrt(Fb), ZZSchmy
 Kill Fb
 End Sub
 
-Function XEr(T$(), F$(), E$(), D$()) As String()
-Dim Tny1$(), EAy1$(), A1$(), A2$(), A3$(), A4$(), A5$(), A6$()
-EAy1 = ELy_EAy(E)
-Tny1 = TLyTny(T)
-A1 = ErDupE(EAy1)
-A2 = ErDupF(Tny1, T)
-A3 = ErDupT(Tny1)
-A4 = ErE(EAy1)
-A5 = ErFldHasNoEle(Tny1, T, F)
-A6 = ErFEle_NotIn_EAy(F, EAy1)
-XEr = AyAddAp(A1, A2, A3, A4, A5, A6)
+Private Function XEr(A As Brk) As String()
+Dim EAy$(), A1$(), A2$(), A3$(), A4$(), A5$(), A6$()
+With A.Dta
+    EAy = AyT1Ay(.E)
+    A1 = ErDupE(EAy)
+    A2 = ErDupF(.Tny, .T)
+    A3 = ErDupT(.Tny)
+    A4 = ErE(EAy)
+    A5 = ErFldHasNoEle(.Tny, .T, .F)
+    A6 = ErFEle_NotIn_EAy(.F, EAy)
+End With
+XEr = AyAddAp(A1, A2, A3, A4, A5, A6, A.Er)
 End Function
 Function ErDupT(Tny$()) As String()
 ErDupT = AyDupChk(Tny, "These T[?] is duplicated in TFld-lines")
@@ -235,7 +257,7 @@ End Function
 Function ErDupF(Tny$(), TF$()) As String()
 Dim T
 For Each T In AyNz(Tny)
-    PushAy ErDupF, AyDupChk(TLyFny(TF, T), FmtQQ("These F[?] are duplicated in T[?]", "?", T))
+    PushAy ErDupF, AyDupChk(TLyT_Fny(TF, T), FmtQQ("These F[?] are duplicated in T[?]", "?", T))
 Next
 End Function
 
@@ -250,10 +272,10 @@ End Function
 Function ErFldHasNoEle(Tny$(), TLy$(), FLy$()) As String()
 Dim T, F, E$
 For Each T In AyNz(Tny)
-    For Each F In AyNz(TLyFny(TLy, T))
+    For Each F In AyNz(TLyT_Fny(TLy, T))
         If T = F Then GoTo Nxt
         If AyHas(Tny, F) Then GoTo Nxt
-        E = TF_E(T, F, FLy)
+        E = FLyTF_E(FLy, T, F)
         If E = "" Then
             Push ErFldHasNoEle, FmtQQ("T[?] F[?] cannot be found in any EF-lines", T, F)
         End If
@@ -262,13 +284,13 @@ Nxt:
 Next
 End Function
 
-Function FLy_EAy(FLy$()) As String()
-FLy_EAy = AyT1Ay(FLy)
+Function FLyEAy(FLy$()) As String()
+FLyEAy = AyT1Ay(FLy)
 End Function
 
 Function ErFEle_NotIn_EAy(FLy$(), EAy$()) As String()
 Dim E$(), Er$()
-E = FLy_EAy(FLy)
+E = FLyEAy(FLy)
 Er = AyMinus(E, EAy)
 If Sz(Er) = 0 Then Exit Function
 ErFEle_NotIn_EAy = MsgLy("These [Ele] in F-lines are not found in the elements of E-lines", JnSpc(Er))
@@ -278,66 +300,146 @@ Function ErNoTF(T$()) As String()
 ErNoTF = AyEmpChk(T, "No TFld lines")
 End Function
 
-Sub SchmyAsg(A, OEr$(), OT$(), OF$(), OE$(), OD$())
-Dim Ny$(), Er$()
-    Ny = Sy(C_T, C_F, C_E, C_D)
-    AyAsg LyBrk1(A, Ny), OT, OF, OE, OD, OEr
-End Sub
-Sub DbCrtSchm_z1(A As Database, Er$(), TdAyFun$, PkSqyFun$, SkSqyFun$, DLyTDesLyFun$, DLyTFDesLyFun$)
-
-End Sub
 Sub DbCrtSchm(A As Database, Schmy$())
-Dim Er1$(), TF$(), EF$(), E$(), D$()
-    SchmyAsg Schmy, Er1, TF, EF, E, D
-Dim Er$()
-    Er = AyAdd(XEr(TF, EF, E, D), Er1)
-    If Sz(Er) > 0 Then Er = AyAdd(Schmy, Er)
-AyBrwThw Er
-Dim Tny$()
-    Tny = TLyTny(TF)
-AyDoPX TdAy(Tny, TF, EF, E), "DbAppTd", A
-AyDoPX TLy_PkSqy(TF), "DbRun", A
-AyDoPX TLy_SkSqy(TF), "DbRun", A
-AyDoPX DLyTDesLy(D), "DbSetTblDes", A
-AyDoPX DLyFDesLy(D, Tny), "DbSetFDes", A
+With XRslt(Schmy)
+    AyBrwThw .Er
+    AyDoPX .Td, "DbAppTd", A
+    AyDoPX .Pk, "DbRun", A
+    AyDoPX .Sk, "DbRun", A
+    AyDoPX .TDes, "DbSetTDes", A
+    AyDoPX .FDes, "DbSetFDes", A
+End With
 End Sub
 
-Function SchmyEr(A) As String()
-Dim Er1$(), T$(), F$(), E$(), D$(), Tny$()
-SchmyAsg A, Er1, T, F, E, D
-SchmyEr = AyAdd(XEr(T, F, E, D), Er1)
+Private Function XBrk(Schmy$()) As Brk
+Dim Ny$()
+Ny = Sy(C_T, C_F, C_E, C_D)
+With XBrk.Dta
+    AyAsg LyBrk1(LyCln(Schmy), Ny), .T, .F, .E, .D, XBrk.Er
+    .Tny = AyT1Ay(.T)
+End With
 End Function
 
-Function DLyTDesLy(DLy$()) As String()
-
+Private Function ZZCln() As String()
+ZZCln = LyCln(ZZSchmy)
 End Function
 
-Function DLyFDesLy(DLy$(), Tny$()) As String()
-
+Private Function ZZDLy() As String()
+ZZDLy = AyWhRmvT1(ZZCln, "D")
 End Function
 
-Function ToTLin$(T, TLy$())
-ToTLin = AySng(AyWhT1(TLy, T), "Schm.TFLin.PrpEr")
+Private Function XRslt(Schmy$()) As Rslt
+Dim Brk As Brk
+    Brk = XBrk(Schmy)
+    Dim Er$()
+    Er = XEr(Brk)
+    If Sz(Er) > 0 Then
+        Dim UL$()
+        UL = ApSy("--------------------------------")
+        XRslt.Er = AyAddAp(Schmy, UL, Er)
+        Exit Function
+    End If
+Dim O As Rslt, XDes As Des
+With Brk.Dta
+    XDes = DLyDes(.D)
+    O.Td = DtaTdAy(Brk.Dta)
+    O.Sk = TLySkSqy(.T)
+    O.Pk = TLyPkSqy(.T)
+    O.TDes = XDes.T
+    O.FDes = XDes.F
+End With
+XRslt = O
+End Function
+Sub Z_DLyDes()
+Dim X As Des
+X = DLyDes(ZZDLy)
+Stop
+End Sub
+Function SchmyEr(A$()) As String()
+SchmyEr = XEr(XBrk(A))
 End Function
 
-Function TLyFny(TLy$(), T) As String()
-Dim A$, B$
-A = ToTLin(T, TLy)
-If LinShiftT1(A) <> T Then Debug.Print "Schm.Fny PrpEr": Exit Function
-B = Replace(A, "*", T)
-TLyFny = AyRmvEle(SslSy(B), "|")
+Function CvTDes(A) As TDes
+Set CvTDes = A
 End Function
 
-Function FdAy(T, Tny$(), TLy$(), FLy$(), ELy$()) As DAO.Field()
-Dim Fny$()
-Fny = TLyFny(TLy, T)
-FdAy = AyMapXABCDInto(Fny, "Fd", T, Tny, FLy, ELy, FdAy)
+Function CvFDes(A) As FDes
+Set CvFDes = A
 End Function
 
-Function IsFk(F, Tny$()) As Boolean
-IsFk = AyHas(Tny, F)
+Sub PushTDes(O() As TDes, T, Des$)
+Dim I
+If Sz(O) > 0 Then
+    For Each I In O
+        With CvTDes(I)
+            If .T = T Then
+                .Des = Des & vbCrLf & Des
+                Exit Sub
+            End If
+        End With
+    Next
+End If
+
+Dim M As New TDes
+M.Des = Des
+M.T = T
+Push O, M
+End Sub
+
+Sub PushFDes(O() As FDes, T, F, Des$)
+Dim I
+If Sz(O) > 0 Then
+    For Each I In O
+        With CvFDes(I)
+            If .T = T Then
+                If .F = F Then
+                    .Des = Des & vbCrLf & Des
+                    Exit Sub
+                End If
+            End If
+        End With
+    Next
+End If
+
+Dim M As New FDes
+M.Des = Des
+M.T = T
+M.F = F
+Push O, M
+End Sub
+
+Function DLyDes(A$()) As Des
+Dim OT() As TDes
+Dim OF() As FDes
+Dim DLin, T$, Des$, F$, V$
+If Sz(A) = 0 Then Exit Function
+For Each DLin In A
+    AyAsg Lin3TAy(DLin), T, F, V, Des
+    If V <> "|" Then Stop
+    If F = "." Then
+        PushTDes OT, T, Des
+    Else
+        PushFDes OF, T, F, Des
+    End If
+Next
+DLyDes.T = OT
+DLyDes.F = OF
 End Function
 
-Function IsId(T, F) As Boolean
-IsId = T = F
+Function TLyT_Fny(A$(), T) As String()
+Dim B$
+B = AyFstT1(A, T)
+If LinShiftT1(B) <> T Then Stop
+B = Replace(B, "*", T)
+TLyT_Fny = AyRmvEle(SslSy(B), "|")
+End Function
+
+Private Function DtaT_FdAy(A As Dta, T) As DAO.Field()
+Dim O() As DAO.Field, F
+With A
+    For Each F In TLyT_Fny(.T, T)
+        PushObj O, Fd(F, T, .Tny, .F, .E)
+    Next
+End With
+DtaT_FdAy = O
 End Function

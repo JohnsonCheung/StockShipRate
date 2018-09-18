@@ -7,22 +7,22 @@ Dryz_Db_T_Fx_Ws() As Variant
 Sqy() As String
 End Type
 Type LnkSpec
-    AFb() As AFil
-    AFx() As AFil
-    ASw() As ASw
-    FmFb() As FmFil
-    FmFx() As FmFil
+    AFb() As LnkAFil
+    AFx() As LnkAFil
+    ASw() As LnkASw
+    FmFb() As LnkFmFil
+    FmFx() As LnkFmFil
     FmIp() As String
-    FmStu() As FmStu
-    FmSw() As FmSw
-    FmWh() As FmWh
-    IpFb() As IpFil
-    IpFx() As IpFil
+    FmStu() As LnkFmStu
+    FmSw() As LnkFmSw
+    FmWh() As LnkFmWh
+    IpFb() As LnkIpFil
+    IpFx() As LnkIpFil
     IpS1() As String
-    IpWs() As IpWs
-    StEle() As StEle
-    StExt() As StExt
-    StFld() As StFld
+    IpWs() As LnkIpWs
+    StEle() As LnkStEle
+    StExt() As LnkStExt
+    StFld() As LnkStFld
 End Type
 Type FR: Er() As String: OkFilKind() As String: End Type ' FilRslt
 Type Wr: Er() As String: OkWny() As String:  End Type ' WnyRslt
@@ -76,6 +76,7 @@ Dim FR As FR, TR As TR, CR As CR
     CR = ChkCol(C, TR.OkTny)
 
 End Function
+
 Private Function SelIntoAy(ActInpy$(), A As LnkSpec) As SqlSelInto()
 Dim Inp$, I, J%, O() As SqlSelInto
 ReDim O(UB(ActInpy))
@@ -93,33 +94,36 @@ For Each I In ActInpy
 Next
 SelIntoAy = O
 End Function
-Function InpWhBExpr$(Inp$, FmWh() As FmWh)
+
+Private Function InpWhBExpr$(Inp$, FmWh() As LnkFmWh)
 
 End Function
-Function ZZCln() As String()
+
+Private Function ZZCln() As String()
 ZZCln = LyCln(SplitCrLf(LNKAllLines))
 End Function
+
 Private Function NewLnkSpec(LnkSpec$) As LnkSpec
 Dim Cln$():   Cln = LyCln(SplitCrLf(LnkSpec))
-Dim AFx() As AFil
-Dim AFb() As AFil
-Dim ASw() As ASw
+Dim AFx() As LnkAFil
+Dim AFb() As LnkAFil
+Dim ASw() As LnkASw
 
-Dim FmFx() As FmFil
-Dim FmFb() As FmFil
+Dim FmFx() As LnkFmFil
+Dim FmFb() As LnkFmFil
 Dim FmIp() As String
-Dim FmSw() As FmSw
-Dim FmWh() As FmWh
-Dim FmStu() As FmStu
+Dim FmSw() As LnkFmSw
+Dim FmWh() As LnkFmWh
+Dim FmStu() As LnkFmStu
 
-Dim IpFx() As IpFil
-Dim IpFb() As IpFil
+Dim IpFx() As LnkIpFil
+Dim IpFb() As LnkIpFil
 Dim IpS1() As String
-Dim IpWs() As IpWs
+Dim IpWs() As LnkIpWs
 
-Dim StEle() As StEle
-Dim StExt() As StExt
-Dim StFld() As StFld
+Dim StEle() As LnkStEle
+Dim StExt() As LnkStExt
+Dim StFld() As LnkStFld
     
     FmIp = SslSy(AyWhRmvTT(Cln, "FmIp", "|")(0))
     FmSw = NewFmSw(AyWhRmvT1(Cln, "IpSw"))
@@ -162,36 +166,39 @@ End Function
 Sub SrtDcl()
 MdSrtDclDim Md("LnkM")
 End Sub
-Function NewIpWs(Ly$()) As IpWs()
+
+Function NewIpWs(Ly$()) As LnkIpWs()
 
 End Function
-Function NewIpFil(Ly$()) As IpFil()
+
+Function NewIpFil(Ly$()) As LnkIpFil()
 If Sz(Ly) = 0 Then Exit Function
-Dim O() As IpFil, J%, L, Ay
+Dim O() As LnkIpFil, J%, L, Ay
 ReDim O(UB(Ly))
 For Each L In Ly
     Ay = AyT1Rst(SslSy(L))
-    Set O(J) = New IpFil
+    Set O(J) = New LnkIpFil
     O(J).Fil = Ay(0)
     O(J).Inpy = CvSy(Ay(1))
     J = J + 1
 Next
 NewIpFil = O
 End Function
-Function NewStExt(Lin) As StExt
-Dim O As New StExt
+
+Function NewStExt(Lin) As LnkStExt
+Dim O As New LnkStExt
 With O
     AyAsg Lin3TAy(Lin), .LikInp, .F, , .Ext
 End With
 Set NewStExt = O
 End Function
 
-Private Function NyEy(Ny$(), A() As StEle) As String()
+Private Function NyEy(Ny$(), A() As LnkStEle) As String()
 
 End Function
 
-Private Function NewStFld(Lin) As StFld
-Dim O As New StFld, A$
+Private Function NewStFld(Lin) As LnkStFld
+Dim O As New LnkStFld, A$
 With O
     AyAsg Lin2TAy(Lin), .Stu, , A
     .Fny = SslSy(A)
@@ -305,9 +312,7 @@ End Function
 Private Function LyExt(NoT1$()) As String()
 LyExt = LyXXX(NoT1, "Ext")
 End Function
-Private Function TWhLy() As String()
-'TWhLy = T1Ly("A-Wh")
-End Function
+
 Private Function ImpSql$(FldLin$)
 Dim T$, Fny$()
 T = LinT1(FldLin)
@@ -320,8 +325,8 @@ End Sub
 Private Sub AssCol()
 Stop '
 End Sub
-Private Function InActInpy__zSel(SwNm$, TF As Boolean, ASw() As ASw) As Boolean
-Dim IA As ASw, I
+Private Function InActInpy__zSel(SwNm$, TF As Boolean, ASw() As LnkASw) As Boolean
+Dim IA As LnkASw, I
 For Each I In ASw
     Set IA = I
     If SwNm = IA.SwNm Then
@@ -331,8 +336,8 @@ For Each I In ASw
 Next
 Stop
 End Function
-Private Function InActInpy(ASw() As ASw, FmSw() As FmSw) As String()
-Dim O$(), I, IFm As FmSw, SwNm$, TF As Boolean
+Private Function InActInpy(ASw() As LnkASw, FmSw() As LnkFmSw) As String()
+Dim O$(), I, IFm As LnkFmSw, SwNm$, TF As Boolean
 If Sz(ASw) = 0 Then Exit Function
 
 For Each I In FmSw

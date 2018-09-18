@@ -1,7 +1,7 @@
 Option Compare Database
 Option Explicit
 Public Q$
-Public Actual, Expect
+Public Act, Ept
 Private X_W As Database
 Private Const Z_ReSeqSpec$ = _
 "Flg RecTy Amt Key Uom MovTy Qty BchRateUX RateTy Bch Las GL |" & _
@@ -12,7 +12,8 @@ Private Const Z_ReSeqSpec$ = _
 " GL GLDocNo GLDocDte GLAsg GLDocTy GLLin GLPstKy GLPc GLAc GLBusA GLRef |" & _
 " Uom Des StkUom Ac_U"
 
-Sub WImp(LnkSpec$)
+Sub WImp _
+(LnkSpec$)
 LNKDbImp W, LnkSpec
 End Sub
 Function SclShift$(OA)
@@ -29,28 +30,28 @@ If Not HasSubStr(A, "=") Then SclItm_V = CByte(2): Exit Function
 SclItm_V = Trim(TakAft(A, "="))
 End Function
 
-Function SyExpectStmt$(A)
+Function SyEptStmt$(A)
 Dim O$(), I
-Push O, "Expect = EmpSy"
+Push O, "Ept =  EmpSy"
 For Each I In AyNz(A)
-    Push O, FmtQQ("Push Expect, ""?""", Replace(I, """", """"""))
+    Push O, FmtQQ("Push Ept, ""?""", Replace(I, """", """"""))
 Next
-SyExpectStmt = JnCrLf(O)
+SyEptStmt = JnCrLf(O)
 End Function
 
 Private Sub Z_SclChk()
 Dim A$, Ny0
 A = "Req;Alw;Sz=1"
 Ny0 = VdtEleSclNmSsl
-Expect = EmpSy
-Push Expect, "There are [invalid-SclNy] in given [scl] under these [valid-SclNy]."
-Push Expect, "    [invalid-SclNy] : Alw"
-Push Expect, "    [scl]           : Req;Alw;Sz=1"
-Push Expect, "    [valid-SclNy]   : Req AlwZLen Sz Dft VRul VTxt Des Expr"
+Ept = EmpSy
+Push Ept, "There are [invalid-SclNy] in given [scl] under these [valid-SclNy]."
+Push Ept, "    [invalid-SclNy] : Alw"
+Push Ept, "    [scl]           : Req;Alw;Sz=1"
+Push Ept, "    [valid-SclNy]   : Req AlwZLen Sz Dft VRul VTxt Des Expr"
 GoSub Tst
 Exit Sub
 Tst:
-    Actual = SclChk(A, Ny0)
+    Act = SclChk(A, Ny0)
     C
 End Sub
 
@@ -180,6 +181,7 @@ AyMapObjFunXInto = O
 End Function
 
 Function CvFz(A) As SchmF
+If IsNothing(A) Then Exit Function
 Set CvFz = A
 End Function
 Function CvTz(A) As SchmT
@@ -294,8 +296,8 @@ ApLines = JnCrLf(AyRmvEmp(Av))
 End Function
 
 Private Sub Z_ApScl()
-Actual = ApScl(" ", "")
-Expect = ""
+Act = ApScl(" ", "")
+Ept = ""
 C
 End Sub
 Function ApScl$(ParamArray Ap())
@@ -429,6 +431,7 @@ End Sub
 Private Sub ZZ_TFDes()
 TFDes("Att", "AttNm") = "AttNm"
 End Sub
+
 Property Get DbtfDes$(A As Database, T, F)
 DbtfDes = DbtfPrp(A, T, F, C_Des)
 End Property
@@ -445,7 +448,40 @@ End Function
 Function FdDes$(A As DAO.Field)
 If PrpHas(A.Properties, C_Des) Then FdDes = A.Properties(C_Des)
 End Function
+Sub DbAddTmpTbl(A As Database)
+DbAddTd CurrentDb, TmpTd
+End Sub
+Sub EnsTmpTbl()
+If Not DbHasTbl(CurrentDb, "Tmp") Then
+    DbAddTmpTbl CurrentDb
+End If
+End Sub
+Sub Z_DbtfPrp()
+EnsTmpTbl
+
+End Sub
+
+Property Get TFDes(T, F)
+TFDes = DbtfDes(CurrentDb, T, F)
+End Property
+Property Let TFDes(T, F, V)
+DbtfDes(CurrentDb, T, F) = V
+End Property
+
+Property Let TfPrp(T, F, P, V)
+DbtfPrp(CurrentDb, T, F, P) = V
+End Property
+Property Get TfPrp(T, F, P)
+TfPrp = DbtfPrp(CurrentDb, T, F, P)
+End Property
+
 Property Let DbtfPrp(A As Database, T, F, P, V)
+'If IsEmpty(V) Then
+'    If DbtfHasPrp(A, T, F, P) Then
+'        A.TableDefs(T).Fields(T).Properties.Delete P
+'    End If
+'    Exit Function
+'End If
 If DbtfHasPrp(A, T, F, P) Then
     A.TableDefs(T).Fields(F).Properties(P).Value = V
 Else
@@ -455,18 +491,6 @@ Else
 End If
 End Property
 
-Property Get TFDes$(T, F)
-TFDes = TFldPrp(T, F, C_Des)
-End Property
-Property Let TFDes(T, F, Des$)
-TFldPrp(T, F, C_Des) = Des
-End Property
-Property Get TFldPrp(T, F, P)
-TFldPrp = DbtfPrp(CurrentDb, T, F, P)
-End Property
-Property Let TFldPrp(T, F, P, V)
-DbtfPrp(CurrentDb, T, F, P) = V
-End Property
 Function DbtfHasPrp(A As Database, T, F, P) As Boolean
 DbtfHasPrp = ItrHasNm(A.TableDefs(T).Fields(F).Properties, P)
 End Function
@@ -498,14 +522,12 @@ For Each L In A
 Next
 End Function
 
-Function TnPkSql$(A)
-TnPkSql = FmtQQ("Create Index PrimaryKey on [?] (?) with Primary", A, A)
+Function SqlzCrtPk$(T$)
+SqlzCrtPk = FmtQQ("Create Index PrimaryKey on [?] (?) with Primary", T, T)
 End Function
 
-Function TnSkSsl_SkSql$(A)
-Dim T$, SkSsl$
-LinAsgT1Rest A, T, SkSsl
-TnSkSsl_SkSql = FmtQQ("Create Unique Index [?] on [?] (?)", T, T, JnComma(CvNy(SkSsl)))
+Function SqlzCrtSk$(T$, Sk$())
+SqlzCrtSk = FmtQQ("Create Unique Index [?] on [?] (?)", T, T, JnComma(CvNy(Sk)))
 End Function
 
 Sub LinesBrkAsg1(A, OErLy$(), ORmkDic As Dictionary, Ny0, ParamArray OLyAp())
@@ -530,29 +552,35 @@ OErLy = O(U - 1)
 Set ORmkDic = O(U)
 End Sub
 
-Function DbSetTblDes$(A As Database, TblDes$)
-Dim T$, D$
-LinTRstAsg TblDes, T, D
-DbtDes(A, T) = D
+Function CMdMthNy() As String()
+CMdMthNy = MdMthNy(CurMd)
 End Function
 
-Function AyRmvSQRmk(A) As String()
+Sub DbSetTDes(A As Database, B As TDes)
+DbtDes(A, B.T) = B.Des
+End Sub
+
+Sub DbSetFDes(A As Database, B As FDes)
+DbtfDes(A, B.T, B.F) = B.Des
+End Sub
+
+Function AyRmvSngQRmk(A) As String()
 If Sz(A) = 0 Then Exit Function
 Dim X, O$()
 For Each X In A
-    If Not IsSQRmk(X) Then Push O, X
+    If Not IsSngQRmk(X) Then Push O, X
 Next
-AyRmvSQRmk = O
+AyRmvSngQRmk = O
 End Function
 
-Function IsSQRmk(A) As Boolean
-IsSQRmk = FstChr(LTrim(A)) = "'"
+Function IsSngQRmk(A) As Boolean
+IsSngQRmk = FstChr(LTrim(A)) = "'"
 End Function
 
 Function LyChk(A, Ny0) As String()
 Dim Ny$(), L, O$()
 Ny = CvNy(Ny0)
-For Each L In AyRmvSQRmk(AyRmvEmp(A))
+For Each L In AyRmvSngQRmk(AyRmvEmp(A))
     If Not AyHas(Ny, LinT1(L)) Then Push O, L
 Next
 If Sz(O) > 0 Then
@@ -886,13 +914,13 @@ Dim A$(), Fny$(), T$, O()
 T = "T"
 A = Sy("Tit T A A;B;C", "Tit T D df;s", "Tit T B 234")
 Fny = SslSy("A B C D E F")
-Expect = O
-ReDim Expect(1 To 2, 1 To 3)
+Ept = O
+ReDim Ept(1 To 2, 1 To 3)
 GoSub Tst
 Exit Sub
 Tst:
-    Actual = FmtSpecLy_TitSq(A, T, Fny)
-    Ass SqIsEq(Actual, Expect)
+    Act = FmtSpecLy_TitSq(A, T, Fny)
+    Ass SqIsEq(Act, Ept)
     Return
 End Sub
 
@@ -1499,12 +1527,14 @@ End Property
 Sub DbtfAddExpr(A As Database, T, F, Expr$, Optional Ty As DAO.DataTypeEnum = dbText, Optional TxtSz% = 255)
 A.TableDefs(T).Fields.Append NewFd(F, Ty, TxtSz, Expr)
 End Sub
-Function DicKey_Asg(A As Dictionary, K, O) As Boolean
-If A.Exists(K) Then
-    O = A(K)
-    DicKey_Asg = True
-End If
+Sub AA()
+Dim O As New Dictionary
+O.Add "A", Empty
+End Sub
+Function DicK_Val(A As Dictionary, K)
+If A.Exists(K) Then Asg A(K), DicK_Val
 End Function
+
 Sub TdAddFd(A As DAO.TableDef, F As DAO.Field)
 A.Fields.Append F
 End Sub
@@ -1525,40 +1555,41 @@ With O
 End With
 Set NewFd = O
 End Function
-Function DaoTbl(T) As DAO.TableDef
+
+Function NewTd(T, F() As DAO.Field) As DAO.TableDef
 Dim O As New DAO.TableDef
-With O
-    .Name = T
-    .Fields.Append NewFd("F1")
-End With
-Set DaoTbl = O
+O.Name = T
+AyDoPX F, "TdAddFd", O
+Set NewTd = O
 End Function
 
-Private Sub ZZ_DbtfAddExpr()
+Private Sub Z_DbtfAddExpr()
 TblDrp "Tmp"
 Dim A As DAO.TableDef
-Set A = DbAddTbl(CurrentDb, "Tmp")
+Set A = DbAddTd(CurrentDb, TmpTd)
 DbtfAddExpr CurrentDb, "Tmp", "F2", "[F1]+"" hello!"""
 TblDrp "Tmp"
 End Sub
 
-Private Sub ZZ_DbAddTbl()
+Function TmpTd() As DAO.TableDef
+Dim O() As DAO.Field
+Push O, NewFd("F1")
+Set TmpTd = NewTd("Tmp", O)
+End Function
+
+Private Sub Z_DbAddTd()
 Dim A As DAO.TableDef
 TblDrp "Tmp"
-Set A = DbAddTbl(CurrentDb, "Tmp")
+Set A = DbAddTd(CurrentDb, TmpTd)
 TblDrp "Tmp"
 End Sub
-Function DbAddTbl(A As Database, T) As DAO.TableDef
-Dim O As DAO.TableDef
-Set O = DaoTbl(T)
-A.TableDefs.Append O
-Set DbAddTbl = O
+Function DbAddTd(A As Database, Td As DAO.TableDef) As DAO.TableDef
+A.TableDefs.Append Td
+Set DbAddTd = Td
 End Function
-Function DbtAddFld(A As Database, T, F, Optional Ty As DAO.DataTypeEnum = dbText, Optional TxtSz% = 255) As DAO.Field2
-Dim O As DAO.Field2
-Set O = NewFd(F, Ty, TxtSz)
-A.TableDefs(T).Fields.Append O
-Set DbtAddFld = O
+Function DbtAddFd(A As Database, T, Fd As DAO.Fields) As DAO.Field2
+A.TableDefs(T).Fields.Append Fd
+Set DbtAddFd = Fd
 End Function
 Function FldPrpNy(A As DAO.Field) As String()
 FldPrpNy = ItrNy(A.Properties)
@@ -1654,22 +1685,25 @@ Function StrInSfxAy(A, SfxAy$()) As Boolean
 StrInSfxAy = AyHasPredPXTrue(SfxAy, "HasSfx", A)
 End Function
 
-Private Sub ZZ_LinShiftT1()
+Private Sub Z_LinShiftT1()
 Dim L$, A$
 L = " S   DFKDF SLDF  "
 A = LinShiftT1(L)
 Debug.Assert A = "S"
 Debug.Assert L = "DFKDF SLDF"
 End Sub
+
 Function LinShiftT1$(OLin)
 Dim T$, R$
 BrkS1Asg LTrim(OLin), " ", T, R
 LinShiftT1 = T
 OLin = R
 End Function
+
 Sub LinAsgT1Rest(A, OT1, ORest)
 BrkAsg Trim(A), " ", OT1, ORest
 End Sub
+
 Sub BrkS1Asg(A, Sep$, Optional O1, Optional O2, Optional NoTrim As Boolean)
 BrkS1AtAsg A, InStr(A, Sep), Sep, O1, O2, NoTrim
 End Sub
@@ -1780,11 +1814,11 @@ End Function
 Sub WtImp(T$, ColLnk$())
 DbtImp W, T, ColLnk
 End Sub
-Function ToSql_by_Fm_Into_xx$(Fm, Into, Ny$(), Ey$(), Optional WhBExpr$)
+Function SqlzFmIntoXX$(Fm, Into, Ny$(), Ey$(), Optional WhBExpr$)
 Dim Sel$, Wh$
 Sel = SqpzSel(Ny, Ey)
 Wh = SqpWh(WhBExpr)
-ToSql_by_Fm_Into_xx = RplVBar(FmtQQ("Select |?|  Into [?]|  From [?]?;|", Sel, Into, Fm, Wh))
+SqlzFmIntoXX = RplVBar(FmtQQ("Select |?|  Into [?]|  From [?]?;|", Sel, Into, Fm, Wh))
 End Function
 Function ColLnk_ImpSql$(A$(), Fm)
 'data ColLnk = F T E
@@ -1793,7 +1827,7 @@ If FstChr(Fm) <> ">" Then Stop
 Into = "#I" & Mid(Fm, 2)
 Ny = AyT1Ay(A)
 Ey = AyMapSy(A, "LinRmvTT")
-ColLnk_ImpSql = ToSql_by_Fm_Into_xx(Fm, Into, Ny, Ey)
+ColLnk_ImpSql = SqlzFmIntoXX$(Fm, Into, Ny, Ey)
 End Function
 Sub DbtImp(A As Database, T, ColLnk$())
 DbDrpTbl A, "#I" & Mid(T, 2)
@@ -3291,7 +3325,9 @@ V = CallByName(A, PrpNm, VbGet)
 Asg V, ObjPrp
 Exit Function
 X:
-Debug.Print "ObjPrp: " & Err.Description
+Dim Er$
+Er = Err.Description
+Debug.Print "ObjPrp: TypeName[" & TypeName(A) & "]  PrpNm[" & PrpNm & "] Er[" & Er & "]"
 End Function
 Function ItrPrpSy(A, PrpNm$) As String()
 ItrPrpSy = ItrPrpInto(A, PrpNm, EmpSy)
@@ -3921,11 +3957,16 @@ Ass VarType(A) = VarType(B)
 Select Case True
 Case IsArray(A): Ass AyIsEq(A, B)
 Case IsObject(A): Ass ObjPtr(A) = ObjPtr(B)
-Case Else: Ass A = B
+Case Else:
+    If A <> B Then
+        Debug.Print A
+        Debug.Print B
+        Stop
+    End If
 End Select
 End Sub
 Sub C()
-ChkEq Actual, Expect
+ChkEq Act, Ept
 End Sub
 Sub D(A)
 AyDmp VarLy(A)
@@ -4063,12 +4104,12 @@ End Property
 
 Private Sub Z_LinNTermAy()
 Dim A$
-A = "  [ksldfj ]":  Expect = "ksldfj ": GoSub Tst
-A = "  [ ksldfj ]": Expect = " ksldf ": GoSub Tst
-A = "  [ksldfj]":  Expect = "ksldf": GoSub Tst
+A = "  [ksldfj ]":  Ept = "ksldfj ": GoSub Tst
+A = "  [ ksldfj ]": Ept = " ksldf ": GoSub Tst
+A = "  [ksldfj]":  Ept = "ksldf": GoSub Tst
 Exit Sub
 Tst:
-    Actual = LinT1(A)
+    Act = LinT1(A)
     C
     Return
 End Sub
@@ -4552,8 +4593,13 @@ If Sz(A) = 0 Then Exit Function
 OyPrpSy = ItrPrpSy(A, PrpNm)
 End Function
 Function OyPrpInto(A, PrpNm$, OInto)
-If Sz(A) = 0 Then Exit Function
-Stop
+If Sz(A) = 0 Then
+    Dim O
+    O = OInto
+    Erase O
+    OyPrpInto = O
+    Exit Function
+End If
 OyPrpInto = ItrPrpInto(A, PrpNm, OInto)
 End Function
 
@@ -5120,8 +5166,8 @@ If Sz(O) > 0 Then LgIniSchmy = O: Exit Property
 Push O, "E Mem | Mem Req AlwZLen"
 Push O, "E Txt | Txt Req"
 Push O, "E Crt | Dte Req Dft=Now"
-Push O, "E Crt | Dte Req Dft=Now"
 Push O, "E Dte | Dte"
+Push O, "E Amt | Cur"
 Push O, "F Amt * | *Amt"
 Push O, "F Crt * | CrtDte"
 Push O, "F Dte * | *Dte"
@@ -5143,11 +5189,11 @@ Dim A$, FmStr, ToStr
 A = "lkjsdf;dkfjl;Data Source=Johnson;lsdfjldf"
 FmStr = "Data Source="
 ToStr = ";"
-Expect = "Johnson"
+Ept = "Johnson"
 GoSub Tst
 Exit Sub
 Tst:
-    Actual = TakBet(A, FmStr, ToStr)
+    Act = TakBet(A, FmStr, ToStr)
     C
     Return
 End Sub
@@ -6085,8 +6131,8 @@ MdZMthLy = O
 End Function
 
 Private Sub Z_DbqV()
-Expect = CByte(18)
-Actual = SqlV("Select Y from [^YM]")
+Ept = CByte(18)
+Act = SqlV("Select Y from [^YM]")
 C
 End Sub
 Function DbqTim(A As Database, Sql) As Date
@@ -7158,12 +7204,8 @@ For Each Dr In Dry
 Next
 SqlQQStr_Sy = O
 End Function
-
-Function NewTd(T, FdAy() As DAO.Field) As DAO.TableDef
-Dim O As New DAO.TableDef
-O.Name = T
-AyDoPX FdAy, "TdAddFd", O
-Set NewTd = O
+Function CvFd(A) As DAO.Field
+Set CvFd = A
 End Function
 
 Function FldsCsv$(A As DAO.Fields)
@@ -7237,11 +7279,11 @@ End Function
 Private Sub Z_LinWdtAy_Align()
 Dim A$, W%()
 A = "a b [c] ddd": W = ApIntAy(3, 4, 5)
-Expect = "a   b    [c]"
+Ept = "a   b    [c]"
 GoSub Tst
 Exit Sub
 Tst:
-    Actual = Run("LinWdtAy_Align", A, W)
+    Act = Run("LinWdtAy_Align", A, W)
     C
     Return
 End Sub
@@ -7472,7 +7514,7 @@ SpecSchmy = SplitCrLf(SpecSchmLines)
 End Function
 
 Sub DbCrtSpecTbl(A As Database)
-DbCrtSchm A, SpecSchmy
+SchmM.DbCrtSchm A, SpecSchmy
 End Sub
 
 Sub AppExpFrm()
@@ -7552,6 +7594,18 @@ Private Sub Z_ReSeqSpec_OutLinL1Ay()
 D ReSeqSpec_OLinFldAy(Z_ReSeqSpec)
 End Sub
 
+Function LinTermAy(A) As String()
+Dim L$, T$, O$(), J%, Sy$()
+ReDim Sy(1)
+Sy(1) = A
+Do
+    J = J + 10000
+    If J > 10000 Then Stop
+    Sy = LinTRst(Sy(1))
+    If Sy(0) <> "" Then Push O, Sy(0)
+Loop Until Sy(1) = ""
+LinTermAy = O
+End Function
 Function LinNTermAy(A, N%) As String()
 Dim L$, T$, O$(), J%
 L = A
@@ -7910,11 +7964,11 @@ Private Sub Z_AyIns()
 Dim A, M, At&
 A = Array(1, 2, 3)
 M = "X"
-Expect = Array("X", 1, 2, 3)
+Ept = Array("X", 1, 2, 3)
 GoSub Tst
 Exit Sub
 Tst:
-    Actual = AyIns(A, M, At)
+    Act = AyIns(A, M, At)
     C
 Return
 End Sub
@@ -8535,11 +8589,11 @@ End Function
 Private Sub Z_RmvNm()
 Dim Nm$
 Nm = "lksdjfsd f"
-Expect = " f"
+Ept = " f"
 GoSub Tst
 Exit Sub
 Tst:
-    Actual = RmvNm(Nm)
+    Act = RmvNm(Nm)
     C
     Return
 End Sub
@@ -8599,11 +8653,11 @@ Private Sub Z_T1LikSslAy_T1()
 Dim A$(), Nm$
 A = SplitVBar("a bb* *dd | c x y")
 Nm = "x"
-Expect = "c"
+Ept = "c"
 GoSub Tst
 Exit Sub
 Tst:
-    Actual = T1LikSslAy_T1(A, Nm)
+    Act = T1LikSslAy_T1(A, Nm)
     C
     Return
 End Sub
@@ -9265,12 +9319,12 @@ End Sub
 Private Sub Z_AyAlign2T()
 Dim Ly$()
 Ly = Sy("AAA B C", "A BBB CCC")
-Expect = Sy("AAA B   C", _
+Ept = Sy("AAA B   C", _
             "A   BBB CCC")
 GoSub Tst
 Exit Sub
 Tst:
-    Actual = AyAlign2T(Ly)
+    Act = AyAlign2T(Ly)
     C
     Return
 End Sub
@@ -9356,7 +9410,7 @@ End Function
 
 Function ToSql_by_SqlSelInto$(A As SqlSelInto)
 With A
-    ToSql_by_SqlSelInto = ToSql_by_Fm_Into_xx(.Fm, .Into, .Ny, .Ey, .Wh)
+    ToSql_by_SqlSelInto = SqlzFmIntoXX(.Fm, .Into, .Ny, .Ey, .Wh)
 End With
 End Function
 

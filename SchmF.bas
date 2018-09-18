@@ -3,22 +3,18 @@ Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = True
 Option Compare Database
+Option Explicit
 Public Schm As Schm, T$, F$
-Friend Property Get Init(Schm, T, F) As SchmF
+Friend Function Init(Schm, T, F) As SchmF
 Set Me.Schm = Schm
 Me.T = T
 Me.F = F
-End Property
-Property Get ELy() As String()
-On Error GoTo X
-ELy = Schm.ELy
-Exit Property
-X: Debug.Print "SchmF.ELy.PrpEr...["; Err.Description; "]"
-End Property
+Set Init = Me
+End Function
 
 Property Get ELin$()
 On Error GoTo X
-ELin = AyFstT1(ELy, E)
+ELin = AyFstT1(Schm.ELy, E)
 Exit Property
 X: Debug.Print "SchmF.ELin.PrpEr...["; Err.Description; "]"
 End Property
@@ -28,20 +24,15 @@ On Error GoTo X
 Select Case True
 Case IsId: ESpec = "*Id"
 Case IsFk: ESpec = "*Fk"
-Case Else: ESpec = LinRmvT1(ELin)
+Case Else: ESpec = LinRmvTT(ELin)
 End Select
 Exit Property
 X: Debug.Print "SchmF.ESpec.PrpEr...["; Err.Description; "]"
 End Property
-Property Get Tny() As String()
-On Error GoTo X
-Tny = Schm.Tny
-Exit Property
-X: Debug.Print "SchmF.Tny.PrpEr...["; Err.Description; "]"
-End Property
+
 Property Get IsFk() As Boolean
 On Error GoTo X
-IsFk = AyHas(Tny, F)
+IsFk = AyHas(Schm.Tny, F)
 Exit Property
 X: Debug.Print "SchmF.IsFk.PrpEr...["; Err.Description; "]"
 End Property
@@ -64,10 +55,12 @@ FLin = T1LikLikSslAy_T1(Schm.FLy, T, F)
 Exit Property
 X: Debug.Print "SchmF.FLin.PrpEr...["; Err.Description; "]"
 End Property
-
+Property Get ESpecScl$()
+ESpecScl = JnSC(LinTermAy(ESpec))
+End Property
 Property Get Scl$()
 On Error GoTo X
-Scl = ApScl(F, EleSpec)
+Scl = ApScl(F, ESpec)
 Exit Property
 X: Debug.Print "SchmF.Scl.PrpEr...["; Err.Description; "]"
 End Property
@@ -83,3 +76,8 @@ End Select
 Exit Property
 X: Debug.Print "SchmF.Fd.PrpEr...["; Err.Description; "]"
 End Property
+
+Friend Sub Z()
+Init NewSchm(LgSchmLines), "LgV", "Lines"
+Stop
+End Sub

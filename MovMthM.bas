@@ -57,6 +57,79 @@ Next
 MdMthNy = AyDist(O)
 End Function
 
+Function MdMthLy(A As CodeModule) As String()
+If MdIsNoLin(A) Then Exit Function
+Dim O$(), J%
+For J = 1 To A.CountOfLines
+    If LinIsMthLin(A.Lines(J, 1)) Then
+        Push O, MdContLin(A, J)
+    End If
+Next
+MdMthLy = O
+End Function
+
+Function LinIsMthLin(A) As Boolean
+LinIsMthLin = LinMthKd(A) <> ""
+End Function
+
+Function PjMdAy(A As VBProject) As CodeModule()
+Dim O() As CodeModule, I
+For Each I In A.VBComponents
+    PushObj O, CvCmp(I).CodeModule
+Next
+PjMdAy = O
+End Function
+Function CmpTy_Str$(A As vbext_ComponentType)
+Dim O$
+Select Case A
+Case vbext_ComponentType.vbext_ct_StdModule: O = "Mod"
+Case vbext_ComponentType.vbext_ct_ClassModule: O = "Cls"
+Case vbext_ComponentType.vbext_ct_Document: O = "Doc"
+Case Else: Stop
+End Select
+CmpTy_Str = O
+End Function
+Function CvCmp(A) As VBComponent
+Set CvCmp = A
+End Function
+Function CvMd(A) As CodeModule
+Set CvMd = A
+End Function
+Function MdTyStr$(A As CodeModule)
+MdTyStr = CmpTy_Str(A.Parent.Type)
+End Function
+Function PjMthLy(A As VBProject) As String()
+Dim I, O$(), N$, M As CodeModule
+For Each I In PjMdAy(A)
+    Set M = I
+    N = MdTyStr(M) & "." & MdNm(M) & "."
+    PushAy O, AyAddPfx(MdMthLy(M), N)
+Next
+PjMthLy = O
+End Function
+Function CPjMthLy() As String()
+CPjMthLy = PjMthLy(CurPj)
+End Function
+Function CMdMthLy() As String()
+CMdMthLy = MdMthLy(CurMd)
+End Function
+Function StrApp$(A, L)
+If A = "" Then StrApp = L: Exit Function
+StrApp = A & " " & L
+End Function
+Function LinesApp$(A, L)
+If A = "" Then LinesApp = L: Exit Function
+LinesApp = A & vbCrLf & L
+End Function
+Function MdContLin$(A As CodeModule, Lno%)
+Dim O$, J%
+J = Lno
+Do
+    O = RmvSfx(O, " _") & A.Lines(J, 1)
+    J = J + 1
+Loop Until LasChr(O) <> "_"
+MdContLin = O
+End Function
 Sub MovMth(FmMd$, MthNmPfx$, ToMd$, Optional EptMthNmPfx$)
 Dim Fm As CodeModule
 Dim Ny$()

@@ -1,5 +1,8 @@
 Option Compare Database
 Option Explicit
+Sub AA()
+Dim A As AA12
+End Sub
 Property Get IsFstYM() As Boolean
 IsFstYM = FstY = Y And FstM = M
 End Property

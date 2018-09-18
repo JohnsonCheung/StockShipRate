@@ -3,8 +3,8 @@ Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = True
 Option Compare Database
+Option Explicit
 Public Schm As Schm, T$
-
 Friend Function Init(A As Schm, T) As SchmT
 Set Schm = A
 Me.T = T
@@ -38,7 +38,7 @@ End Property
 Property Get FdAy() As DAO.Field()
 On Error GoTo X
 Dim O() As DAO.Field
-Dim F
+Dim F, I
 For Each I In Fzy
     Set F = I
     PushObj O, F.Fd
@@ -56,7 +56,7 @@ End Function
 Property Get Fzy() As SchmF()
 On Error GoTo X
 Dim O() As SchmF, F
-For Each F In Fny
+For Each F In AyNz(Fny)
     PushObj O, Fz(F)
 Next
 Fzy = O
@@ -69,13 +69,14 @@ Set Td = NewTd(T, FdAy)
 Exit Property
 X: Debug.Print "SchmT.Td.PrpEr...["; Err.Description; "]"
 End Property
-
+Property Get SkSql$()
+Dim A$
+A = SkSsl: If A = "" Then Exit Function
+SkSql = TnSkSsl_SkSql(T & " " & A)
+End Property
 Property Get SkSsl$()
 On Error GoTo X
-Dim A$, B$
-A = SkP1: If A = "" Then Exit Property
-B = Replace(A, " * ", "")
-SkSsl = Replace(B, "*", LinT1(B))
+SkSsl = TLinSkSsl(TLin)
 Exit Property
 X: Debug.Print "SchmT.SkSsl.PrpEr...["; Err.Description; "]"
 End Property
@@ -85,9 +86,15 @@ Scly = AyIns(FdScly, Scl)
 Exit Property
 X: Debug.Print "SchmT.Scly.PrpEr...["; Err.Description; "]"
 End Property
+
+Property Get PkSql$()
+If AyHas(Fny, T) Then PkSql = TnPkSql(T)
+End Property
+
 Property Get FdScly() As String()
 On Error GoTo X
-Dim O$(), F
+Dim O$(), F, Ay
+Ay = AyNz(Fzy)
 For Each F In AyNz(Fzy)
     Push O, CvFz(F).Scl
 Next
@@ -108,13 +115,6 @@ On Error GoTo X
 Des = DLyDes_zT(Schm.DLy, T)
 Exit Property
 X: Debug.Print "SchmT.Des.PrpEr...["; Err.Description; "]"
-End Property
-
-Property Get SkP1$()
-On Error GoTo X
-SkP1 = Trim(TakBef(TLin, "|"))
-Exit Property
-X: Debug.Print "SchmT.SkP1.PrpEr...["; Err.Description; "]"
 End Property
 
 Friend Sub Z()
