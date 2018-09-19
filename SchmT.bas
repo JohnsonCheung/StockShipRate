@@ -72,7 +72,7 @@ End Property
 Property Get SkSql$()
 Dim A$
 A = SkSsl: If A = "" Then Exit Function
-SkSql = TnSkSsl_SkSql(T & " " & A)
+SkSql = SqlzCrtSk(T, SslSy(A))
 End Property
 Property Get SkSsl$()
 On Error GoTo X
@@ -88,7 +88,7 @@ X: Debug.Print "SchmT.Scly.PrpEr...["; Err.Description; "]"
 End Property
 
 Property Get PkSql$()
-If AyHas(Fny, T) Then PkSql = TnPkSql(T)
+If AyHas(Fny, T) Then PkSql = SqlzCrtPk(T)
 End Property
 
 Property Get FdScly() As String()
@@ -116,8 +116,3 @@ Des = DLyDes_zT(Schm.DLy, T)
 Exit Property
 X: Debug.Print "SchmT.Des.PrpEr...["; Err.Description; "]"
 End Property
-
-Friend Sub Z()
-Init NewSchm(LgSchmLines), "LgV"
-Stop
-End Sub

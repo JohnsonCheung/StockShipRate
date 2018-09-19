@@ -150,3 +150,8 @@ End Function
 Private Function ZZMd() As CodeModule
 Set ZZMd = CurVbe.VBProjects("StockShipRate").VBComponents("Schm").CodeModule
 End Function
+
+Sub Z()
+Z_MdEnsPrpOnEr
+Z_MdRmvPrpOnEr
+End Sub

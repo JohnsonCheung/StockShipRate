@@ -387,3 +387,6 @@ End Function
 Private Function WhT1(T1$) As String()
 WhT1 = AyWhRmvT1(Cln, T1)
 End Function
+Sub Z()
+Z_LNKDbImp
+End Sub

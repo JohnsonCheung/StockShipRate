@@ -205,13 +205,6 @@ D "-----------------------"
 D Er
 D "-----------------------"
 End Sub
-Sub Z()
-Z_ErDupT
-Z_ErDupF
-Z_ErDupE
-Z_Tny
-Z_DbCrtSchm
-End Sub
 
 Sub Z_Ini()
 X_Schmy = LgIniSchmy
@@ -325,4 +318,13 @@ Tst:
     Act = ErPfx
     C
     Return
+End Sub
+Sub Z()
+Z_DbCrtSchm
+Z_ErDupE
+Z_ErDupF
+Z_ErDupT
+Z_ErPfx
+Z_Ini
+Z_Tny
 End Sub

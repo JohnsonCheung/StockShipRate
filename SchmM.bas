@@ -99,11 +99,6 @@ Function TLyPkTny(A$()) As String()
 TLyPkTny = AyT1Ay(AyWhPred(A, "TLinHasPk"))
 End Function
 
-Sub Z()
-Z_Tny
-Z_FLyTF_FLin
-Z_DbCrtSchm
-End Sub
 
 Private Sub ZZ_FdAy()
 ZZT = "Sess"
@@ -315,7 +310,7 @@ Private Function XBrk(Schmy$()) As Brk
 Dim Ny$()
 Ny = Sy(C_T, C_F, C_E, C_D)
 With XBrk.Dta
-    AyAsg LyBrk1(LyCln(Schmy), Ny), .T, .F, .E, .D, XBrk.Er
+    AyAsg ClnBrk1(LyCln(Schmy), Ny), .T, .F, .E, .D, XBrk.Er
     .Tny = AyT1Ay(.T)
 End With
 End Function
@@ -443,3 +438,10 @@ With A
 End With
 DtaT_FdAy = O
 End Function
+
+Sub Z()
+Z_DbCrtSchm
+Z_DLyDes
+Z_FLyTF_FLin
+Z_Tny
+End Sub

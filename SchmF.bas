@@ -76,8 +76,3 @@ End Select
 Exit Property
 X: Debug.Print "SchmF.Fd.PrpEr...["; Err.Description; "]"
 End Property
-
-Friend Sub Z()
-Init NewSchm(LgSchmLines), "LgV", "Lines"
-Stop
-End Sub

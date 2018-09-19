@@ -521,18 +521,50 @@ For Each L In A
     J = J + 1
 Next
 End Function
-
+Sub CMdRfhSubZ()
+MdRfhSubZ CurMd
+End Sub
 Function SqlzCrtPk$(T$)
 SqlzCrtPk = FmtQQ("Create Index PrimaryKey on [?] (?) with Primary", T, T)
 End Function
+Function MdIsSubZUpToDte(A As CodeModule) As Boolean
+MdIsSubZUpToDte = MdActSubZLines(A) = MdEptSubZLines(A)
+End Function
 
-Function SqlzCrtSk$(T$, Sk$())
+Function MdActSubZLines$(A As CodeModule)
+MdActSubZLines = MdMthLines(A, "Z")
+End Function
+
+Function MdEptSubZLines$(A As CodeModule)
+Dim O$(), M$()
+M = MdSubZDashMthNy(A)
+If Sz(M) = 0 Then Exit Function
+Push O, "Sub Z()"
+PushAy O, AySrt(M)
+Push O, "End Sub"
+MdEptSubZLines = JnCrLf(O)
+End Function
+
+Function MdSubZDashMthNy(A As CodeModule) As String()
+MdSubZDashMthNy = AyWhPredXP(MdMthNy(A), "HasPfx", "Z_")
+End Function
+
+Sub MdRfhSubZ(A As CodeModule)
+Dim Act$, Ept$
+Act = MdActSubZLines(A)
+Ept = MdEptSubZLines(A)
+If Act = Ept Then Exit Sub
+MdRmvMth A, "Z"
+MdAppLines A, Ept
+End Sub
+
+Function SqlzCrtSk$(T, Sk$())
 SqlzCrtSk = FmtQQ("Create Unique Index [?] on [?] (?)", T, T, JnComma(CvNy(Sk)))
 End Function
 
 Sub LinesBrkAsg1(A, OErLy$(), ORmkDic As Dictionary, Ny0, ParamArray OLyAp())
 Dim O(), J%, U%
-O = LyBrk1(SplitCrLf(A), Ny0)
+O = ClnBrk1(LyCln(SplitCrLf(A)), Ny0)
 U = UB(O)
 For J = 0 To U - 2
     OLyAp(J) = O(J)
@@ -543,7 +575,7 @@ End Sub
 
 Sub LyBrkAsg1(A, OErLy$(), ORmkDic As Dictionary, Ny0, ParamArray OLyAp())
 Dim O(), J%, U%
-O = LyBrk1(A, Ny0)
+O = ClnBrk1(LyCln(A), Ny0)
 U = UB(O)
 For J = 0 To U - 2
     OLyAp(J) = O(J)
@@ -577,20 +609,20 @@ Function IsSngQRmk(A) As Boolean
 IsSngQRmk = FstChr(LTrim(A)) = "'"
 End Function
 
-Function LyChk(A, Ny0) As String()
+Function ClnChk(A, Ny0) As String()
 Dim Ny$(), L, O$()
 Ny = CvNy(Ny0)
-For Each L In AyRmvSngQRmk(AyRmvEmp(A))
+For Each L In A
     If Not AyHas(Ny, LinT1(L)) Then Push O, L
 Next
 If Sz(O) > 0 Then
     O = AyAddPfx(AyQuoteSqBkt(O), Space(4))
     O = AyIns(O, FmtQQ("Following lines have invalid T1.  Valid T1 are [?]", JnSpc(Ny)))
 End If
-LyChk = O
+ClnChk = O
 End Function
 
-Function LyBrk1(A, Ny0) As Variant()
+Function ClnBrk1(A, Ny0) As Variant()
 Dim O(), U%, Ny$(), L, T1$, T2$, NmDic As Dictionary, Ix%, Er$()
 Ny = CvNy(Ny0)
 U = UB(Ny)
@@ -604,8 +636,8 @@ For Each L In A
         Push O(Ix), T2 '<----
     End If
 Next
-Push O, LyChk(A, Ny)
-LyBrk1 = O
+Push O, ClnChk(A, Ny)
+ClnBrk1 = O
 End Function
 
 Sub LinesBrkAsg(A, Ny0, ParamArray OLyAp())
@@ -3247,16 +3279,47 @@ End Function
 Function IsObjAy(A) As Boolean
 IsObjAy = VarType(A) = vbArray + vbObject
 End Function
-Function AyRmvEle(A, Ele)
+Function AyRmvEle(A, Ele, Optional Cnt%)
 Dim O: O = AyCln(A)
-Dim X
+Dim X, C%
+C = Cnt
 If Sz(A) = 0 Then AyRmvEle = O: Exit Function
 For Each X In A
-    If X <> Ele Then Push O, X
+    If X <> Ele Then
+        Push O, X
+        If Cnt > 0 Then
+            If C = 0 Then GoTo X
+            C = C - 1
+        End If
+    End If
 Next
+X:
 AyRmvEle = O
 End Function
-
+Function AyFstLik$(A, Lik$)
+If Sz(A) = 0 Then Exit Function
+Dim X
+For Each X In A
+    If X Like Lik Then AyFstLik = X: Exit Function
+Next
+End Function
+Function AyRmvEleLik(A, Lik$) As String()
+If Sz(A) = 0 Then Exit Function
+Dim J&
+For J = 0 To UB(A)
+    If A(J) Like Lik Then AyRmvEleLik = AyRmvEleAt(A, J): Exit Function
+Next
+End Function
+Function AyShiftItmEq(A, Itm$) As Variant()
+Dim B$, Lik$
+Lik = Itm & "=*"
+B = AyFstLik(A, Lik)
+If B = "" Then
+    AyShiftItmEq = Array("", A)
+Else
+    AyShiftItmEq = Array(Trim(RmvPfx(B, Itm & "=")), AyRmvEleLik(A, Lik))
+End If
+End Function
 Function AyRmvEleAt(A, Optional At&)
 Dim O, J&, U&
 U = UB(A)
@@ -3933,15 +3996,18 @@ A.Execute FmtQQ("Select x.* into [?] from [?] x inner join [?] a on ?", TarTbl, 
 DbDrpTbl A, Tmp
 End Sub
 
-Function AyDupChk(A, QMsg$) As String()
-AyDupChk = AyRmvEmp(Sy(AyDupMsg(A, QMsg)))
-End Function
+Sub Z_AyDupChk()
+Dim Ay
+Ay = Array("1", "1", "2")
+D AyDupChk(Ay, "[?] these item is duplicated")
 
-Function AyDupMsg$(A, QMsg$)
-Dim Dup$()
+End Sub
+
+Function AyDupChk(A, QMsg$) As String()
+Dim Dup
 Dup = AyWhDup(A)
 If Sz(Dup) = 0 Then Exit Function
-AyDupMsg = FmtQQ(QMsg, JnSpc(Dup))
+Push AyDupChk, FmtQQ(QMsg, JnSpc(Dup))
 End Function
 
 Function AyNz(A)
@@ -4170,6 +4236,7 @@ MdAppLines M, Lines
 Run Nm
 End Sub
 Sub MdAppLines(A As CodeModule, Lines$)
+If Lines = "" Then Exit Sub
 A.InsertLines A.CountOfLines + 1, Lines
 End Sub
 Function Lin2TAy(A) As String()
@@ -4479,7 +4546,7 @@ Case "Yes": O = DAO.DataTypeEnum.dbBoolean
 Case "Dbl": O = DAO.DataTypeEnum.dbDouble
 Case "Sng": O = DAO.DataTypeEnum.dbSingle
 Case "Cur": O = DAO.DataTypeEnum.dbCurrency
-Case Else: FunEr "DaoShtTy_Ty", "Given [DaoShtTy] is invalid.  These is [Vdt-DaoShtTy]", A, DaoShtTySsl
+'Case Else: FunEr "DaoShtTy_Ty", "Given [DaoShtTy] is invalid.  These is [Vdt-DaoShtTy]", A, DaoShtTySsl
 End Select
 DaoShtTy_Ty = O
 End Function
@@ -6881,6 +6948,7 @@ End Sub
 Function AyIsEmpty(A) As Boolean
 AyIsEmpty = Sz(A) = 0
 End Function
+
 Function AyIsAllEq(A) As Boolean
 If Sz(A) <= 1 Then AyIsAllEq = True: Exit Function
 Dim A0, J&
@@ -7599,7 +7667,7 @@ Dim L$, T$, O$(), J%, Sy$()
 ReDim Sy(1)
 Sy(1) = A
 Do
-    J = J + 10000
+    J = J + 1
     If J > 10000 Then Stop
     Sy = LinTRst(Sy(1))
     If Sy(0) <> "" Then Push O, Sy(0)
@@ -9306,8 +9374,6 @@ Property Let LNKLines(Lines$)
 SpnmLines("Lnk") = Lines
 End Property
 
-
-
 Function AyAlign1T(A) As String()
 AyAlign1T = AyAlignNTerm(A, 1)
 End Function
@@ -9320,7 +9386,7 @@ Private Sub Z_AyAlign2T()
 Dim Ly$()
 Ly = Sy("AAA B C", "A BBB CCC")
 Ept = Sy("AAA B   C", _
-            "A   BBB CCC")
+         "A   BBB CCC")
 GoSub Tst
 Exit Sub
 Tst:
@@ -9414,6 +9480,16 @@ With A
 End With
 End Function
 
+Sub PjRfhSubZ(A As VBProject)
+Dim I
+For Each I In PjMdAy(A)
+    Debug.Print MdNm(CvMd(I))
+    MdRfhSubZ CvMd(I)
+Next
+End Sub
+Sub CPjRfhSubZ()
+PjRfhSubZ CurPj
+End Sub
 Function ToSqy_by_SqlSelIntoAy(A() As SqlSelInto) As String()
 Dim J%, O$()
 For J = 0 To UBound(A)
@@ -9421,3 +9497,28 @@ For J = 0 To UBound(A)
 Next
 ToSqy_by_SqlSelIntoAy = O
 End Function
+
+Sub Z()
+Z_ApScl
+Z_AyAlign2T
+Z_AyIns
+Z_AyShift
+Z_CdLines_Run
+Z_DbAddTd
+Z_DbqV
+Z_DbtfAddExpr
+Z_DbtfPrp
+Z_FmtSpecLy_TitSq
+Z_FxwFny
+Z_LinNTermAy
+Z_LinShiftT1
+Z_LinWdtAy_Align
+Z_LoReset
+Z_PfxSsl_Sy
+Z_ReSeqSpec_OutLinL1Ay
+Z_RgNMoreBelow
+Z_RmvNm
+Z_SclChk
+Z_T1LikSslAy_T1
+Z_TakBet
+End Sub

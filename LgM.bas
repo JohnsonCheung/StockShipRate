@@ -284,15 +284,15 @@ End Function
 Function SessNLg%(A&)
 SessNLg = DbqV(L, "Select Count(*) from Lg where Sess=" & A)
 End Function
-Sub Z()
-Stop
-Z_Lg
-Stop
-End Sub
 
 Private Sub Z_Lg()
 LgKill
 Debug.Assert Dir(LgFb) = ""
 LgBeg
 Debug.Assert Dir(LgFb) = LgFn
+End Sub
+
+
+Sub Z()
+Z_Lg
 End Sub
