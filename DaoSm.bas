@@ -267,6 +267,7 @@ Set E = BrkE(EIxly)
 Set F = BrkF(AyWhRmvT1(Cln, "F"))
 Set T = BrkT(TLy)
 Er = ClnChk(Cln, "D E F T")
+Set Brk = New DaoSmBrk
 Brk.Er = CvSy(AyAddAp(Er, D.Er, E.Er, F.Er, , T.Er))
 If Sz(Brk.Er) > 0 Then Exit Function
 With Brk.Dta
@@ -297,7 +298,7 @@ End Function
 
 Private Function Er(A As DaoSmBrk) As String()
 Dim D As DaoSmDta
-D = A.Dta
+Set D = A.Dta
 Er = AyAddAp _
     (A.Er _
    , Er_DupT(D.Tny) _
@@ -458,18 +459,23 @@ End Function
 Private Function FDesAy(A As DaoSmDta) As FDes()
 Stop '
 End Function
+
 Private Function ErMsgTblFldEr$(Lno%, T$, F$)
 ErMsgTblFldEr = ErMsg(Lno, FmtQQ("T[?] has invalid F[?], which cannot be found in any F-Lines"))
 End Function
+
 Private Function ErMsgFldEleEr$(Lno%, E$, Essl$)
 ErMsgFldEleEr = ErMsg(Lno, FmtQQ("E[?] is invalid.  Valid E is [?]", E, Essl))
 End Function
+
 Private Function ErMsgDupF$(Lno%, T$, Fny$())
 ErMsgDupF = ErMsg(Lno, FmtQQ("F[?] is dup in T[?]", JnSpc(Fny), T))
 End Function
+
 Private Function ErMsgExcessTxtSz$(Lno%, Ty$)
 ErMsgExcessTxtSz = ErMsg(Lno, FmtQQ("Ty[?] is not Txt, it should not have TxtSz", Ty))
 End Function
+
 Private Function ErMsgDupT$(LnoAy%(), T$)
 ErMsgDupT = ErMsg1(LnoAy, FmtQQ("This T[?] is dup", T))
 End Function
