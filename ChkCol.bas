@@ -4,9 +4,6 @@ Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = True
 Option Compare Database
 Public FilKind$, Ffn$, T$
-Public Enum AA12
-    BB = 1
-End Enum
 Private X_F() As EptFldTy
 Property Get F() As EptFldTy()
 F = X_F

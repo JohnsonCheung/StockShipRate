@@ -19,6 +19,7 @@ Private Type Rslt
     Td() As DAO.TableDef
 End Type
 Private Type Dta
+    Eny() As String
     Tny() As String
     T() As String
     F() As String

@@ -1559,10 +1559,7 @@ End Property
 Sub DbtfAddExpr(A As Database, T, F, Expr$, Optional Ty As DAO.DataTypeEnum = dbText, Optional TxtSz% = 255)
 A.TableDefs(T).Fields.Append NewFd(F, Ty, TxtSz, Expr)
 End Sub
-Sub AA()
-Dim O As New Dictionary
-O.Add "A", Empty
-End Sub
+
 Function DicK_Val(A As Dictionary, K)
 If A.Exists(K) Then Asg A(K), DicK_Val
 End Function
@@ -7416,8 +7413,35 @@ Function AyRmvDDLin(A) As String()
 AyRmvDDLin = AyWhPredFalse(A, "LinIsDDLin")
 End Function
 
+Function LyClnIxly(A) As Ixl()
+Dim O() As Ixl, L$, J%
+For J = 0 To UB(A)
+    L = LinCln(A(J))
+    If L <> "" Then
+        Dim M As Ixl
+        Set M = New Ixl
+        M.Ix = J
+        M.Lin = A(J)
+        Push O, M
+    End If
+Next
+LyClnIxly = O
+End Function
+
+Function LinCln$(A)
+If IsEmp(A) Then Exit Function
+If LinIsDotLin(A) Then Exit Function
+If LinIsOneTermLin(A) Then Exit Function
+If LinIsDDLin(A) Then Exit Function
+LinCln = TakBefDD(A)
+End Function
+
+Function AyTakBefDD(A) As String()
+AyTakBefDD = AyMapSy(A, "TakBefDD")
+End Function
+
 Function LyCln(A) As String()
-LyCln = AyMapSy(AyRmvDDLin(AyRmvOneTermLin(AyRmvDotLin(AyRmvEmp(A)))), "TakBefDD")
+LyCln = AyRmvEmp(AyMapSy(A, "LinCln"))
 End Function
 
 Property Get LNKPmLines$()
@@ -9377,10 +9401,6 @@ End Property
 Function AyAlign1T(A) As String()
 AyAlign1T = AyAlignNTerm(A, 1)
 End Function
-
-Sub AAAA()
-Z_AyAlign2T
-End Sub
 
 Private Sub Z_AyAlign2T()
 Dim Ly$()

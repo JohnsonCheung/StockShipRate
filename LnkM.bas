@@ -28,9 +28,6 @@ Type FR: Er() As String: OkFilKind() As String: End Type ' FilRslt
 Type Wr: Er() As String: OkWny() As String:  End Type ' WnyRslt
 Type TR: Er() As String: OkTny() As String:  End Type ' TnyRslt
 Type CR: Er() As String:                     End Type ' ColRslt
-Sub AA()
-Z_LNKDbImp
-End Sub
 
 Private Sub Z_LNKDbImp()
 LNKDbImp WDb, LNKAllLines
@@ -244,6 +241,7 @@ End Function
 Function Dry_Db_T_Fb_Fbt(A As Database) As Variant()
 Stop '
 End Function
+
 Sub A()
 Stop
 End Sub

@@ -178,10 +178,6 @@ Function LinMthKd$(A)
 LinMthKd = AyFstEqV(MthKdAy, LinT1(LinRmvMdy(A)))
 End Function
 
-Sub AAAAA()
-Z_MdMthLinCnt
-End Sub
-
 Private Sub ZZ_MdMthLno()
 Dim O$()
     Dim Lno, L%(), M, A As CodeModule, Ny$(), J%
