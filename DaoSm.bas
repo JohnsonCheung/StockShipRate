@@ -18,87 +18,6 @@ vbCrLf & "D . Fun | Function name that call the log" & _
 vbCrLf & "D . Fun | Function name that call the log" & _
 vbCrLf & "D . Msg | it will a new record when Lg-function is first time using the Fun+MsgTxt" & _
 vbCrLf & "D . Msg | ..."
-Private Type E
-    E As String
-    Req As Boolean
-    Ty As DAO.DataTypeEnum
-    AlwZ As Boolean
-    TxtSz As Byte
-    Expr As String
-    VRul As String
-    VTxt As String
-    Dft As String
-End Type
-Private Type F
-    E As String
-    LikT As String
-    LikFny() As String
-End Type
-Private Type D
-    Lno As Integer
-    T As String
-    F As String
-    Des As String
-End Type
-Private Type T
-    Sk() As String
-    T As String
-    Fny() As String
-End Type
-Private Type Rslt
-    Er() As String
-    SkSqy() As String
-    PkSqy() As String
-    Td() As DAO.TableDef
-    FDes() As FDes
-    TDes() As TDes
-End Type
-Private Type Dta
-    E() As E
-    F() As F
-    T() As T
-    D() As D
-    Eny() As String
-    Tny() As String
-    DLyUB As Integer
-    FLyUB As Integer
-End Type
-Private Type Brk
-    Er() As String
-    Dta As Dta
-End Type
-Private Type ERslt
-    E As E
-    Er() As String
-End Type
-Private Type FRslt
-    F As F
-    Er() As String
-End Type
-Private Type TRslt
-    T As T
-    Er() As String
-End Type
-Private Type DRslt
-    D As D
-    Er() As String
-End Type
-Private Type EyRslt
-    E() As E
-    Er() As String
-End Type
-Private Type FyRslt
-    F() As F
-    Er() As String
-End Type
-Private Type TyRslt
-    T() As T
-    Er() As String
-End Type
-Private Type DyRslt
-    D() As D
-    Er() As String
-End Type
 
 Sub DbCrtSchm(A As Database, SmLines$)
 With Rslt(SmLines)
@@ -111,24 +30,30 @@ With Rslt(SmLines)
 End With
 End Sub
 
-Private Function BrkDLin(DLin) As DRslt
+Private Function BrkDLin(DLin) As DaoSmDRslt
 Dim V$
+Set BrkDLin = New DaoSmDRslt
+Set BrkDLin.D = New DaoSmD
 With BrkDLin.D
     AyAsg Lin3TAy(DLin), .T, .F, V, .Des
     If V <> "|" Then Stop
 End With
 End Function
 
-Private Function BrkFLin(FLin) As FRslt
+Private Function BrkFLin(FLin) As DaoSmFRslt
 Dim LikFldSsl$, A$, V$
+Set BrkFLin = New DaoSmFRslt
+Set BrkFLin.F = New DaoSmF
 With BrkFLin.F
     AyAsg Lin3TAy(FLin), .E, .LikT, V, A
     .LikFny = SslSy(LikFldSsl)
 End With
 End Function
 
-Private Function BrkELin(ELin As Ixl) As ERslt
+Private Function BrkELin(ELin As Ixl) As DaoSmERslt
 Dim LikFldSsl$, A$(), V$, Ty$, Ay()
+Set BrkELin = New DaoSmERslt
+Set BrkELin.E = New DaoSmE
 With BrkELin.E
     A = LinTermAy(ELin.Lin)
     .E = A(0)
@@ -172,27 +97,26 @@ Z_BrkTLin
 End Sub
 
 Private Sub Z_BrkTLin()
-Dim Act As TRslt
-Dim Ept As TRslt
-Dim Emp As TRslt
+Dim Act As DaoSmTRslt
+Dim Ept As DaoSmTRslt
 Dim TLin$
 TLin = "A"
-Ept = Emp
+Set Ept = New DaoSmTRslt
 Push Ept.Er, "should have a |"
 GoSub Tst
 '
 TLin = "A | B B"
-Ept = Emp
+Set Ept = New DaoSmTRslt
 Push Ept.Er, "dup fields[B]"
 GoSub Tst
 '
 TLin = "A | B B D C C"
-Ept = Emp
+Set Ept = New DaoSmTRslt
 Push Ept.Er, "dup fields[B C]"
 GoSub Tst
 '
 TLin = "A | * B D C"
-Ept = Emp
+Set Ept = New DaoSmTRslt
 With Ept.T
     .T = "A"
     .Fny = SslSy("A B D C")
@@ -200,7 +124,7 @@ End With
 GoSub Tst
 '
 TLin = "A | * B | D C"
-Ept = Emp
+Set Ept = New DaoSmTRslt
 With Ept.T
     .T = "A"
     .Fny = SslSy("A B D C")
@@ -209,7 +133,7 @@ End With
 GoSub Tst
 '
 TLin = "A |"
-Ept = Emp
+Set Ept = New DaoSmTRslt
 With Ept
     Push .Er, "should have fields after |"
 End With
@@ -221,7 +145,7 @@ Tst:
     Return
 End Sub
 
-Private Function IsTRsltEq(A As TRslt, B As TRslt) As Boolean
+Private Function IsTRsltEq(A As DaoSmTRslt, B As DaoSmTRslt) As Boolean
 If Not AyIsEq(A.Er, B.Er) Then Exit Function
 If Sz(A.Er) > 0 Then
     IsTRsltEq = True
@@ -230,19 +154,21 @@ End If
 IsTRsltEq = IsTItmEq(A.T, B.T)
 End Function
 
-Private Function IsTItmEq(A As T, B As T) As Boolean
+Private Function IsTItmEq(A As DaoSmT, B As DaoSmT) As Boolean
 If A.T <> B.T Then Exit Function
 If Not AyIsEq(A.Fny, B.Fny) Then Exit Function
 IsTItmEq = AyIsEq(A.Sk, B.Sk)
 End Function
 
-Private Function BrkTLin(TLin) As TRslt
+Private Function BrkTLin(TLin) As DaoSmTRslt
 If Not HasSubStr(TLin, "|") Then
     Push BrkTLin.Er, "should have a |"
     Exit Function
 End If
 Dim A$, B$, C$, D$
 BrkAsg TLin, "|", A, B
+Set BrkTLin = New DaoSmTRslt
+Set BrkTLin.T = New DaoSmT
 With BrkTLin.T
     .T = A
     B = Replace(B, "*", A)
@@ -266,79 +192,82 @@ With BrkTLin.T
 End With
 End Function
 
-Private Function BrkD(DLy$()) As DyRslt
-Dim O As DyRslt, U%, J%, Er$()
+Private Function BrkD(DLy$()) As DaoSmDyRslt
+Dim O As New DaoSmDyRslt, U%, J%, Er$(), D() As DaoSmD, R As DaoSmDRslt
 U = UB(DLy)
-ReDim O.D(U)
+ReDim D(U)
 For J = 0 To U
     With BrkDLin(DLy(J))
-        O.D(J) = .D
-        PushAy Er, .Er
+        Set D(J) = .D
+        PushAy O.Er, .Er
     End With
 Next
-O.Er = Er
-BrkD = O
+O.D = D
+Set BrkD = O
 End Function
 
-Private Function BrkT(TLy$()) As TyRslt
+Private Function BrkT(TLy$()) As DaoSmTyRslt
 If Sz(TLy) = 0 Then
     Push BrkT.Er, ErMsgNoTLin
     Exit Function
 End If
-Dim U%, J%
+Dim U%, J%, T() As DaoSmT
 U = UB(TLy)
-ReDim BrkT.T(U)
+ReDim T(U)
+Set BrkT = New DaoSmTyRslt
 For J = 0 To U
     With BrkTLin(TLy(J))
-        BrkT.T(J) = .T
+        Set T(J) = .T
         Dim Pfx$
         Pfx = FmtQQ("T-Lin[?] ", TLy(J))
         PushAy BrkT.Er, AyAddPfx(.Er, Pfx)
     End With
 Next
+BrkT.T = T
 End Function
 
-Private Function BrkF(FLy$()) As FyRslt
-Dim O As FyRslt, U%, J%, Er$()
+Private Function BrkF(FLy$()) As DaoSmFyRslt
+Dim U%, J%, Er$(), F() As DaoSmF
 U = UB(FLy)
-ReDim O.F(U)
+ReDim F(U)
+Set BrkF = New DaoSmFyRslt
 For J = 0 To U
     With BrkFLin(FLy(J))
-        O.F(J) = .F
-        PushAy Er, .Er
+        Set F(J) = .F
+        PushAy BrkF.Er, .Er
     End With
 Next
-O.Er = Er
-BrkF = O
+BrkF.F = F
 End Function
 
-Private Function BrkE(A() As Ixl) As EyRslt
-Dim O As EyRslt, U%, J%, Er$()
+Private Function BrkE(A() As Ixl) As DaoSmEyRslt
+Dim U%, J%, Er$(), E() As DaoSmE
 U = UB(A)
-ReDim O.E(U)
+ReDim E(U)
+Set BrkE = New DaoSmEyRslt
 For J = 0 To U
     With BrkELin(A(J))
-        O.E(J) = .E
-        PushAy Er, .Er
+        Set E(J) = .E
+        PushAy BrkE.Er, .Er
     End With
 Next
-O.Er = Er
-BrkE = O
+BrkE.E = E
 End Function
-Private Function Brk(SmLines$) As Brk
-Dim Cln$(), E As EyRslt, D As DyRslt, F As FyRslt, T As TyRslt, Er$(), TLy$(), EIxly() As Ixl, ELnoAy%(), DLy$()
+Private Function Brk(SmLines$) As DaoSmBrk
+Dim Cln$(), E As DaoSmEyRslt, D As DaoSmDyRslt, F As DaoSmFyRslt, T As DaoSmTyRslt
+Dim Er$(), TLy$(), EIxly() As Ixl, ELnoAy%(), DLy$()
 Dim ClnIxly() As Ixl
 ClnIxly = LyClnIxly(SplitCrLf(SmLines))
 Cln = IxlyLy(ClnIxly)
 TLy = AyWhRmvT1(Cln, "T")
 DLy = AyWhRmvT1(Cln, "D")
 EIxly = IxlyWhRmvT1(ClnIxly, "E")
-D = BrkD(DLy)
-E = BrkE(EIxly)
-F = BrkF(AyWhRmvT1(Cln, "F"))
-T = BrkT(TLy)
+Set D = BrkD(DLy)
+Set E = BrkE(EIxly)
+Set F = BrkF(AyWhRmvT1(Cln, "F"))
+Set T = BrkT(TLy)
 Er = ClnChk(Cln, "D E F T")
-Brk.Er = AyAddAp(Er, D.Er, E.Er, F.Er, , T.Er)
+Brk.Er = CvSy(AyAddAp(Er, D.Er, E.Er, F.Er, , T.Er))
 If Sz(Brk.Er) > 0 Then Exit Function
 With Brk.Dta
     .E = E.E
@@ -347,7 +276,6 @@ With Brk.Dta
     .D = D.D
     .Eny = Eny(IxlyLy(EIxly))
     .Tny = Tny(TLy)
-    .DLyUB = UB(DLy)
 End With
 End Function
 
@@ -367,52 +295,53 @@ Private Function Eny(ELy$()) As String()
 Eny = AyT1Ay(ELy)
 End Function
 
-Private Function Er(A As Brk) As String()
-Dim D As Dta
+Private Function Er(A As DaoSmBrk) As String()
+Dim D As DaoSmDta
 D = A.Dta
 Er = AyAddAp _
     (A.Er _
    , Er_DupT(D.Tny) _
    , Er_DupE(D.Eny) _
-   , Er_TzDLy_NotIn_Tny(D.DLyUB, D.D, D.Tny) _
-   , Er_FzDLy_NotIn_TblFny(D.DLyUB, D.D, D.Tny, D.T) _
-   , Er_EzFLy_NotIn_Eny(D.FLyUB, D.F, D.Eny) _
+   , Er_TzDLy_NotIn_Tny(D.D, D.Tny) _
+   , Er_FzDLy_NotIn_TblFny(D.D, D.Tny, D.T) _
+   , Er_EzFLy_NotIn_Eny(D.F, D.Eny) _
     )
 End Function
 
-Private Function PkSqy(A As Dta) As String()
-Dim J%, O$()
+Private Function PkSqy(A As DaoSmDta) As String()
+Dim J%, O$(), T() As DaoSmT
+T = A.T
 With A
-    For J = 0 To UBound(.T)
-        PushNonEmp O, PkSql(.T(J))
+    For J = 0 To UBound(T)
+        PushNonEmp O, PkSql(T(J))
     Next
 End With
 PkSqy = O
 End Function
 
-Private Function PkSql$(A As T)
+Private Function PkSql$(A As DaoSmT)
 With A
     If AyHas(.Fny, .T) Then PkSql = SqlzCrtPk(.T)
 End With
 End Function
 
-Private Function ItmT(T, A() As T) As T
+Private Function ItmT(T, A() As DaoSmT) As DaoSmT
 Dim J%
 For J = 0 To UBound(A)
     With A(J)
-        If .T = T Then ItmT = A(J): Exit Function
+        If .T = T Then Set ItmT = A(J): Exit Function
     End With
 Next
 End Function
 
-Private Function SkSql$(T, TBrk() As T)
-Dim M As T
-M = ItmT(T, TBrk)
+Private Function SkSql$(T, TBrk() As DaoSmT)
+Dim M As DaoSmT
+Set M = ItmT(T, TBrk)
 If Sz(M.Sk) = 0 Then Exit Function
 SkSql = SqlzCrtSk(T, M.Sk)
 End Function
 
-Private Function SkSqy(A As Dta) As String()
+Private Function SkSqy(A As DaoSmDta) As String()
 Dim T, O$()
 For Each T In A.Tny
     PushNonEmp O, SkSql(T, A.T)
@@ -420,15 +349,17 @@ Next
 SkSqy = O
 End Function
 
-Private Function Td(A As Dta) As DAO.TableDef()
-Dim O() As DAO.TableDef, I
+Private Function Td(A As DaoSmDta) As DAO.TableDef()
+Dim O() As DAO.TableDef, I, T$, FdAy1() As DAO.Field2
 For Each I In A.Tny
-    PushObj O, NewTd(I, FdAy(I, A))
+    T = I
+    FdAy1 = FdAy(T, A)
+    PushObj O, NewTd(T, FdAy1)
 Next
 Td = O
 End Function
 
-Private Function Fny(T, TBrk() As T) As String()
+Private Function Fny(T, TBrk() As DaoSmT) As String()
 Dim J%
 With ItmT(T, TBrk)
     Fny = .Fny
@@ -436,8 +367,8 @@ With ItmT(T, TBrk)
 End With
 End Function
 
-Private Function ItmE(T, F, FBrk() As F, EBrk() As E) As E
-Dim J%, O As F, M As F
+Private Function ItmE(T$, F$, FBrk() As DaoSmF, EBrk() As DaoSmE) As DaoSmE
+Dim J%, O As DaoSmF, M As DaoSmF
 For J = 0 To UBound(FBrk)
     M = FBrk(J)
     If T Like M.LikT Then
@@ -450,7 +381,7 @@ For J = 0 To UBound(FBrk)
 Next
 End Function
 
-Private Function ItmE__1(E, EBrk() As E) As E
+Private Function ItmE__1(E$, EBrk() As DaoSmE) As DaoSmE
 Dim J%
 For J = 0 To UBound(EBrk)
     If EBrk(J).E = E Then
@@ -460,8 +391,8 @@ For J = 0 To UBound(EBrk)
 Next
 End Function
 
-Private Function Fd(T, F, Tny$(), FBrk() As F, EBrk() As E) As DAO.Field2
-Dim E As E
+Private Function Fd(T$, F$, Tny$(), FBrk() As DaoSmF, EBrk() As DaoSmE) As DAO.Field2
+Dim E As DaoSmE
 Select Case True
 Case T = F: Set Fd = NewFd_zId(F)
 Case AyHas(Tny, T): Set Fd = NewFd_zFk(F)
@@ -473,21 +404,21 @@ End With
 End Select
 End Function
 
-Private Function FdAy(T, A As Dta) As DAO.Field2()
-Dim F, O() As DAO.Field2
-For Each F In Fny(T, A.T)
+Private Function FdAy(T$, A As DaoSmDta) As DAO.Field2()
+Dim I, F$, O() As DAO.Field2
+For Each I In Fny(T, A.T)
+    F = I
     PushObj O, Fd(T, F, A.Tny, A.F, A.E)
 Next
 FdAy = O
 End Function
-Private Function Er_EzFLy_NotIn_Eny(FLyUB%, F() As F, Eny$()) As String()
-
+Private Function Er_EzFLy_NotIn_Eny(F() As DaoSmF, Eny$()) As String()
 End Function
 
-Private Function Er_TzDLy_NotIn_Tny(DLyUB%, D() As D, Tny$()) As String()
-Dim O$(), M As D, Tssl$, J%
+Private Function Er_TzDLy_NotIn_Tny(D() As DaoSmD, Tny$()) As String()
+Dim O$(), M As DaoSmD, Tssl$, J%
 Tssl = JnSpc(Tny)
-For J = 0 To DLyUB
+For J = 0 To UB(D)
     With D(J)
         If Not AyHas(Tny, .T) Then Push O, ErMsg_TzDLy_NotIn_Tny(.Lno, .T, Tssl)
     End With
@@ -495,10 +426,11 @@ Next
 Er_TzDLy_NotIn_Tny = O
 End Function
 
-Private Function Er_FzDLy_NotIn_TblFny(DLyUB%, D() As D, Tny$(), TBrk() As T) As String()
-Dim J%, O$(), M As D, F, Fny1$()
-For J = 0 To DLyUB
+Private Function Er_FzDLy_NotIn_TblFny(D() As DaoSmD, Tny$(), TBrk() As DaoSmT) As String()
+Dim J%, O$(), M As DaoSmD, F, Fny1$()
+For J = 0 To UB(D)
     With D(J)
+        If Not AyHas(Tny, .T) Then GoTo Nxt
         Fny1 = Fny(.T, TBrk)
         For Each F In AyNz(Fny1)
             If Not AyHas(Fny1, .F) Then
@@ -506,6 +438,7 @@ For J = 0 To DLyUB
             End If
         Next
     End With
+Nxt:
 Next
 Er_FzDLy_NotIn_TblFny = O
 End Function
@@ -518,11 +451,11 @@ Private Function ErMsg_FzDLy_NotIn_TblFny$(Lno%, T$, F$, Fssl$)
 ErMsg_FzDLy_NotIn_TblFny = ErMsg(Lno, FmtQQ("F[?] is invalid in T[?].  Valid F[?]", F, T, Fssl))
 End Function
 
-Private Function TDesAy(A As Dta) As TDes()
+Private Function TDesAy(A As DaoSmDta) As TDes()
 Stop '
 End Function
 
-Private Function FDesAy(A As Dta) As FDes()
+Private Function FDesAy(A As DaoSmDta) As FDes()
 Stop '
 End Function
 Private Function ErMsgTblFldEr$(Lno%, T$, F$)
@@ -563,15 +496,14 @@ Private Function ErMsg$(Lno%, M$)
 ErMsg = "--Lno" & Lno & ".  " & M
 End Function
 
-Private Function Rslt(SmLines$) As Rslt
-Dim B As Brk
-    B = Brk(SmLines)
-Dim E$()
-    E = Er(B)
-    If Sz(E) > 0 Then Rslt.Er = E: Exit Function
+Private Function Rslt(SmLines$) As DaoSmRslt
+Dim B As DaoSmBrk, Er1$(), D As DaoSmDta
+
+Set B = Brk(SmLines)
+Er1 = Er(B):  If Sz(Er1) > 0 Then Rslt.Er = Er1: Exit Function
+Set D = B.Dta
+Set Rslt = New DaoSmRslt
 With Rslt
-    Dim D As Dta
-    D = B.Dta
     .Td = Td(D)
     .PkSqy = PkSqy(D)
     .SkSqy = SkSqy(D)

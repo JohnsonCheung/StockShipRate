@@ -28,7 +28,101 @@ If Not StrMatchPfxAy(A, Ny) Then SclItm_V = CByte(1): Exit Function
 If Not HasSubStr(A, "=") Then SclItm_V = CByte(2): Exit Function
 SclItm_V = Trim(TakAft(A, "="))
 End Function
-
+Sub AcsCpyFrm(A As Access.Application, Fb$)
+Dim I As AccessObject
+For Each I In A.CodeProject.AllForms
+    A.DoCmd.CopyObject Fb, , acForm, I.Name
+Next
+End Sub
+Sub AcsCpyTbl(A As Access.Application, Fb$)
+Dim I As AccessObject
+For Each I In A.CodeData.AllTables
+    If Not TblIsSys(I.Name) Then
+        A.DoCmd.CopyObject Fb, , acTable, I.Name
+    End If
+Next
+End Sub
+Function DbtIsSys(A As Database, T$) As Boolean
+DbtIsSys = A.TableDefs(T).Attributes And DAO.TableDefAttributeEnum.dbSystemObject
+End Function
+Function TblIsSys(T$) As Boolean
+TblIsSys = DbtIsSys(CurrentDb, T)
+End Function
+Sub PjAddRfFfnAy(A As VBProject, RfFfnAy$())
+Dim F
+For Each F In RfFfnAy
+    If Not PjHasRfFfn(A, CStr(F)) Then
+        A.References.AddFromFile F
+    End If
+Next
+End Sub
+Function PjHasRfFfn(A As VBProject, RfFfn$) As Boolean
+PjHasRfFfn = ItrHasPrpEqV(A.References, "FullPath", RfFfn)
+End Function
+Function ItrHasPrpEqV(A, P, V) As Boolean
+Dim X
+For Each X In A
+    If ObjPrp(X, P) = V Then ItrHasPrpEqV = True: Exit Function
+Next
+End Function
+Function CPjRfFfnAy() As String()
+CPjRfFfnAy = PjRfFfnAy(CurPj)
+End Function
+Function ItrSpy(A, P$) As String()
+ItrSpy = ItrPrpSy(A, P)
+End Function
+Function PjRfFfnAy(A As VBProject) As String()
+PjRfFfnAy = ItrSpy(A.References, "FullPath")
+End Function
+Sub AcsCpyRf(A As Access.Application, Fb$)
+Dim R$()
+    R = PjRfFfnAy(A.VBE.ActiveVBProject)
+Dim ToAcs As Access.Application
+Set ToAcs = FbAcs(Fb)
+PjAddRfFfnAy ToAcs.VBE.ActiveVBProject, R
+AcsQuit ToAcs
+End Sub
+Sub AcsQuit(A As Access.Application)
+AcsClsDb A
+A.Quit
+Set A = Nothing
+End Sub
+Sub AcsClsDb(A As Access.Application)
+On Error Resume Next
+A.CloseCurrentDatabase
+End Sub
+Function FbAcs(A$) As Access.Application
+Dim O As New Access.Application
+Set FbAcs = O
+O.OpenCurrentDatabase A
+End Function
+Sub AcsCpyMd(A As Access.Application, Fb$)
+Dim I As AccessObject
+For Each I In A.CodeProject.AllModules
+    A.DoCmd.CopyObject Fb, , acModule, I.Name
+Next
+End Sub
+Function CurAcs() As Access.Application
+Set CurAcs = Access.Application
+End Function
+Sub CurAcsCpy(Optional Fb0$)
+AcsCpy CurAcs, Fb0
+End Sub
+Sub AcsCpy(A As Access.Application, Optional Fb0$)
+Dim Fb$
+If Fb0 = "" Then
+    Fb = FfnNxt(A.CurrentDb.Name)
+Else
+    Fb = Fb0
+End If
+Ass PthIsExist(FfnPth(Fb))
+Ass Not FfnIsExist(Fb)
+FbCrt Fb
+AcsCpyTbl A, Fb
+AcsCpyFrm A, Fb
+AcsCpyMd A, Fb
+AcsCpyRf A, Fb
+End Sub
 Function SyEptStmt$(A)
 Dim O$(), I
 Push O, "Ept =  EmpSy"
@@ -177,14 +271,6 @@ If Sz(A) > 0 Then
     Next
 End If
 AyMapObjFunXInto = O
-End Function
-
-Function CvFz(A) As SchmF
-If IsNothing(A) Then Exit Function
-Set CvFz = A
-End Function
-Function CvTz(A) As SchmT
-Set CvTz = A
 End Function
 
 Function ItrMapSy(A, Map$) As String()
@@ -1583,13 +1669,13 @@ With O
 End With
 Set NewFd = O
 End Function
-Function LikAyHas(A, N) As Boolean
+Function LikAyHas(A$(), N$) As Boolean
 Dim X
 For Each X In A
     If N Like X Then LikAyHas = True: Exit Function
 Next
 End Function
-Function NewTd(T, F() As DAO.Field2) As DAO.TableDef
+Function NewTd(T$, F() As DAO.Field2) As DAO.TableDef
 Dim O As New DAO.TableDef
 O.Name = T
 AyDoPX F, "TdAddFd", O
@@ -6772,12 +6858,6 @@ XX:
     X = True
     GoTo Beg
 End Function
-Sub AcsQuit()
-Dim A As Access.Application
-Set A = Acs
-A.Quit
-Set A = Nothing
-End Sub
 Function DbtPutAtByCn(A As Database, T$, At As Range, Optional LoNm0$) As ListObject
 If FstChr(T) <> "@" Then Stop
 Dim LoNm$, Lo As ListObject
@@ -7654,7 +7734,7 @@ SpecSchmy = SplitCrLf(SpecSchmLines)
 End Function
 
 Sub DbCrtSpecTbl(A As Database)
-DaoSchm.DbCrtSchm A, SpecSchmLines
+DaoSm.DbCrtSchm A, SpecSchmLines
 End Sub
 
 Sub AppExpFrm()
