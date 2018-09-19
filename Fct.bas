@@ -1556,7 +1556,7 @@ With DbtfidRs(A, T, F, Id)
     .Update
 End With
 End Property
-Sub DbtfAddExpr(A As Database, T, F, Expr$, Optional Ty As DAO.DataTypeEnum = dbText, Optional TxtSz% = 255)
+Sub DbtfAddExpr(A As Database, T, F, Expr$, Optional Ty As DAO.DataTypeEnum = dbText, Optional TxtSz As Byte = 255)
 A.TableDefs(T).Fields.Append NewFd(F, Ty, TxtSz, Expr)
 End Sub
 
@@ -1568,7 +1568,7 @@ Sub TdAddFd(A As DAO.TableDef, F As DAO.Field)
 A.Fields.Append F
 End Sub
 
-Function NewFd(F, Optional Ty As DAO.DataTypeEnum = dbText, Optional TxtSz% = 255, Optional Expr$, Optional Dft$, Optional Req As Boolean, Optional VRul$, Optional VTxt$) As DAO.Field2
+Function NewFd(F, Optional Ty As DAO.DataTypeEnum = dbText, Optional TxtSz As Byte = 255, Optional Expr$, Optional Dft$, Optional Req As Boolean, Optional VRul$, Optional VTxt$) As DAO.Field2
 Dim O As New DAO.Field
 With O
     .Name = F
@@ -1584,8 +1584,13 @@ With O
 End With
 Set NewFd = O
 End Function
-
-Function NewTd(T, F() As DAO.Field) As DAO.TableDef
+Function LikAyHas(A, N) As Boolean
+Dim X
+For Each X In A
+    If N Like X Then LikAyHas = True: Exit Function
+Next
+End Function
+Function NewTd(T, F() As DAO.Field2) As DAO.TableDef
 Dim O As New DAO.TableDef
 O.Name = T
 AyDoPX F, "TdAddFd", O
@@ -1601,7 +1606,7 @@ TblDrp "Tmp"
 End Sub
 
 Function TmpTd() As DAO.TableDef
-Dim O() As DAO.Field
+Dim O() As DAO.Field2
 Push O, NewFd("F1")
 Set TmpTd = NewTd("Tmp", O)
 End Function
@@ -3957,6 +3962,15 @@ O = A
 PushAy O, B
 AyAdd = O
 End Function
+Sub TTBrw(TT0)
+DbttBrw CurrentDb, TT0
+End Sub
+Sub DbttBrw(A As Database, TT0)
+AyDoPX CvNy(TT0), "DbtBrw", A
+End Sub
+Sub DbtBrw(A As Database, T$)
+
+End Sub
 Private Sub ZZ_DbtWhDupKey()
 TTDrp "#A #B"
 DoCmd.RunSQL "Select Distinct Sku,BchNo,CLng(Rate) as RateRnd into [#A] from ZZ_DbtUpdSeq"
@@ -3965,18 +3979,11 @@ TTBrw "#B"
 Stop
 TTDrp "#B"
 End Sub
-Sub TTWbBrw(TT, Optional UseWc As Boolean)
-WbVis TTWb(TT, UseWc)
+Sub TTWbBrw(TT0, Optional UseWc As Boolean)
+WbVis TTWb(TT0, UseWc)
 End Sub
-Sub TblBrw(T)
+Sub TblBrw(T$)
 DoCmd.OpenTable T
-End Sub
-Function CvTT(A) As String()
-CvTT = CvNy(A)
-End Function
-
-Sub TTBrw(TT)
-'OFunAyDo DoCmd, "OpenTable", CvTT(TT)
 End Sub
 
 Sub DbtWhDupKey(A As Database, T$, KK, TarTbl$)
@@ -5612,13 +5619,13 @@ If A = "" Then Exit Function
 On Error Resume Next
 FfnIsExist = Dir(A) <> ""
 End Function
-Function TTWb(TT, Optional UseWc As Boolean) As Workbook
-Set TTWb = DbttWb(CurrentDb, TT, UseWc)
+Function TTWb(TT0, Optional UseWc As Boolean) As Workbook
+Set TTWb = DbttWb(CurrentDb, TT0, UseWc)
 End Function
-Function DbttWb(A As Database, TT, Optional UseWc As Boolean) As Workbook
+Function DbttWb(A As Database, TT0, Optional UseWc As Boolean) As Workbook
 Dim O As Workbook
 Set O = NewWb
-Set DbttWb = WbAddDbtt(O, A, TT, UseWc)
+Set DbttWb = WbAddDbtt(O, A, TT0, UseWc)
 WbWs(O, "Sheet1").Delete
 End Function
 Function WbA1(A As Workbook, Optional WsNm) As Range
@@ -5706,8 +5713,8 @@ For Each X In A
 Next
 End Sub
 
-Function WbAddDbtt(A As Workbook, Db As Database, TT, Optional UseWc As Boolean) As Workbook
-AyDoPPXP CvTT(TT), "WbAddDbt", A, Db, UseWc
+Function WbAddDbtt(A As Workbook, Db As Database, TT0, Optional UseWc As Boolean) As Workbook
+AyDoPPXP CvNy(TT0), "WbAddDbt", A, Db, UseWc
 Set WbAddDbtt = A
 End Function
 
@@ -8308,12 +8315,12 @@ Function TblTblDes$(T)
 TblTblDes = T & " " & TblDes(T)
 End Function
 
-Sub TblAddPfx(T, Pfx$)
+Sub TblAddPfx(T$, Pfx$)
 DbtAddPfx CurrentDb, T, Pfx
 End Sub
 
-Sub DbttAddPfx(A As Database, TT, Pfx)
-AyDoAXB CvTT(TT), "DbtAddPfx", A, Pfx
+Sub DbttAddPfx(A As Database, TT0, Pfx)
+AyDoAXB CvNy(TT0), "DbtAddPfx", A, Pfx
 End Sub
 
 Sub AyDoAXB(Ay, AXB$, A, B)
@@ -8527,39 +8534,37 @@ Sub TdAddId(A As DAO.TableDef)
 A.Fields.Append NewFd_zId(A.Name)
 End Sub
 
-Sub TdAddStamp(A As DAO.TableDef, F)
+Sub TdAddStamp(A As DAO.TableDef, F$)
 A.Fields.Append NewFd(F, DAO.dbDate, Dft:="Now")
 End Sub
 
-Function CvFF(FF) As String()
-CvFF = CvNy(FF)
-End Function
-
-Sub TdAddLngFld(A As DAO.TableDef, FF)
+Sub TdAddLngFld(A As DAO.TableDef, FF0)
 Dim F
-For Each F In CvFF(FF)
+For Each F In CvNy(FF0)
     A.Fields.Append NewFd(F, dbLong)
 Next
 End Sub
-Sub TdAddTxtFld(A As DAO.TableDef, FF, Optional Sz% = 255)
+
+Sub TdAddTxtFld(A As DAO.TableDef, FF0, Optional Sz As Byte = 255)
 Dim F
-For Each F In CvFF(FF)
+For Each F In CvNy(FF0)
     A.Fields.Append NewFd(F, dbText, Sz)
 Next
 End Sub
-Sub TdAddLngTxt(A As DAO.TableDef, FF)
+
+Sub TdAddLngTxt(A As DAO.TableDef, FF0)
 Dim F
-For Each F In CvFF(FF)
+For Each F In CvNy(FF0)
     A.Fields.Append NewFd(F, dbMemo)
 Next
 End Sub
 
-Sub DbtCrtPk(A As Database, T)
-Q = FmtQQ("Create Index PrimaryKey on ? (?) with Primary", T, T): A.Execute Q
+Sub DbtCrtPk(A As Database, T$)
+Q = SqlzCrtPk(T): A.Execute Q
 End Sub
 
-Sub DbttCrtPk(A As Database, TT)
-AyDoPX CvTT(TT), "DbtCrtPk", A
+Sub DbttCrtPk(A As Database, TT0)
+AyDoPX CvNy(TT0), "DbtCrtPk", A
 End Sub
 
 Function DbtSk(A As Database, T) As String()

@@ -112,7 +112,7 @@ End If
 Const TT$ = "CurYM IniRate IniRateH InvH InvD YM YMRate YMOH"
 Dim Fbtt$()
 If IsDev Then
-    Fbtt = AyAddPfx(CvTT(TT), "^")
+    Fbtt = AyAddPfx(CvNy(TT), "^")
 End If
 WttLnkFb TT, IFbStkShpRate, Fbtt
 

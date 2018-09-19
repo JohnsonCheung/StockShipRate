@@ -35,9 +35,9 @@ Exit Property
 X: Debug.Print "SchmT.Fny.PrpEr...["; Err.Description; "]"
 End Property
 
-Property Get FdAy() As DAO.Field()
+Property Get FdAy() As DAO.Field2()
 On Error GoTo X
-Dim O() As DAO.Field
+Dim O() As DAO.Field2
 Dim F, I
 For Each I In Fzy
     Set F = I

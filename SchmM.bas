@@ -117,7 +117,7 @@ Private Function ZZBrk() As Brk
 
 End Function
 
-Private Function ZZFdAy() As DAO.Field()
+Private Function ZZFdAy() As DAO.Field2()
 ZZFdAy = DtaT_FdAy(ZZDta, ZZT)
 End Function
 
@@ -430,8 +430,8 @@ B = Replace(B, "*", T)
 TLyT_Fny = AyRmvEle(SslSy(B), "|")
 End Function
 
-Private Function DtaT_FdAy(A As Dta, T) As DAO.Field()
-Dim O() As DAO.Field, F
+Private Function DtaT_FdAy(A As Dta, T) As DAO.Field2()
+Dim O() As DAO.Field2, F
 With A
     For Each F In TLyT_Fny(.T, T)
         PushObj O, Fd(F, T, .Tny, .F, .E)

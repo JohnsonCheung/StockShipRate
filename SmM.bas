@@ -24,6 +24,7 @@ Private Type E
     Ty As DAO.DataTypeEnum
     AlwZ As Boolean
     TxtSz As Byte
+    Expr As String
     VRul As String
     VTxt As String
     Dft As String
@@ -123,15 +124,15 @@ With BrkFItm.F
 End With
 End Function
 
-Private Function BrkEItm(ELin, Lno%) As ERslt
+Private Function BrkEItm(ELin As Ixl) As ERslt
 Dim LikFldSsl$, A$(), V$, Ty$, Ay()
 With BrkEItm.E
-    A = LinTermAy(ELin)
+    A = LinTermAy(ELin.Lin)
     .E = A(0)
     V = A(1)
     Ty = DaoShtTy_Ty(A(2))
     If Ty = 0 Then
-        Push BrkEItm.Er, ErMsgTyEr(Lno, A(2))
+        Push BrkEItm.Er, ErMsgTyEr(ELin.Ix, A(2))
     End If
     A = AyMid(A, 2)
     If AyHas(A, "Req") Then
@@ -311,12 +312,12 @@ O.Er = Er
 BrkF = O
 End Function
 
-Private Function BrkE(ELy$(), LnoAy%()) As EyRslt
+Private Function BrkE(A() As Ixl) As EyRslt
 Dim O As EyRslt, U%, J%, Er$()
-U = UB(ELy)
+U = UB(A)
 ReDim O.E(U)
 For J = 0 To U
-    With BrkEItm(ELy(J), LnoAy(J))
+    With BrkEItm(A(J))
         O.E(J) = .E
         PushAy Er, .Er
     End With
@@ -340,13 +341,35 @@ End Function
 Private Function IxlyLy(A() As Ixl) As String()
 IxlyLy = OyStrPy(A, "Lin")
 End Function
+Function CvIxl(A) As Ixl
+Set CvIxl = A
+End Function
+Function Ixl(Ix%, Lin$) As Ixl
+Set Ixl = New Ixl
+Ixl.Ix = Ix
+Ixl.Lin = Lin
+End Function
+Function IxlyWhRmvT1(A() As Ixl, T1) As Ixl()
+Dim O() As Ixl, X
+For Each X In A
+    With CvIxl(X)
+        If LinT1(.Lin) = T1 Then
+            PushObj O, Ixl(.Ix, LinRmvT1(.Lin))
+        End If
+    End With
+Next
+IxlyWhRmvT1 = O
+End Function
+
 Private Function Brk(SmLines$) As Brk
-Dim Cln$(), E As EyRslt, D As DyRslt, F As FyRslt, T As TyRslt, Er$(), TLy$(), ELy$(), ELnoAy%()
-Cln = IxlyLy(LyClnIxly(SplitCrLf(SmLines)))
+Dim Cln$(), E As EyRslt, D As DyRslt, F As FyRslt, T As TyRslt, Er$(), TLy$(), EIxly() As Ixl, ELnoAy%()
+Dim ClnIxly() As Ixl
+ClnIxly = LyClnIxly(SplitCrLf(SmLines))
+Cln = IxlyLy(ClnIxly)
 TLy = AyWhRmvT1(Cln, "T")
-ELy = AyWhRmvT1(Cln, "E")
+EIxly = IxlyWhRmvT1(ClnIxly, "E")
 D = BrkD(AyWhRmvT1(Cln, "D"))
-E = BrkE(ELy, ELnoAy)
+E = BrkE(EIxly)
 F = BrkF(AyWhRmvT1(Cln, "F"))
 T = BrkT(TLy)
 Er = ClnChk(Cln, "D E F T")
@@ -357,7 +380,7 @@ With Brk.Dta
     .F = F.F
     .T = T.T
     .D = D.D
-    .Eny = Eny(ELy)
+    .Eny = Eny(IxlyLy(EIxly))
     .Tny = Tny(TLy)
 End With
 End Function
@@ -381,6 +404,7 @@ End Function
 Private Function Eny(ELy$()) As String()
 Eny = AyT1Ay(ELy)
 End Function
+
 Private Function Er(A As Brk) As String()
 Dim D As Dta
 D = A.Dta
@@ -401,6 +425,7 @@ With A
 End With
 PkSqy = O
 End Function
+
 Private Function PkSql$(A As T)
 With A
     If AyHas(.Fny, .T) Then PkSql = SqlzCrtPk(.T)
@@ -439,8 +464,75 @@ Next
 Td = O
 End Function
 
-Private Function FdAy(T, A As Dta) As DAO.Field()
-Stop '
+Function OyFstPrpEqV(A, P, V)
+If Sz(A) = 0 Then Exit Function
+Dim X
+For Each X In A
+    If ObjPrp(X, P) = V Then Asg X, OyFstPrpEqV: Exit Function
+Next
+End Function
+
+Private Function Fny(T, TBrk() As T) As String()
+Dim J%
+With ItmT(T, TBrk)
+    Fny = .Fny
+    If .T <> T Then Stop
+End With
+'Fny = ObjPrp(OyFstPrpEqV(TBrk, "T", T), "Fny")
+End Function
+
+Private Function ItmE(T, F, FBrk() As F, EBrk() As E) As E
+Dim J%, O As F, M As F
+For J = 0 To UBound(FBrk)
+    M = FBrk(J)
+    If T Like M.LikT Then
+        If LikAyHas(M.LikFny, F) Then
+            ItmE = ItmE__1(M.E, EBrk)
+            If ItmE.E <> M.E Then Stop
+            Exit Function
+        End If
+    End If
+Next
+End Function
+
+Private Function ItmE__1(E, EBrk() As E) As E
+Dim J%
+For J = 0 To UBound(EBrk)
+    If EBrk(J).E = E Then
+        ItmE__1 = EBrk(J)
+        Exit Function
+    End If
+Next
+End Function
+
+Private Function ItmT(T, TBrk() As T) As T
+Dim J%
+For J = 0 To UBound(TBrk)
+    With TBrk(J)
+        If .T = T Then ItmT = TBrk(J): Exit Function
+    End With
+Next
+End Function
+
+Private Function Fd(T, F, Tny$(), FBrk() As F, EBrk() As E) As DAO.Field2
+Dim E As E
+Select Case True
+Case T = F: Set Fd = NewFd_zId(F)
+Case AyHas(Tny, T): Set Fd = NewFd_zFk(F)
+Case Else
+E = ItmE(T, F, FBrk, EBrk)
+With E
+    Set Fd = NewFd(F, .Ty, .TxtSz, .Expr, .Dft, .Req, .VRul, .VTxt)
+End With
+End Select
+End Function
+
+Private Function FdAy(T, A As Dta) As DAO.Field2()
+Dim F, O() As DAO.Field2
+For Each F In Fny(T, A.T)
+    PushObj O, Fd(T, F, A.Tny, A.F, A.E)
+Next
+FdAy = O
 End Function
 
 Private Function TDes(A As Dta) As TDes()
@@ -468,9 +560,11 @@ End Function
 Private Function ErMsgNoFLin$()
 ErMsgNoFLin = "No F-Line"
 End Function
+
 Private Function ErMsgDupF$(Lno%, T$, Fny$())
 
 End Function
+
 Private Function Rslt(SmLines$) As Rslt
 Dim B As Brk
     B = Brk(SmLines)
