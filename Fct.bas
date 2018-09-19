@@ -11,9 +11,8 @@ Private Const Z_ReSeqSpec$ = _
 " Las LasBchNo LasPermitDate LasPermit |" & _
 " GL GLDocNo GLDocDte GLAsg GLDocTy GLLin GLPstKy GLPc GLAc GLBusA GLRef |" & _
 " Uom Des StkUom Ac_U"
-
-Sub WImp _
-(LnkSpec$)
+Public Const DaoShtTySsl$ = "Byt Mem Lng Int Dte Txt Yes Dbl Sng Cur"
+Sub WImp(LnkSpec$)
 LNKDbImp W, LnkSpec
 End Sub
 Function SclShift$(OA)
@@ -4533,10 +4532,52 @@ Case Else: O = "?" & A & "?"
 End Select
 DaoTy_ShtTy = O
 End Function
-
-Function DaoShtTySsl$()
-DaoShtTySsl = "Byt Mem Lng Int Dte Txt Yes Dbl Sng Cur"
+Function OyStrPy(A, P) As String()
+OyStrPy = OyPyInto(A, P, EmpSy)
 End Function
+Function OyFstPrpEqV(A, P, V)
+If Sz(A) = 0 Then Exit Function
+Dim X
+For Each X In A
+    If ObjPrp(X, P) = V Then Asg X, OyFstPrpEqV: Exit Function
+Next
+End Function
+
+Function OyPyInto(A, P, OInto)
+Dim O, X
+O = OInto
+Erase O
+If Sz(A) = 0 Then OyPyInto = O: Exit Function
+For Each X In A
+    Push O, ObjPrp(X, P)
+Next
+OyPyInto = O
+End Function
+
+Function IxlyLy(A() As Ixl) As String()
+IxlyLy = OyStrPy(A, "Lin")
+End Function
+
+Function CvIxl(A) As Ixl
+Set CvIxl = A
+End Function
+Function Ixl(Ix%, Lin$) As Ixl
+Set Ixl = New Ixl
+Ixl.Ix = Ix
+Ixl.Lin = Lin
+End Function
+Function IxlyWhRmvT1(A() As Ixl, T1) As Ixl()
+Dim O() As Ixl, X
+For Each X In A
+    With CvIxl(X)
+        If LinT1(.Lin) = T1 Then
+            PushObj O, Ixl(.Ix, LinRmvT1(.Lin))
+        End If
+    End With
+Next
+IxlyWhRmvT1 = O
+End Function
+
 Function DaoShtTy_Ty(A) As DAO.DataTypeEnum
 Dim O As DAO.DataTypeEnum
 Select Case A
@@ -7613,7 +7654,7 @@ SpecSchmy = SplitCrLf(SpecSchmLines)
 End Function
 
 Sub DbCrtSpecTbl(A As Database)
-SchmM.DbCrtSchm A, SpecSchmy
+DaoSchm.DbCrtSchm A, SpecSchmLines
 End Sub
 
 Sub AppExpFrm()

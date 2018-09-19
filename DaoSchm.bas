@@ -1,6 +1,6 @@
 Option Compare Database
 Option Explicit
-Private Const ZZSmLines$ = _
+Private Const ZZLines$ = _
          "E Mem | Mem Req AlwZLen" & _
 vbCrLf & "E Txt | Txt Req" & _
 vbCrLf & "E Crt | Dte Req Dft=Now" & _
@@ -35,6 +35,7 @@ Private Type F
     LikFny() As String
 End Type
 Private Type D
+    Lno As Integer
     T As String
     F As String
     Des As String
@@ -59,6 +60,8 @@ Private Type Dta
     D() As D
     Eny() As String
     Tny() As String
+    DLyUB As Integer
+    FLyUB As Integer
 End Type
 Private Type Brk
     Er() As String
@@ -108,31 +111,31 @@ With Rslt(SmLines)
 End With
 End Sub
 
-Private Function BrkDItm(DLin) As DRslt
+Private Function BrkDLin(DLin) As DRslt
 Dim V$
-With BrkDItm.D
+With BrkDLin.D
     AyAsg Lin3TAy(DLin), .T, .F, V, .Des
     If V <> "|" Then Stop
 End With
 End Function
 
-Private Function BrkFItm(FLin) As FRslt
+Private Function BrkFLin(FLin) As FRslt
 Dim LikFldSsl$, A$, V$
-With BrkFItm.F
+With BrkFLin.F
     AyAsg Lin3TAy(FLin), .E, .LikT, V, A
     .LikFny = SslSy(LikFldSsl)
 End With
 End Function
 
-Private Function BrkEItm(ELin As Ixl) As ERslt
+Private Function BrkELin(ELin As Ixl) As ERslt
 Dim LikFldSsl$, A$(), V$, Ty$, Ay()
-With BrkEItm.E
+With BrkELin.E
     A = LinTermAy(ELin.Lin)
     .E = A(0)
     V = A(1)
     Ty = DaoShtTy_Ty(A(2))
     If Ty = 0 Then
-        Push BrkEItm.Er, ErMsgTyEr(ELin.Ix, A(2))
+        Push BrkELin.Er, ErMsgTyEr(ELin.Ix, A(2))
     End If
     A = AyMid(A, 2)
     If AyHas(A, "Req") Then
@@ -163,15 +166,12 @@ With BrkEItm.E
 End With
 End Function
 
-Private Function TMsg$(TLin, Msg$)
-TMsg = FmtQQ("T-Lin[?] ?", TLin, Msg)
-End Function
 
 Private Sub AAA()
-Z_BrkTItm
+Z_BrkTLin
 End Sub
 
-Private Sub Z_BrkTItm()
+Private Sub Z_BrkTLin()
 Dim Act As TRslt
 Dim Ept As TRslt
 Dim Emp As TRslt
@@ -216,7 +216,7 @@ End With
 GoSub Tst
 Exit Sub
 Tst:
-    Act = BrkTItm(TLin)
+    Act = BrkTLin(TLin)
     Ass IsTRsltEq(Act, Ept)
     Return
 End Sub
@@ -236,14 +236,14 @@ If Not AyIsEq(A.Fny, B.Fny) Then Exit Function
 IsTItmEq = AyIsEq(A.Sk, B.Sk)
 End Function
 
-Private Function BrkTItm(TLin) As TRslt
+Private Function BrkTLin(TLin) As TRslt
 If Not HasSubStr(TLin, "|") Then
-    Push BrkTItm.Er, "should have a |"
+    Push BrkTLin.Er, "should have a |"
     Exit Function
 End If
 Dim A$, B$, C$, D$
 BrkAsg TLin, "|", A, B
-With BrkTItm.T
+With BrkTLin.T
     .T = A
     B = Replace(B, "*", A)
     BrkS1Asg B, "|", C, D
@@ -254,13 +254,13 @@ With BrkTItm.T
         .Fny = SslSy(Replace(B, "|", " "))
     End If
     If Sz(.Fny) = 0 Then
-        Push BrkTItm.Er, "should have fields after |"
+        Push BrkTLin.Er, "should have fields after |"
         Exit Function
     End If
     Dim Dup$()
     Dup = AyWhDup(.Fny)
     If Sz(Dup) > 0 Then
-        Push BrkTItm.Er, FmtQQ("dup fields[?]", JnSpc(Dup))
+        Push BrkTLin.Er, FmtQQ("dup fields[?]", JnSpc(Dup))
         Exit Function
     End If
 End With
@@ -271,7 +271,7 @@ Dim O As DyRslt, U%, J%, Er$()
 U = UB(DLy)
 ReDim O.D(U)
 For J = 0 To U
-    With BrkDItm(DLy(J))
+    With BrkDLin(DLy(J))
         O.D(J) = .D
         PushAy Er, .Er
     End With
@@ -289,7 +289,7 @@ Dim U%, J%
 U = UB(TLy)
 ReDim BrkT.T(U)
 For J = 0 To U
-    With BrkTItm(TLy(J))
+    With BrkTLin(TLy(J))
         BrkT.T(J) = .T
         Dim Pfx$
         Pfx = FmtQQ("T-Lin[?] ", TLy(J))
@@ -303,7 +303,7 @@ Dim O As FyRslt, U%, J%, Er$()
 U = UB(FLy)
 ReDim O.F(U)
 For J = 0 To U
-    With BrkFItm(FLy(J))
+    With BrkFLin(FLy(J))
         O.F(J) = .F
         PushAy Er, .Er
     End With
@@ -317,7 +317,7 @@ Dim O As EyRslt, U%, J%, Er$()
 U = UB(A)
 ReDim O.E(U)
 For J = 0 To U
-    With BrkEItm(A(J))
+    With BrkELin(A(J))
         O.E(J) = .E
         PushAy Er, .Er
     End With
@@ -325,50 +325,15 @@ Next
 O.Er = Er
 BrkE = O
 End Function
-Private Function OyStrPy(A, P) As String()
-OyStrPy = OyPyInto(A, P, EmpSy)
-End Function
-Private Function OyPyInto(A, P, OInto)
-Dim O, X
-O = OInto
-Erase O
-If Sz(A) = 0 Then OyPyInto = O: Exit Function
-For Each X In A
-    Push O, ObjPrp(X, P)
-Next
-OyPyInto = O
-End Function
-Private Function IxlyLy(A() As Ixl) As String()
-IxlyLy = OyStrPy(A, "Lin")
-End Function
-Function CvIxl(A) As Ixl
-Set CvIxl = A
-End Function
-Function Ixl(Ix%, Lin$) As Ixl
-Set Ixl = New Ixl
-Ixl.Ix = Ix
-Ixl.Lin = Lin
-End Function
-Function IxlyWhRmvT1(A() As Ixl, T1) As Ixl()
-Dim O() As Ixl, X
-For Each X In A
-    With CvIxl(X)
-        If LinT1(.Lin) = T1 Then
-            PushObj O, Ixl(.Ix, LinRmvT1(.Lin))
-        End If
-    End With
-Next
-IxlyWhRmvT1 = O
-End Function
-
 Private Function Brk(SmLines$) As Brk
-Dim Cln$(), E As EyRslt, D As DyRslt, F As FyRslt, T As TyRslt, Er$(), TLy$(), EIxly() As Ixl, ELnoAy%()
+Dim Cln$(), E As EyRslt, D As DyRslt, F As FyRslt, T As TyRslt, Er$(), TLy$(), EIxly() As Ixl, ELnoAy%(), DLy$()
 Dim ClnIxly() As Ixl
 ClnIxly = LyClnIxly(SplitCrLf(SmLines))
 Cln = IxlyLy(ClnIxly)
 TLy = AyWhRmvT1(Cln, "T")
+DLy = AyWhRmvT1(Cln, "D")
 EIxly = IxlyWhRmvT1(ClnIxly, "E")
-D = BrkD(AyWhRmvT1(Cln, "D"))
+D = BrkD(DLy)
 E = BrkE(EIxly)
 F = BrkF(AyWhRmvT1(Cln, "F"))
 T = BrkT(TLy)
@@ -382,6 +347,7 @@ With Brk.Dta
     .D = D.D
     .Eny = Eny(IxlyLy(EIxly))
     .Tny = Tny(TLy)
+    .DLyUB = UB(DLy)
 End With
 End Function
 
@@ -389,16 +355,12 @@ Private Function Tny(TLy$()) As String()
 Tny = AyT1Ay(TLy)
 End Function
 
-Private Function ErDupT(Tny$()) As String()
-ErDupT = AyDupChk(Tny, "These T[?] in T-Lin is duplicated")
+Private Function Er_DupT(Tny$()) As String()
+Er_DupT = AyDupChk(Tny, "These T[?] in T-Lin is duplicated")
 End Function
 
-Private Function ErDupE(Eny$()) As String()
-ErDupE = AyDupChk(Eny, "These E[?] in E-Lin is duplicated")
-End Function
-
-Private Function ErFldEleIsInVdt(T() As T, EAy$()) As String()
-Stop '
+Private Function Er_DupE(Eny$()) As String()
+Er_DupE = AyDupChk(Eny, "These E[?] in E-Lin is duplicated")
 End Function
 
 Private Function Eny(ELy$()) As String()
@@ -410,9 +372,11 @@ Dim D As Dta
 D = A.Dta
 Er = AyAddAp _
     (A.Er _
-   , ErDupT(D.Tny) _
-   , ErDupE(D.Eny) _
-   , ErFldEleIsInVdt(D.T, D.Eny) _
+   , Er_DupT(D.Tny) _
+   , Er_DupE(D.Eny) _
+   , Er_TzDLy_NotIn_Tny(D.DLyUB, D.D, D.Tny) _
+   , Er_FzDLy_NotIn_TblFny(D.DLyUB, D.D, D.Tny, D.T) _
+   , Er_EzFLy_NotIn_Eny(D.FLyUB, D.F, D.Eny) _
     )
 End Function
 
@@ -432,18 +396,18 @@ With A
 End With
 End Function
 
-Private Function TBrkItm(T, A() As T) As T
+Private Function ItmT(T, A() As T) As T
 Dim J%
 For J = 0 To UBound(A)
     With A(J)
-        If .T = T Then TBrkItm = A(J): Exit Function
+        If .T = T Then ItmT = A(J): Exit Function
     End With
 Next
 End Function
 
 Private Function SkSql$(T, TBrk() As T)
 Dim M As T
-M = TBrkItm(T, TBrk)
+M = ItmT(T, TBrk)
 If Sz(M.Sk) = 0 Then Exit Function
 SkSql = SqlzCrtSk(T, M.Sk)
 End Function
@@ -464,21 +428,12 @@ Next
 Td = O
 End Function
 
-Function OyFstPrpEqV(A, P, V)
-If Sz(A) = 0 Then Exit Function
-Dim X
-For Each X In A
-    If ObjPrp(X, P) = V Then Asg X, OyFstPrpEqV: Exit Function
-Next
-End Function
-
 Private Function Fny(T, TBrk() As T) As String()
 Dim J%
 With ItmT(T, TBrk)
     Fny = .Fny
     If .T <> T Then Stop
 End With
-'Fny = ObjPrp(OyFstPrpEqV(TBrk, "T", T), "Fny")
 End Function
 
 Private Function ItmE(T, F, FBrk() As F, EBrk() As E) As E
@@ -505,15 +460,6 @@ For J = 0 To UBound(EBrk)
 Next
 End Function
 
-Private Function ItmT(T, TBrk() As T) As T
-Dim J%
-For J = 0 To UBound(TBrk)
-    With TBrk(J)
-        If .T = T Then ItmT = TBrk(J): Exit Function
-    End With
-Next
-End Function
-
 Private Function Fd(T, F, Tny$(), FBrk() As F, EBrk() As E) As DAO.Field2
 Dim E As E
 Select Case True
@@ -534,22 +480,71 @@ For Each F In Fny(T, A.T)
 Next
 FdAy = O
 End Function
+Private Function Er_EzFLy_NotIn_Eny(FLyUB%, F() As F, Eny$()) As String()
 
-Private Function TDes(A As Dta) As TDes()
+End Function
+
+Private Function Er_TzDLy_NotIn_Tny(DLyUB%, D() As D, Tny$()) As String()
+Dim O$(), M As D, Tssl$, J%
+Tssl = JnSpc(Tny)
+For J = 0 To DLyUB
+    With D(J)
+        If Not AyHas(Tny, .T) Then Push O, ErMsg_TzDLy_NotIn_Tny(.Lno, .T, Tssl)
+    End With
+Next
+Er_TzDLy_NotIn_Tny = O
+End Function
+
+Private Function Er_FzDLy_NotIn_TblFny(DLyUB%, D() As D, Tny$(), TBrk() As T) As String()
+Dim J%, O$(), M As D, F, Fny1$()
+For J = 0 To DLyUB
+    With D(J)
+        Fny1 = Fny(.T, TBrk)
+        For Each F In AyNz(Fny1)
+            If Not AyHas(Fny1, .F) Then
+                Push O, ErMsg_FzDLy_NotIn_TblFny(.Lno, .T, CStr(F), JnSpc(Fny1))
+            End If
+        Next
+    End With
+Next
+Er_FzDLy_NotIn_TblFny = O
+End Function
+
+Private Function ErMsg_TzDLy_NotIn_Tny$(Lno%, T$, Tssl$)
+ErMsg_TzDLy_NotIn_Tny = ErMsg(Lno, FmtQQ("T[?] is invalid.  Valid T[?]", T, Tssl))
+End Function
+
+Private Function ErMsg_FzDLy_NotIn_TblFny$(Lno%, T$, F$, Fssl$)
+ErMsg_FzDLy_NotIn_TblFny = ErMsg(Lno, FmtQQ("F[?] is invalid in T[?].  Valid F[?]", F, T, Fssl))
+End Function
+
+Private Function TDesAy(A As Dta) As TDes()
 Stop '
 End Function
 
-Private Function FDes(A As Dta) As FDes()
+Private Function FDesAy(A As Dta) As FDes()
 Stop '
+End Function
+Private Function ErMsgTblFldEr$(Lno%, T$, F$)
+ErMsgTblFldEr = ErMsg(Lno, FmtQQ("T[?] has invalid F[?], which cannot be found in any F-Lines"))
+End Function
+Private Function ErMsgFldEleEr$(Lno%, E$, Essl$)
+ErMsgFldEleEr = ErMsg(Lno, FmtQQ("E[?] is invalid.  Valid E is [?]", E, Essl))
+End Function
+Private Function ErMsgDupF$(Lno%, T$, Fny$())
+ErMsgDupF = ErMsg(Lno, FmtQQ("F[?] is dup in T[?]", JnSpc(Fny), T))
+End Function
+Private Function ErMsgExcessTxtSz$(Lno%, Ty$)
+ErMsgExcessTxtSz = ErMsg(Lno, FmtQQ("Ty[?] is not Txt, it should not have TxtSz", Ty))
 End Function
 Private Function ErMsgDupT$(LnoAy%(), T$)
-
+ErMsgDupT = ErMsg1(LnoAy, FmtQQ("This T[?] is dup", T))
 End Function
-Private Function ErMsgTyEr$(Lno, Ty$)
-
+Private Function ErMsgTyEr$(Lno%, Ty$)
+ErMsgTyEr = ErMsg(Lno, FmtQQ("Invalid DaoShtTy[?].  Valid ShtTy[?]", Ty, DaoShtTySsl))
 End Function
 Private Function ErMsgDupE$(LnoAy%(), E$)
-
+ErMsgDupE = ErMsg1(LnoAy, FmtQQ("This E[?] is dup", E))
 End Function
 Private Function ErMsgNoTLin$()
 ErMsgNoTLin = "No T-Line"
@@ -560,9 +555,12 @@ End Function
 Private Function ErMsgNoFLin$()
 ErMsgNoFLin = "No F-Line"
 End Function
+Private Function ErMsg1(LnoAy%(), M$)
+ErMsg1 = "--" & Join(AyAddPfx(LnoAy, "Lno"), ".") & "  " & M
+End Function
 
-Private Function ErMsgDupF$(Lno%, T$, Fny$())
-
+Private Function ErMsg$(Lno%, M$)
+ErMsg = "--Lno" & Lno & ".  " & M
 End Function
 
 Private Function Rslt(SmLines$) As Rslt
@@ -577,13 +575,13 @@ With Rslt
     .Td = Td(D)
     .PkSqy = PkSqy(D)
     .SkSqy = SkSqy(D)
-    .FDes = FDes(D)
-    .TDes = TDes(D)
+    .FDes = FDesAy(D)
+    .TDes = TDesAy(D)
 End With
 End Function
 
 Private Sub Z_DbCrtSchm()
-DbCrtSchm W, ZZSmLines
+DbCrtSchm W, ZZLines
 End Sub
 
 Sub AA()

@@ -81,7 +81,7 @@ Sub LgCrt_v1()
 Dim Fb$
 Fb = LgFb
 If FfnIsExist(Fb) Then Exit Sub
-SchmM.DbCrtSchm FbCrt(Fb), LgSchmLy
+DaoSchm.DbCrtSchm FbCrt(Fb), LgSchmLines
 End Sub
 
 Sub LgCrt()
