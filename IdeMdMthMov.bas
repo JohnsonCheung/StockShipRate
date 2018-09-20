@@ -1,6 +1,6 @@
 Option Compare Database
 Option Explicit
-Sub Z_MovMth()
+Private Sub Z_MovMth()
 MovMth "Fct", "LNK", "LnkM", "LnkCCM"
 End Sub
 Function MdMthNy_zPfxEpt(A As CodeModule, MthTy$, Optional EptMthTy$) As String()
@@ -107,11 +107,11 @@ For Each I In PjMdAy(A)
 Next
 PjMthLy = O
 End Function
-Function CPjMthLy() As String()
-CPjMthLy = PjMthLy(CurPj)
+Function CurPjMthLy() As String()
+CurPjMthLy = PjMthLy(CurPj)
 End Function
-Function CMdMthLy() As String()
-CMdMthLy = MdMthLy(CurMd)
+Function CurMdMthLy() As String()
+CurMdMthLy = MdMthLy(CurMd)
 End Function
 Function StrApp$(A, L)
 If A = "" Then StrApp = L: Exit Function
@@ -260,6 +260,22 @@ End Function
 Sub MdMovMth(A As CodeModule, M, ToMd As CodeModule)
 MdAppLines ToMd, MdMthLines(A, M)
 MdRmvMth A, M
+End Sub
+
+Sub MdMovMthNy(A As CodeModule, MthNy$(), ToMd As CodeModule)
+If Sz(MthNy) = 0 Then Exit Sub
+For Each N In MthNy
+    MdMovMth A, CStr(N), ToMd
+Next
+End Sub
+Function CurMdPatnMthNy(Patn$)
+CurMdPatnMthNy = MdPatnMthNy(CurMd, Patn)
+End Function
+Function MdPatnMthNy(A As CodeModule, Patn$) As String()
+MdPatnMthNy = AyWhPatn(MdMthNy(A), Patn)
+End Function
+Sub MdMovMthPatn(A As CodeModule, Patn$, ToMd As CodeModule)
+MdMovMthNy A, MdPatnNy(A), ToMd
 End Sub
 Sub Z()
 Z_MdMthLinCnt

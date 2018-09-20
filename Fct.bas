@@ -12,6 +12,74 @@ Private Const Z_ReSeqSpec$ = _
 " GL GLDocNo GLDocDte GLAsg GLDocTy GLLin GLPstKy GLPc GLAc GLBusA GLRef |" & _
 " Uom Des StkUom Ac_U"
 Public Const DaoShtTySsl$ = "Byt Mem Lng Int Dte Txt Yes Dbl Sng Cur"
+Sub AddMd(Nm$)
+CurPjAddMd Nm
+End Sub
+
+Sub CurPjAddMd(Nm$)
+PjAddMd CurPj, Nm
+End Sub
+Function MthLinDotLin$(A$)
+Dim A1$, Mdy$, Ty$, Nm$, MthSfx$, AsTy$, P$
+Mdy = LinMdy(A): A1 = LinRmvMdy(A)
+Ty = LinMthTy(A)
+MthLinDotLin = ApDotLin(Mdy, Ty, Nm, MthSfx, AsTy, P)
+End Function
+Sub AAA()
+ZZ_LinMthTy
+End Sub
+Private Sub ZZ_LinMthTy()
+Dim O$(), L
+For Each L In Src("Fct")
+    Push O, LinMthShtTy(L) & "." & L
+Next
+Brw O
+End Sub
+Function Src(MdNm$) As String()
+Src = MdLy(Md(MdNm))
+End Function
+Function ApDotLin$(ParamArray Ap())
+Dim Av(): Av = Ap
+ApDotLin = JnDot(Av)
+End Function
+Function JnDot$(A)
+JnDot = Join(A, ".")
+End Function
+Function PrmDotLin$(A$)
+Dim ArgAy$()
+ArgAy = SplitComma(A)
+ArgAy = AyMapSy(ArgAy, "ArgStr")
+End Function
+Function ArgStr$(A$)
+ArgStr = A
+End Function
+Function SplitComma(A) As String()
+SplitComma = Split(A, ",")
+End Function
+Sub PjAddCmp(A As VBProject, Nm$, Ty As vbext_ComponentType)
+If PjHasCmp(A, Nm) Then
+    FunMsgDmp "PjAddCmp", "[Pj] already has [Cmp]", A.Name, Nm
+    Exit Sub
+End If
+With A.VBComponents.Add(Ty)
+    .Name = Nm
+    .CodeModule.InsertLines 1, "Option Explicit"
+    MdSav .CodeModule
+End With
+End Sub
+
+Sub MdSav(A As CodeModule)
+
+End Sub
+Sub PjAddMd(A As VBProject, Nm$)
+PjAddCmp A, Nm, vbext_ct_StdModule
+End Sub
+Sub PjAddCls(A As VBProject, Nm$)
+PjAddCmp A, Nm, vbext_ct_ClassModule
+End Sub
+Function PjHasCmp(A As VBProject, Nm$) As Boolean
+PjHasCmp = ItrHasNm(A.VBComponents, Nm)
+End Function
 Sub WImp(LnkSpec$)
 LNKDbImp W, LnkSpec
 End Sub
@@ -65,8 +133,8 @@ For Each X In A
     If ObjPrp(X, P) = V Then ItrHasPrpEqV = True: Exit Function
 Next
 End Function
-Function CPjRfFfnAy() As String()
-CPjRfFfnAy = PjRfFfnAy(CurPj)
+Function CurPjRfFfnAy() As String()
+CurPjRfFfnAy = PjRfFfnAy(CurPj)
 End Function
 Function ItrSpy(A, P$) As String()
 ItrSpy = ItrPrpSy(A, P)
@@ -248,7 +316,7 @@ End Function
 Function TdFdScly(A As DAO.TableDef) As String()
 Dim N$
 N = A.Name & ";"
-TdFdScly = AyAddPfx(ItrMapSy(A.Fields, "FdScl1"), N)
+TdFdScly = AyAddPfx(ItrMapSy(A.Fields, "FdScl"), N)
 End Function
 
 Function ItrMapInto(A, Map$, OInto)
@@ -294,18 +362,18 @@ End If
 If A <> "" Then AddLbl = Lbl & "=" & B
 End Function
 
-Function FdScl1$(A As DAO.Field2)
-Dim Rq$, Ty$, Sz$, ZLen$, Rul$, Dft$, VTxt$, Expr$, Des$
+Function FdScl$(A As DAO.Field2)
+Dim Rq$, Ty$, TxtSz$, AlwZ$, Rul$, Dft$, VTxt$, Expr$, Des$
 Des = AddLbl(FdDes(A), "Des")
 Rq = BoolTxt(A.Required, "Req")
-ZLen = BoolTxt(A.AllowZeroLength, "AlwZLen")
+AlwZ = BoolTxt(A.AllowZeroLength, "AlwZ")
 Ty = DaoTy_ShtTy(A.Type)
-Sz = BoolTxt(A.Type = dbText, "Sz=" & A.Size)
+If A.Type = DAO.DataTypeEnum.dbText Then TxtSz = BoolTxt(A.Type = dbText, "TxtSz=" & A.Size)
 Rul = AddLbl(A.ValidationText, "VTxt")
 VTxt = AddLbl(A.ValidationRule, "VRul")
 Expr = AddLbl(A.Expression, "Expr")
 Dft = AddLbl(A.DefaultValue, "Dft")
-FdScl1 = ApScl(A.Name, Ty, Sz, Rq, ZLen, Rul, VTxt, Dft, Expr)
+FdScl = ApScl(A.Name, Ty, TxtSz, Rq, AlwZ, Rul, VTxt, Dft, Expr)
 End Function
 
 Function MdNm$(A As CodeModule)
@@ -385,6 +453,7 @@ Act = ApScl(" ", "")
 Ept = ""
 C
 End Sub
+
 Function ApScl$(ParamArray Ap())
 Dim Av(): Av = Ap
 ApScl = JnSC(AyRmvEmp(Av))
@@ -536,14 +605,22 @@ End Function
 Sub DbAddTmpTbl(A As Database)
 DbAddTd CurrentDb, TmpTd
 End Sub
-Sub EnsTmpTbl()
-If Not DbHasTbl(CurrentDb, "Tmp") Then
-    DbAddTmpTbl CurrentDb
-End If
+Sub RfhTmpTbl()
+TblDrp "Tmp"
+DbAddTmpTbl CurrentDb
 End Sub
-Sub Z_DbtfPrp()
-EnsTmpTbl
-
+Private Sub Z_TfPrp()
+RfhTmpTbl
+Dim P
+P = "Ele"
+Ept = 123
+GoSub Tst
+Exit Sub
+Tst:
+    TfPrp("Tmp", "F1", P) = Ept
+    Act = TfPrp("Tmp", "F1", P)
+    C
+    Return
 End Sub
 
 Property Get TFDes(T, F)
@@ -606,7 +683,7 @@ For Each L In A
     J = J + 1
 Next
 End Function
-Sub CMdRfhSubZ()
+Sub CurMdRfhSubZ()
 MdRfhSubZ CurMd
 End Sub
 Function SqlzCrtPk$(T$)
@@ -669,8 +746,8 @@ OErLy = O(U - 1)
 Set ORmkDic = O(U)
 End Sub
 
-Function CMdMthNy() As String()
-CMdMthNy = MdMthNy(CurMd)
+Function CurMdMthNy() As String()
+CurMdMthNy = MdMthNy(CurMd)
 End Function
 
 Sub DbSetTDes(A As Database, B As TDes)
@@ -694,20 +771,35 @@ Function IsSngQRmk(A) As Boolean
 IsSngQRmk = FstChr(LTrim(A)) = "'"
 End Function
 
-Function ClnChk(A, Ny0) As String()
-Dim Ny$(), L, O$()
-Ny = CvNy(Ny0)
+Function ClnT1Chk(A$(), T1Ay0) As String()
+Dim T1Ay$(), L, O$()
+T1Ay = CvNy(T1Ay0)
 For Each L In A
-    If Not AyHas(Ny, LinT1(L)) Then Push O, L
+    If Not AyHas(T1Ay, LinT1(L)) Then Push O, L
 Next
 If Sz(O) > 0 Then
     O = AyAddPfx(AyQuoteSqBkt(O), Space(4))
-    O = AyIns(O, FmtQQ("Following lines have invalid T1.  Valid T1 are [?]", JnSpc(Ny)))
+    O = AyIns(O, FmtQQ("Following lines have invalid T1.  Valid T1 are [?]", JnSpc(T1Ay)))
 End If
-ClnChk = O
+ClnT1Chk = O
 End Function
 
-Function ClnBrk1(A, Ny0) As Variant()
+Function IxlyT1Chk(A() As Ixl, T1Ay0) As String()
+Dim T1Ay$(), T1$, L, O$()
+T1Ay = CvNy(T1Ay0)
+For Each L In A
+    T1 = LinT1(L)
+    If Not AyHas(T1Ay, LinT1(L)) Then Push O, L
+Next
+If Sz(O) > 0 Then
+    O = AyAddPfx(AyQuoteSqBkt(O), Space(4))
+    O = AyIns(O, FmtQQ("Following lines have invalid T1.  Valid T1 are [?]", JnSpc(T1Ay)))
+End If
+IxlyT1Chk = O
+End Function
+
+
+Function ClnBrk1(A$(), Ny0) As Variant()
 Dim O(), U%, Ny$(), L, T1$, T2$, NmDic As Dictionary, Ix%, Er$()
 Ny = CvNy(Ny0)
 U = UB(Ny)
@@ -721,7 +813,7 @@ For Each L In A
         Push O(Ix), T2 '<----
     End If
 Next
-Push O, ClnChk(A, Ny)
+Push O, ClnT1Chk(A, Ny)
 ClnBrk1 = O
 End Function
 
@@ -845,7 +937,7 @@ DbCcmTny = AyWhPfx(DbTny(A), "^")
 End Function
 
 Property Get CnSy() As String()
-CnSy = CDbCnSy
+CnSy = CurDbCnSy
 End Property
 Function AyabNonEmpBLy(A, B, Optional Sep$ = " ") As String()
 Dim J&, O$()
@@ -2531,7 +2623,7 @@ Q = "Select AttNm from Att order by AttNm": DbAttNy = RsSy(A.OpenRecordset(Q))
 End Function
 
 Property Get AttNy() As String()
-AttNy = CDbAttNy
+AttNy = CurDbAttNy
 End Property
 Function AttRs_AttNm$(A As AttRs)
 AttRs_AttNm = A.TblRs!AttNm
@@ -3051,13 +3143,13 @@ Function SampleDrs() As Drs
 Set SampleDrs = Drs("A B C D E F", SampleDry)
 End Function
 Function SampleDry() As Variant()
-Dim O(), Dr(), I%, J%
+Dim O(), DR(), I%, J%
 For J = 0 To 9
-    ReDim Dr(5)
+    ReDim DR(5)
     For I = 0 To 5
-        Dr(I) = J * 100 + I
+        DR(I) = J * 100 + I
     Next
-    Push O, Dr
+    Push O, DR
 Next
 SampleDry = O
 End Function
@@ -3397,16 +3489,50 @@ For J = 0 To UB(A)
     If A(J) Like Lik Then AyRmvEleLik = AyRmvEleAt(A, J): Exit Function
 Next
 End Function
+
 Function AyShiftItmEq(A, Itm$) As Variant()
-Dim B$, Lik$
-Lik = Itm & "=*"
-B = AyFstLik(A, Lik)
+Dim B$
+    Dim Lik$
+    Lik = Itm & "=*"
+    B = AyFstLik(A, Lik)
 If B = "" Then
     AyShiftItmEq = Array("", A)
 Else
     AyShiftItmEq = Array(Trim(RmvPfx(B, Itm & "=")), AyRmvEleLik(A, Lik))
 End If
 End Function
+
+Function LinShiftItmNy(A$, ItmNy0) As Variant()
+LinShiftItmNy = AyShiftItmNy(LinTermAy(A), ItmNy0)
+End Function
+
+Private Sub Z_AyShiftItmNy()
+Dim A$(), ItmNy0
+A = SslSy("Req Dft=ABC VTxt=kkk")
+ItmNy0 = "Req ABC VTxt"
+Ept = Array("Req", "", "kkk", ApSy("Dft=ABC"))
+GoSub Tst
+Exit Sub
+Tst:
+    Act = AyShiftItmNy(A, ItmNy0)
+    C
+    Return
+End Sub
+Function AyShiftItmNy(A$(), ItmNy0) As Variant()
+Dim Ny$(), A1$()
+    Ny = CvNy(ItmNy0)
+    A1 = A
+Dim O() As Variant, Ay(), J%
+ReDim O(Sz(Ny))
+For J = 0 To UB(Ny)
+    Ay = AyShiftItmEq(A1, Ny(J))
+    O(J) = Ay(0)
+    A1 = Ay(1)
+Next
+O(Sz(Ny)) = Ay(1)
+AyShiftItmNy = O
+End Function
+
 Function AyRmvEleAt(A, Optional At&)
 Dim O, J&, U&
 U = UB(A)
@@ -3761,7 +3887,7 @@ End Function
 
 Function OupPth$()
 Dim A$
-A = CDbPth & "Output\"
+A = CurDbPth & "Output\"
 PthEns A
 OupPth = A
 End Function
@@ -3773,7 +3899,7 @@ On Error Resume Next
 YYYYMMDD_IsVdt = Format(CDate(A), "YYYY-MM-DD") = A
 End Function
 Function PgmObjPth$()
-PgmObjPth = PthEns(CDbPth & "PgmObj\")
+PgmObjPth = PthEns(CurDbPth & "PgmObj\")
 End Function
 Function FfnPth$(A)
 Dim P%: P = InStrRev(A, "\")
@@ -4085,11 +4211,16 @@ A.Execute FmtQQ("Select x.* into [?] from [?] x inner join [?] a on ?", TarTbl, 
 DbDrpTbl A, Tmp
 End Sub
 
-Sub Z_AyDupChk()
+Private Sub Z_AyDupChk()
 Dim Ay
 Ay = Array("1", "1", "2")
-D AyDupChk(Ay, "[?] these item is duplicated")
-
+Ept = ApSy("This item[1] is duplicated")
+GoSub Tst
+Exit Sub
+Tst:
+    Act = AyDupChk(Ay, "This item[?] is duplicated")
+    C
+    Return
 End Sub
 
 Function AyDupChk(A, QMsg$) As String()
@@ -4107,19 +4238,25 @@ Sub Ass(A As Boolean)
 Debug.Assert A
 End Sub
 
-Sub ChkEq(A, B)
-Ass VarType(A) = VarType(B)
+Function IsEq(A, B) As Boolean
+If VarType(A) <> VarType(B) Then Exit Function
 Select Case True
-Case IsArray(A): Ass AyIsEq(A, B)
-Case IsObject(A): Ass ObjPtr(A) = ObjPtr(B)
-Case Else:
-    If A <> B Then
-        Debug.Print A
-        Debug.Print B
-        Stop
-    End If
+Case IsArray(A): IsEq = AyIsEq(A, B)
+Case IsObject(A): IsEq = ObjPtr(A) = ObjPtr(B)
+'Case IsEmpty(A): IsEq = IsEmpty(B)
+'Case IsMissing(A): IsEq = IsMissing(B)
+Case IsNothing(A): IsEq = IsNothing(B)
+Case Else: IsEq = A = B
 End Select
+End Function
+Sub ChkEq(A, B)
+If Not IsEq(A, B) Then
+    Debug.Print "["; A; "] [" & TypeName(A) & "]"
+    Debug.Print "["; B; "] [" & TypeName(A) & "]"
+    Stop
+End If
 End Sub
+
 Sub C()
 ChkEq Act, Ept
 End Sub
@@ -4967,14 +5104,14 @@ Sq = AySqH(A)
 RgReSz(At, Sq).Value = Sq
 End Sub
 Function DrsColInto(A As Drs, F, OInto)
-Dim O, Ix%, Dry(), Dr
+Dim O, Ix%, Dry(), DR
 Ix = AyIx(A.Fny, F): If Ix = -1 Then Stop
 O = OInto
 Erase O
 Dry = A.Dry
 If Sz(Dry) = 0 Then DrsColInto = O: Exit Function
-For Each Dr In Dry
-    Push O, Dr(Ix)
+For Each DR In Dry
+    Push O, DR(Ix)
 Next
 DrsColInto = O
 End Function
@@ -5293,7 +5430,7 @@ End Sub
 Sub WbDltWc(A As Workbook)
 ItrDo A.Connections, "WcDlt"
 End Sub
-Private Sub ZZ_RplBet()
+Private Sub Z_RplBet()
 Dim A$, Exp$, By$, S1$, S2$
 S1 = "Data Source="
 S2 = ";"
@@ -5308,6 +5445,9 @@ Act = RplBet(A, By, S1, S2)
 Debug.Assert Exp = Act
 Return
 End Sub
+Function RplQ$(A$, By$)
+RplQ = Replace(A, "?", By)
+End Function
 Function RplBet$(A$, By$, S1$, S2$)
 Dim P1%, P2%, B$, C$
 
@@ -5976,40 +6116,40 @@ End Sub
 
 Function RsCsvLyByFny0(A As DAO.Recordset, Fny0) As String()
 Dim Fny$(), Flds As Fields, F
-Dim O$(), J&, I%, UFld%, Dr()
+Dim O$(), J&, I%, UFld%, DR()
 Fny = CvNy(Fny0)
 UFld = A.Fields.Count - 1
 While Not A.EOF
     J = J + 1
     If J Mod 5000 = 0 Then Debug.Print "RsCsvLy: " & J
     If J > 100000 Then Stop
-    ReDim Dr(UFld)
+    ReDim DR(UFld)
     I = 0
     Set Flds = A.Fields
     For Each F In Fny
-        Dr(I) = VarCsv(Flds(F).Value)
+        DR(I) = VarCsv(Flds(F).Value)
         I = I + 1
     Next
-    Push O, Join(Dr, ",")
+    Push O, Join(DR, ",")
     A.MoveNext
 Wend
 RsCsvLyByFny0 = O
 End Function
 
 Function RsCsvLy(A As DAO.Recordset) As String()
-Dim O$(), J&, I%, UFld%, Dr(), F As DAO.Field
+Dim O$(), J&, I%, UFld%, DR(), F As DAO.Field
 UFld = A.Fields.Count - 1
 While Not A.EOF
     J = J + 1
     If J Mod 5000 = 0 Then Debug.Print "RsCsvLy: " & J
     If J > 100000 Then Stop
-    ReDim Dr(UFld)
+    ReDim DR(UFld)
     I = 0
     For Each F In A.Fields
-        Dr(I) = VarCsv(F.Value)
+        DR(I) = VarCsv(F.Value)
         I = I + 1
     Next
-    Push O, Join(Dr, ",")
+    Push O, Join(DR, ",")
     A.MoveNext
 Wend
 RsCsvLy = O
@@ -6195,11 +6335,36 @@ End Function
 Function HasPfxAy(A, PfxAy) As Boolean
 HasPfxAy = AyHasPredPXTrue(PfxAy, "HasPfx", A)
 End Function
-
-Function LinMthTy$(A)
-LinMthTy = AyFstEqV(MthTyAy, LinT1(LinRmvMdy(A)))
+Function ShtMdy$(A)
+Select Case A
+Case "Private": ShtMdy = "Prv"
+Case "Friend": ShtMdy = "Frd"
+Case "Public": ShtMdy = "Pub"
+End Select
 End Function
-
+Function MthShtTy$(A)
+Dim O$
+Select Case A
+Case "Function": O = "Fun"
+Case "Sub": O = "Sub"
+Case "Property Get": O = "Fun"
+Case "Property Let": O = "Let"
+Case "Property Set": O = "Set"
+End Select
+MthShtTy = O
+End Function
+Function LinMthShtTy$(A)
+LinMthShtTy = MthShtTy(LinMthTy(A))
+End Function
+Function LinMthTy$(A)
+LinMthTy = AyFstPfx(MthTyAy, LinRmvMdy(A))
+End Function
+Function AyFstPfx$(PfxAy, Lin$)
+Dim P
+For Each P In PfxAy
+    If IsPfx(Lin, CStr(P)) Then AyFstPfx = P: Exit Function
+Next
+End Function
 Function LinPfx$(A, ParamArray PfxAp())
 Dim Av(): Av = PfxAp
 Dim X
@@ -7268,7 +7433,7 @@ Dim U&, J&
 U = UB(A)
 If UB(B) <> U Then Exit Function
 For J = 0 To U
-    If A(J) <> B(J) Then Exit Function
+    If Not IsEq(A(J), B(J)) Then Exit Function
 Next
 AyIsEq = True
 End Function
@@ -7391,9 +7556,9 @@ Function SqlQQStr_Sy(Sql, QQStr$) As String()
 Dim Dry: Dry = SqlDry(Sql)
 If AyIsEmpty(Dry) Then Exit Function
 Dim O$()
-Dim Dr
-For Each Dr In Dry
-    Push O, FmtQQAv(QQStr, CvAv(Dr))
+Dim DR
+For Each DR In Dry
+    Push O, FmtQQAv(QQStr, CvAv(DR))
 Next
 SqlQQStr_Sy = O
 End Function
@@ -7584,27 +7749,27 @@ End Property
 
 
 Function DryInsConst(A, C, Optional At& = 0) As Variant()
-Dim O(), Dr
+Dim O(), DR
 If Sz(A) = 0 Then Exit Function
-For Each Dr In A
-    Push O, AyIns(Dr, C, At)
+For Each DR In A
+    Push O, AyIns(DR, C, At)
 Next
 DryInsConst = O
 End Function
 
 Sub C3DryDo(C3Dry(), ABC$)
 If Sz(C3Dry) = 0 Then Exit Sub
-Dim Dr
-For Each Dr In C3Dry
-    Run ABC, Dr(0), Dr(1), Dr(2)
+Dim DR
+For Each DR In C3Dry
+    Run ABC, DR(0), DR(1), DR(2)
 Next
 End Sub
 
 Sub C4DryDo(C4Dry(), ABCD$)
 If Sz(C4Dry) = 0 Then Exit Sub
-Dim Dr
-For Each Dr In C4Dry
-    Run ABCD, Dr(0), Dr(1), Dr(2), Dr(3)
+Dim DR
+For Each DR In C4Dry
+    Run ABCD, DR(0), DR(1), DR(2), DR(3)
 Next
 End Sub
 
@@ -7752,10 +7917,10 @@ Function AppMdNy() As String()
 AppMdNy = ItrNy(CodeProject.AllModules)
 End Function
 Function Stru$()
-Stru = CDbStru
+Stru = CurDbStru
 End Function
-Function CDbStru$()
-CDbStru = DbStru(CurrentDb)
+Function CurDbStru$()
+CurDbStru = DbStru(CurrentDb)
 End Function
 Sub AppExpStru()
 StrWrt Stru, SrcPth & "Stru.txt"
@@ -7781,7 +7946,7 @@ Function SrcPth$()
 Dim X As Boolean, Y$
 If Not X Then
     X = True
-    Y = CDbPth & "Src\"
+    Y = CurDbPth & "Src\"
     PthEns Y
 End If
 SrcPth = Y
@@ -7968,24 +8133,24 @@ Set DryWs = SqWs(DrySq(A))
 End Function
 
 Function DryNCol%(A)
-Dim O%, Dr
-For Each Dr In A
-    O = Max(O, Sz(Dr))
+Dim O%, DR
+For Each DR In A
+    O = Max(O, Sz(DR))
 Next
 DryNCol = O
 End Function
 
 Function DrySq(A) As Variant()
-Dim O(), C%, R&, Dr
+Dim O(), C%, R&, DR
 Dim NC%, NR&
 NC = DryNCol(A)
 NR = Sz(A)
 ReDim O(1 To NR, 1 To NC)
 R = 0
-For Each Dr In A
+For Each DR In A
     R = R + 1
-    For C = 1 To Min(Sz(Dr), NC)
-        O(R, C) = Dr(C - 1)
+    For C = 1 To Min(Sz(DR), NC)
+        O(R, C) = DR(C - 1)
     Next
 Next
 DrySq = O
@@ -8043,7 +8208,7 @@ Function AttSz(A) As Date
 AttSz = TfkV("Att", "FilSz", A)
 End Function
 Function DrsSq(A As Drs) As Variant()
-Dim O(), C%, R&, Dr(), Dry()
+Dim O(), C%, R&, DR(), Dry()
 Dim Fny$(), NC%, NR&
 Dry = A.Dry
 Fny = A.Fny
@@ -8056,9 +8221,9 @@ For C = 1 To NC
     O(1, C) = Fny(C - 1)
 Next
 For R = 1 To NR
-    Dr = Dry(R - 1)
-    For C = 1 To Min(Sz(Dr), NC)
-        O(R + 1, C) = Dr(C - 1)
+    DR = Dry(R - 1)
+    For C = 1 To Min(Sz(DR), NC)
+        O(R + 1, C) = DR(C - 1)
     Next
 Next
 DrsSq = O
@@ -8234,19 +8399,19 @@ Function DbLnkTny(A As Database) As String()
 DbLnkTny = ItrWhPredPrpSy(A.TableDefs, "TdHasCnStr", "Name")
 End Function
 Sub DrpLnkTbl()
-CDbDrpLnkTbl
+CurDbDrpLnkTbl
 End Sub
 
 Sub DbDrpLnkTbl(A As Database)
 DbDrpTT A, DbLnkTny(A)
 End Sub
 Sub ApUpdRs(Rs As DAO.Recordset, ParamArray Ap())
-Dim Dr(): Dr = Ap
-DrUpdRs Dr, Rs
+Dim DR(): DR = Ap
+DrUpdRs DR, Rs
 End Sub
 Sub ApAddRs(Rs As DAO.Recordset, ParamArray Ap())
-Dim Dr(): Dr = Ap
-DrInsRs Dr, Rs
+Dim DR(): DR = Ap
+DrInsRs DR, Rs
 End Sub
 Function FfnStampDr(A) As Variant()
 FfnStampDr = Array(A, FfnSz(A), FfnTim(A), Now)
@@ -8332,7 +8497,7 @@ Function AyFstLikItm(A, Lik, Itm)
 AyFstLikItm = AyFstPredXABYes(A, "LinHasLikItm", Lik, Itm)
 End Function
 Function AyFstT1$(A, T1)
-AyFstT1 = AyFstPredXPYes(A, "LinHasT1", T1)
+AyFstT1 = AyFstPredXP(A, "LinHasT1", T1)
 End Function
 
 Function AyFstTT$(A, T1, T2)
@@ -8340,14 +8505,21 @@ AyFstTT = AyFstPredXABYes(A, "LinHasTT", T1, T2)
 End Function
 
 Function AyFstT2$(A, T2)
-AyFstT2 = AyFstPredXPYes(A, "LinHasT2", T2)
+AyFstT2 = AyFstPredXP(A, "LinHasT2", T2)
 End Function
 
-Function AyFstPredXPYes(A, XP$, P)
+Function AyFstPredXP(A, XP$, P)
 If Sz(A) = 0 Then Exit Function
 Dim X
 For Each X In A
-    If Run(XP, X, P) Then Asg X, AyFstPredXPYes: Exit Function
+    If Run(XP, X, P) Then Asg X, AyFstPredXP: Exit Function
+Next
+End Function
+Function AyFstPredPX(A, PX$, P)
+If Sz(A) = 0 Then Exit Function
+Dim X
+For Each X In A
+    If Run(PX, P, X) Then Asg X, AyFstPredPX: Exit Function
 Next
 End Function
 
@@ -8474,8 +8646,8 @@ End Function
 
 
 
-Function CDbChk() As String()
-CDbChk = DbChk(CurrentDb)
+Function CurDbChk() As String()
+CurDbChk = DbChk(CurrentDb)
 End Function
 
 
@@ -9069,7 +9241,7 @@ PthBrw SpecPth
 End Sub
 
 Function SpecPth$()
-SpecPth = PthEns(CDbPth & "Spec\")
+SpecPth = PthEns(CurDbPth & "Spec\")
 End Function
 
 Function ColrStr$(A&)
@@ -9166,12 +9338,12 @@ Const CurIsOld___$ = "Cur is old."
 Const CurIsNew___$ = "Cur is new."
 Const C$ = "|[SpecNm] [Db] [Cur-Ft] [Las-Ft] [Cur-Tim] [Las-Tim] [Cur-Sz] [Las-Sz] [Imported-Time]."
 
-Dim Dr()
-Dr = Array(Spnm, Ft, FtLines(Ft), CurT, CurS, Now)
+Dim DR()
+DR = Array(Spnm, Ft, FtLines(Ft), CurT, CurS, Now)
 Select Case True
 Case NoCur, SamTim:
-Case NoLas: DrInsRs Dr, Rs
-Case DifFt, CurNew: DrUpdRs Dr, Rs
+Case NoLas: DrInsRs DR, Rs
+Case DifFt, CurNew: DrUpdRs DR, Rs
 Case Else: Stop
 End Select
 
@@ -9290,34 +9462,34 @@ Function SpnmTim(A) As Date
 SpnmTim = Nz(TfkV("Spec", "Tim", A), 0)
 End Function
 
-Property Get CDbTny() As String()
-CDbTny = DbTny(CurrentDb)
+Property Get CurDbTny() As String()
+CurDbTny = DbTny(CurrentDb)
 End Property
 
 Property Get Tny() As String()
-Tny = CDbTny
+Tny = CurDbTny
 End Property
 
-Property Get CDbAttNy() As String()
-CDbAttNy = DbAttNy(CurrentDb)
+Property Get CurDbAttNy() As String()
+CurDbAttNy = DbAttNy(CurrentDb)
 End Property
 
-Property Get CDbCnSy() As String()
-CDbCnSy = DbCnSy(CurrentDb)
+Property Get CurDbCnSy() As String()
+CurDbCnSy = DbCnSy(CurrentDb)
 End Property
 
-Property Get CDbLnkTny() As String()
-CDbLnkTny = DbLnkTny(CurrentDb)
+Property Get CurDbLnkTny() As String()
+CurDbLnkTny = DbLnkTny(CurrentDb)
 End Property
 
-Sub CDbDrpLnkTbl()
+Sub CurDbDrpLnkTbl()
 DbDrpLnkTbl CurrentDb
 End Sub
-Function CDbScly() As String()
-CDbScly = DbScly(CurrentDb)
+Function CurDbScly() As String()
+CurDbScly = DbScly(CurrentDb)
 End Function
-Function CDbPth$()
-CDbPth = FfnPth(CurrentDb.Name)
+Function CurDbPth$()
+CurDbPth = FfnPth(CurrentDb.Name)
 End Function
 
 Function IsProd() As Boolean
@@ -9633,7 +9805,7 @@ For Each I In PjMdAy(A)
     MdRfhSubZ CvMd(I)
 Next
 End Sub
-Sub CPjRfhSubZ()
+Sub CurPjRfhSubZ()
 PjRfhSubZ CurPj
 End Sub
 Function ToSqy_by_SqlSelIntoAy(A() As SqlSelInto) As String()
@@ -9653,7 +9825,7 @@ Z_CdLines_Run
 Z_DbAddTd
 Z_DbqV
 Z_DbtfAddExpr
-Z_DbtfPrp
+Z_TfPrp
 Z_FmtSpecLy_TitSq
 Z_FxwFny
 Z_LinNTermAy
@@ -9668,3 +9840,70 @@ Z_SclChk
 Z_T1LikSslAy_T1
 Z_TakBet
 End Sub
+Sub CurMdGenUBSz(TyNm$)
+MdGenUBSz CurMd, TyNm
+End Sub
+Sub GenUBSz(MdNm$, TyNm$)
+MdGenUBSz Md(MdNm), TyNm
+End Sub
+Sub MdGenUBSz(A As CodeModule, TyNm$)
+Dim ActUB$, EptUB$
+Dim ActSz$, EptSz$
+Dim UBNm$, SzNm$
+    UBNm = TyNm & "UB"
+    SzNm = TyNm & "Sz"
+    ActUB = MdMthLines(A, UBNm)
+    ActSz = MdMthLines(A, SzNm)
+    EptUB = UBFctLines(TyNm$)
+    EptSz = SzFctLines(TyNm$)
+If ActUB <> EptUB Then
+    MdRmvMth A, UBNm
+    MdAppLines A, EptUB
+End If
+If ActSz <> EptSz Then
+    MdRmvMth A, SzNm
+    MdAppLines A, EptSz
+End If
+End Sub
+
+Function UBFctLines$(TyNm$)
+Const A$ = "Function ?UB%(A() As ?)" & _
+vbCrLf & "?UB = ?Sz(A) - 1" & _
+vbCrLf & "End Function"
+UBFctLines = RplQ(A, TyNm)
+End Function
+Function CurPjRfLy() As String()
+CurPjRfLy = PjRfLy(CurPj)
+End Function
+Function CurPjRfFmt() As String()
+CurPjRfFmt = AyAlign2T(PjRfLy(CurPj))
+End Function
+Function RfLin$(A As VBIDE.Reference)
+RfLin = A.Name & " " & QuoteSqBkt(A.FullPath) & " " & QuoteSqBkt(A.Description)
+End Function
+Function PjRfLy(A As VBProject) As String()
+PjRfLy = ItrMapSy(A.References, "RfLin")
+End Function
+Function SzFctLines$(TyNm$)
+Const A$ = "Function ?Sz%(A() As ?)" & _
+vbCrLf & "On Error Resume Next" & _
+vbCrLf & "?Sz = UBound(A) + 1" & _
+vbCrLf & "End Function"
+SzFctLines = RplQ(A, TyNm)
+End Function
+Function CurPjRfNy() As String()
+CurPjRfNy = PjRfNy(CurPj)
+End Function
+
+Function PjRfNy(A As VBProject) As String()
+PjRfNy = ItrNy(A.References)
+End Function
+
+Function AyWhPatn(A, Patn$) As String()
+Dim O$(), X, Re As New RegExp
+Re.Pattern = Patn
+For Each X In A
+    If Re.Test(X) Then Push O, X
+Next
+AyWhPatn = O
+End Function

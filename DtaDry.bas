@@ -1,0 +1,2 @@
+Option Explicit
+Option Compare Database
