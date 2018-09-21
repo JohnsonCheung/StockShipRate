@@ -233,6 +233,7 @@ Dim O$()
     Next
 AyBrw O
 End Sub
+
 Function MdMthLinCnt%(A As CodeModule, MthLno%)
 Dim Kd$, Lin$, EndLin$, J%
 Lin = A.Lines(MthLno, 1)
@@ -251,12 +252,14 @@ For J = MthLno + 1 To A.CountOfLines
 Next
 Stop
 End Function
+
 Function MdMthLno%(A As CodeModule, M)
 Dim J%
 For J = 1 To A.CountOfLines
     If LinMthNm(A.Lines(J, 1)) = M Then MdMthLno = J: Exit Function
 Next
 End Function
+
 Sub MdMovMth(A As CodeModule, M, ToMd As CodeModule)
 MdAppLines ToMd, MdMthLines(A, M)
 MdRmvMth A, M
@@ -264,19 +267,24 @@ End Sub
 
 Sub MdMovMthNy(A As CodeModule, MthNy$(), ToMd As CodeModule)
 If Sz(MthNy) = 0 Then Exit Sub
+Dim N
 For Each N In MthNy
     MdMovMth A, CStr(N), ToMd
 Next
 End Sub
+
 Function CurMdPatnMthNy(Patn$)
 CurMdPatnMthNy = MdPatnMthNy(CurMd, Patn)
 End Function
+
 Function MdPatnMthNy(A As CodeModule, Patn$) As String()
 MdPatnMthNy = AyWhPatn(MdMthNy(A), Patn)
 End Function
+
 Sub MdMovMthPatn(A As CodeModule, Patn$, ToMd As CodeModule)
-MdMovMthNy A, MdPatnNy(A), ToMd
+MdMovMthNy A, MdPatnMthNy(A, Patn), ToMd
 End Sub
+
 Sub Z()
 Z_MdMthLinCnt
 Z_MovMth

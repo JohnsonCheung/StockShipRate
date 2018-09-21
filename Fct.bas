@@ -56,6 +56,9 @@ End Function
 Function SplitComma(A) As String()
 SplitComma = Split(A, ",")
 End Function
+Function PjHasCmp(A As VBProject, Nm$) As Boolean
+PjHasCmp = ItrHasNm(A.VBComponents, Nm)
+End Function
 Sub PjAddCmp(A As VBProject, Nm$, Ty As vbext_ComponentType)
 If PjHasCmp(A, Nm) Then
     FunMsgDmp "PjAddCmp", "[Pj] already has [Cmp]", A.Name, Nm
@@ -77,9 +80,6 @@ End Sub
 Sub PjAddCls(A As VBProject, Nm$)
 PjAddCmp A, Nm, vbext_ct_ClassModule
 End Sub
-Function PjHasCmp(A As VBProject, Nm$) As Boolean
-PjHasCmp = ItrHasNm(A.VBComponents, Nm)
-End Function
 Sub WImp(LnkSpec$)
 LNKDbImp W, LnkSpec
 End Sub
